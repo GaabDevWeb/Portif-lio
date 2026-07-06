@@ -4,6 +4,7 @@ import { Terminal } from "lucide-react";
 
 import { SECTION_IDS, SECTION_LABELS } from "@/features/sync/section-map";
 import { scrollToSectionId } from "@/features/landing/components/lenis-provider";
+import { RootMediaHud } from "@/features/landing/components/root-media-hud";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/providers/session-store";
 import type { SectionId } from "@/types/root-os";
@@ -51,6 +52,7 @@ export function SystemHud() {
             </li>
           ))}
         </ul>
+        <RootMediaHud />
         <button
           type="button"
           onClick={() => toggleTerminal("landing")}

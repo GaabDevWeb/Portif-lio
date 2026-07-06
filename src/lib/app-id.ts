@@ -3,6 +3,7 @@ import type { AppId, CoreAppId } from "@/types/root-os";
 
 const CORE_APP_TITLES: Record<CoreAppId, string> = {
   terminal: "Terminal.app",
+  media: "Media.app",
   profile: "Profile.app",
   projects: "Projects.app",
   editor: "Editor.app",

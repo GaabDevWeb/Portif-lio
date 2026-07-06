@@ -5,7 +5,7 @@ export const SECTION_IDS: SectionId[] = [
   "manifesto",
   "projects",
   "process",
-  "skills",
+  "knowledge",
   "timeline",
   "contact",
   "footer",
@@ -16,7 +16,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   manifesto: "Manifesto",
   projects: "Projects",
   process: "Process",
-  skills: "Skills",
+  knowledge: "Graph",
   timeline: "Timeline",
   contact: "Contact",
   footer: "System",
@@ -27,7 +27,7 @@ export const SECTION_HASH: Record<SectionId, string> = {
   manifesto: "#manifesto",
   projects: "#projects",
   process: "#process",
-  skills: "#skills",
+  knowledge: "#knowledge",
   timeline: "#timeline",
   contact: "#contact",
   footer: "#footer",
@@ -39,7 +39,7 @@ export const SECTION_TERMINAL_ECHO: Record<SectionId, string> = {
   manifesto: "$ cat manifesto.md",
   projects: "$ cd projects",
   process: "$ cat process.md",
-  skills: "$ skills --top",
+  knowledge: "$ index --knowledge",
   timeline: "$ git log --oneline",
   contact: "$ mail --compose",
   footer: "$ uptime",
@@ -47,6 +47,7 @@ export const SECTION_TERMINAL_ECHO: Record<SectionId, string> = {
 
 export function sectionFromHash(hash: string): SectionId | null {
   const normalized = hash.replace(/^#/, "").toLowerCase();
+  if (normalized === "skills") return "knowledge";
   return SECTION_IDS.find((id) => id === normalized) ?? null;
 }
 
@@ -60,8 +61,10 @@ export function sectionFromAlias(alias: string): SectionId | null {
     project: "projects",
     work: "projects",
     process: "process",
-    skills: "skills",
-    skill: "skills",
+    knowledge: "knowledge",
+    graph: "knowledge",
+    skills: "knowledge",
+    skill: "knowledge",
     timeline: "timeline",
     history: "timeline",
     git: "timeline",

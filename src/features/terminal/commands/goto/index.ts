@@ -29,7 +29,8 @@ export const gotoCommand: CommandDefinition = {
       "manifesto",
       "projects",
       "process",
-      "skills",
+      "knowledge",
+      "graph",
       "timeline",
       "contact",
     ];

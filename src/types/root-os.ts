@@ -14,7 +14,7 @@ export type SectionId =
   | "manifesto"
   | "projects"
   | "process"
-  | "skills"
+  | "knowledge"
   | "timeline"
   | "contact"
   | "footer";
@@ -23,6 +23,7 @@ export type SyncOrigin = "landing" | "terminal" | "wm" | "system";
 
 export type CoreAppId =
   | "terminal"
+  | "media"
   | "profile"
   | "projects"
   | "editor"

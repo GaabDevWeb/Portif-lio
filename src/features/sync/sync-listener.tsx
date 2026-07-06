@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { registerScrollToSection, registerTerminalWriter } from "@/features/sync/sync-bus";
 import { scrollToSectionId } from "@/features/landing/components/lenis-provider";
 import { useSessionStore } from "@/providers/session-store";
-import type { SectionId } from "@/types/root-os";
+import type { CommandOutputLine, SectionId } from "@/types/root-os";
 
 export function SyncBusListener() {
   const setActiveSection = useSessionStore((s) => s.setActiveSection);
@@ -34,7 +34,7 @@ export function SyncBusListener() {
 export function TerminalSyncBridge({
   writeln,
 }: {
-  writeln: (lines: string[]) => void;
+  writeln: (lines: CommandOutputLine[]) => void;
 }) {
   useEffect(() => registerTerminalWriter(writeln), [writeln]);
   return null;

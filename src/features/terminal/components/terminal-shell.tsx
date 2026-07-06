@@ -11,12 +11,15 @@ import { registerTerminalWriter } from "@/features/sync/sync-bus";
 import { getAutocompleteCandidates, executeInput } from "@/features/terminal/executor/command-executor";
 import { CommandHistory } from "@/features/terminal/history/command-history";
 import { buildPrompt } from "@/lib/utils";
+import { ascii } from "@/features/ascii";
+import { ansi } from "@/features/ascii/ansi";
 import {
   applyCommandResult,
   buildCommandContext,
   useSessionStore,
 } from "@/providers/session-store";
 import { trackCommand } from "@/lib/analytics/track";
+import type { CommandOutputLine } from "@/types/root-os";
 
 import "@xterm/xterm/css/xterm.css";
 
@@ -65,8 +68,11 @@ export function TerminalShell({ className, mobile = false }: TerminalShellProps)
     }
 
     for (const line of result.lines) {
-      const color = line.stream === "stderr" ? "\x1b[31m" : "\x1b[32m";
-      term.writeln(`${color}${line.text}\x1b[0m`);
+      const shouldColorize = ascii.shouldColorizeStream(line.text);
+      const color =
+        line.stream === "stderr" ? (shouldColorize ? ansi("red") : "") : shouldColorize ? ansi("green") : "";
+      const reset = shouldColorize ? ansi("reset") : "";
+      term.writeln(`${color}${line.text}${reset}`);
     }
   }, []);
 
@@ -130,11 +136,14 @@ export function TerminalShell({ className, mobile = false }: TerminalShellProps)
   }, []);
 
   useEffect(() => {
-    return registerTerminalWriter((lines) => {
+    return registerTerminalWriter((lines: CommandOutputLine[]) => {
       const term = terminalRef.current;
       if (!term) return;
-      for (const line of lines) {
-        term.writeln(`\x1b[2m${line}\x1b[0m`);
+      const normalized = ascii.renderCommandResult({ exitCode: 0, lines }).lines;
+      for (const line of normalized) {
+        const dim = ansi("dim");
+        const reset = ansi("reset");
+        term.writeln(`${dim}${line.text}${reset}`);
       }
     });
   }, []);

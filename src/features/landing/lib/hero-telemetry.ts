@@ -1,5 +1,5 @@
+import { getGraphStats, loadKnowledgeGraph } from "@/lib/content/knowledge-graph";
 import { loadProjects } from "@/lib/content/projects";
-import { loadSkills } from "@/lib/content/skills";
 import { loadTimeline } from "@/lib/content/timeline";
 
 export interface HeroTelemetry {
@@ -7,14 +7,14 @@ export interface HeroTelemetry {
   commits: number;
   years: number;
   stacks: number;
-  skills: number;
+  nodes: number;
   experiments: number;
 }
 
 export function computeHeroTelemetry(): HeroTelemetry {
   const projects = loadProjects();
   const timeline = loadTimeline();
-  const skills = loadSkills();
+  const graphStats = getGraphStats(loadKnowledgeGraph());
   const stacks = new Set(projects.flatMap((p) => p.stack));
   const years = projects.map((p) => p.year);
   const minYear = years.length ? Math.min(...years) : new Date().getFullYear();
@@ -25,7 +25,7 @@ export function computeHeroTelemetry(): HeroTelemetry {
     commits: timeline.length,
     years: Math.max(1, maxYear - minYear + 1),
     stacks: stacks.size,
-    skills: skills.length,
+    nodes: graphStats.nodes,
     experiments: projects.filter((p) => p.featured).length,
   };
 }

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "node scripts/generate-music-manifest.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint src",
@@ -29,6 +30,7 @@
     "next": "^15.3.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-force-graph-2d": "^1.29.1",
     "react-hook-form": "^7.56.4",
     "tailwind-merge": "^3.3.0",
     "three": "^0.185.1",

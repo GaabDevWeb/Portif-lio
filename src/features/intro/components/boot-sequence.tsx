@@ -2,13 +2,12 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 
 import { INTRO_CAMERA } from "@/features/intro/constants";
 import { BootRenderer } from "@/features/intro/components/boot-renderer";
 import { CameraRig } from "@/features/intro/components/camera-rig";
-import { ComputerScene } from "@/features/intro/components/computer-scene";
+import { CrtMonitorScene } from "@/features/intro/components/crt-monitor-scene";
 import { disposeObject3D, disposeWebGLRenderer } from "@/features/intro/lib/dispose-scene";
 import type { CameraRigState } from "@/features/intro/types";
 
@@ -62,9 +61,9 @@ function SceneContent({
 
   return (
     <>
-      <color attach="background" args={["#030303"]} />
+      <color attach="background" args={["#020202"]} />
       <CameraRig rig={cameraRig} />
-      <ComputerScene
+      <CrtMonitorScene
         reveal={reveal}
         ledOn={ledOn}
         crtOn={crtOn}
@@ -72,7 +71,6 @@ function SceneContent({
         screenTexture={screenTexture}
         onPowerClick={onPowerClick}
       />
-      <Sparkles count={24} scale={[5, 3, 2]} size={1.2} speed={0.12} opacity={0.18 * reveal} color="#9dff9d" />
       <BootRenderer
         lines={bootLines}
         showCursor={showCursor}
@@ -112,14 +110,14 @@ export function BootSequence({
   if (!active) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-[var(--bg-void)]">
+    <div className="fixed inset-0 z-[60] bg-[#020202]">
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={[1, 1.25]}
         camera={{
           position: INTRO_CAMERA.initial.position,
           fov: INTRO_CAMERA.initial.fov,
           near: 0.01,
-          far: 100,
+          far: 20,
         }}
         gl={{
           antialias: true,

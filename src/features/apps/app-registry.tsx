@@ -5,6 +5,7 @@ import type { AppId } from "@/types/root-os";
 import { EditorApp } from "@/features/apps/editor/editor-app";
 import { MailApp } from "@/features/apps/mail/mail-app";
 import { MonitorApp } from "@/features/apps/monitor/monitor-app";
+import { MediaApp } from "@/features/apps/media/media-app";
 import { ProfileApp } from "@/features/apps/profile/profile-app";
 import { ProjectApp } from "@/features/apps/project/project-app";
 import { ProjectsApp } from "@/features/apps/projects/projects-app";
@@ -19,6 +20,8 @@ export function renderApp(appId: AppId) {
   switch (appId) {
     case "terminal":
       return <TerminalShell className="h-full w-full" />;
+    case "media":
+      return <MediaApp />;
     case "profile":
       return <ProfileApp />;
     case "projects":

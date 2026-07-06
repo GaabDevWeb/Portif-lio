@@ -4,6 +4,7 @@ import { expandAliases } from "../aliases";
 import { parseInput } from "../parser/tokenizer";
 import { getCommandRegistry } from "../registry/command-registry";
 import { notFound } from "../commands/shared";
+import { ascii } from "@/features/ascii";
 
 export async function executeInput(
   input: string,
@@ -30,7 +31,7 @@ export async function executeInput(
   }
 
   const result = await command.execute(ctx, args);
-  return result;
+  return ascii.renderCommandResult(result);
 }
 
 export function getAutocompleteCandidates(

@@ -30,6 +30,23 @@ export function createInitialWindow(
     };
   }
 
+  if (appId === "media" && typeof window !== "undefined") {
+    const margin = 16;
+    const hud = 48;
+    const width = 360;
+    const height = 520;
+    return {
+      appId,
+      x: Math.max(margin, window.innerWidth - width - margin),
+      y: hud + margin,
+      width,
+      height: Math.min(height, window.innerHeight - hud - 36 - margin * 2),
+      minimized: false,
+      maximized: false,
+      zIndex,
+    };
+  }
+
   if (typeof appId === "string" && appId.startsWith("project-")) {
     const offset = index * WINDOW_DEFAULTS.cascadeOffset;
     const vw = typeof window !== "undefined" ? window.innerWidth : 1200;

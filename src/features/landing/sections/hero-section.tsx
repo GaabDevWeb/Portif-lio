@@ -78,7 +78,7 @@ export function HeroSection() {
           <HudReadout label="Commits" value={telemetry.commits} />
           <HudReadout label="Years" value={telemetry.years} />
           <HudReadout label="Stacks" value={telemetry.stacks} />
-          <HudReadout label="Skills" value={telemetry.skills} />
+          <HudReadout label="Nodes" value={telemetry.nodes} />
           <HudReadout label="Experiments" value={telemetry.experiments} />
         </div>
 

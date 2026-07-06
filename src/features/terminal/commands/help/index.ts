@@ -1,6 +1,7 @@
 import type { CommandDefinition } from "@/types/root-os";
 import { getCommandRegistry } from "../../registry/command-registry";
 import { success, stdout } from "../shared";
+import { ascii } from "@/features/ascii";
 
 const CATEGORIES = [
   { key: "navigation", label: "Navigation" },
@@ -27,39 +28,48 @@ export const helpCommand: CommandDefinition = {
           lines: [{ stream: "stderr", text: `help: no command '${target}'` }],
         };
       }
-      return success([
-        ...stdout(`${cmd.name} — ${cmd.description}`),
-        ...stdout(`Usage: ${cmd.usage}`),
-        ...(cmd.aliases?.length
-          ? stdout(`Aliases: ${cmd.aliases.join(", ")}`)
-          : []),
-      ]);
+      const meta = ascii.table({
+        headers: ["Field", "Value"],
+        rows: [
+          ["Name", cmd.name],
+          ["Description", cmd.description],
+          ["Usage", cmd.usage],
+          ["Category", cmd.category],
+          ["Aliases", cmd.aliases?.length ? cmd.aliases.join(", ") : "—"],
+        ],
+      });
+      return success(meta.flatMap((l) => stdout(l)));
     }
 
     const registry = getCommandRegistry();
-    const lines = stdout("ROOT OS — available commands:\n");
+    const header = ascii.box(
+      [
+        `${ascii.icon("terminal")} ROOT OS — command index`,
+        "",
+        "Type `help <command>` for details.",
+        "Tip: `cheatsheet` for a guided start.",
+      ],
+      { title: "MAN", style: "double" },
+    );
+    const lines = header.flatMap((l) => stdout(l));
 
     for (const category of CATEGORIES) {
       const commands = registry
         .list()
         .filter((cmd) => cmd.category === category.key && !cmd.name.startsWith("_"));
       if (commands.length === 0) continue;
-      lines.push({
-        stream: "stdout",
-        text: `\n${category.label}:`,
+      lines.push(...stdout(""));
+      lines.push(...stdout(`${category.label}:`));
+
+      const table = ascii.table({
+        headers: ["Command", "Description"],
+        rows: commands.map((cmd) => [cmd.name, cmd.description]),
       });
-      for (const cmd of commands) {
-        lines.push({
-          stream: "stdout",
-          text: `  ${cmd.name.padEnd(14)} ${cmd.description}`,
-        });
-      }
+      lines.push(...table.flatMap((l) => stdout(l)));
     }
 
-    lines.push({
-      stream: "stdout",
-      text: "\nTip: type 'whoami' to begin.",
-    });
+    lines.push(...stdout(""));
+    lines.push(...stdout(`${ascii.icon("success")} Try: whoami · neofetch · ascii ROOT OS · open terminal`));
 
     return success(lines, { chapterComplete: 2 });
   },

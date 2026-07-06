@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { SECTION_IDS } from "@/features/sync/section-map";
 import { useSessionStore } from "@/providers/session-store";
@@ -10,6 +10,11 @@ export function useScrollSpy(rootMargin = "-40% 0px -50% 0px") {
   const setActiveSection = useSessionStore((s) => s.setActiveSection);
   const emitSync = useSessionStore((s) => s.emitSync);
   const activeSection = useSessionStore((s) => s.activeSection);
+  const activeSectionRef = useRef(activeSection);
+
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+  }, [activeSection]);
 
   useEffect(() => {
     const sections = SECTION_IDS.map((id) => document.getElementById(id)).filter(Boolean);
@@ -23,7 +28,7 @@ export function useScrollSpy(rootMargin = "-40% 0px -50% 0px") {
         if (!visible?.target.id) return;
 
         const section = visible.target.id as SectionId;
-        if (section === activeSection) return;
+        if (section === activeSectionRef.current) return;
 
         setActiveSection(section);
         emitSync({ type: "section.enter", origin: "landing", section });
@@ -36,5 +41,5 @@ export function useScrollSpy(rootMargin = "-40% 0px -50% 0px") {
     }
 
     return () => observer.disconnect();
-  }, [activeSection, emitSync, rootMargin, setActiveSection]);
+  }, [emitSync, rootMargin, setActiveSection]);
 }

@@ -5,6 +5,9 @@ import { error, misuse, success, stdout } from "../shared";
 
 const APP_ALIASES: Record<string, AppId> = {
   terminal: "terminal",
+  music: "media",
+  player: "media",
+  media: "media",
   profile: "profile",
   projects: "projects",
   project: "projects",

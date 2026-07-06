@@ -1,17 +1,20 @@
 import { BOOT_MODULES } from "@/constants/boot";
 
-export const COMPUTER_MODEL_PATH = "/models/computer.glb";
+export const CRT_MONITOR_MODEL_PATH = "/models/crt-monitor.glb";
 
-/** Screen plane aligned to pack_1 monitor mesh (model space). */
+/** Glass plane aligned to CRT_Monitor_monitor_glass_0 (model space). */
 export const SCREEN_TARGET = {
-  position: [0, 0.12, 0.2] as [number, number, number],
+  position: [0, 0.015, 0.208] as [number, number, number],
   rotation: [0, 0, 0] as [number, number, number],
-  size: [0.62, 0.46] as [number, number],
+  size: [0.298, 0.224] as [number, number],
 };
+
+/** Power LED on lower-right bezel (model space). */
+export const LED_POSITION: [number, number, number] = [0.14, -0.21, 0.11];
 
 export const INTRO_TIMING = {
   blackoutMs: 450,
-  revealMs: 2800,
+  revealMs: 3200,
   ledDelayMs: 380,
   crtFlickerMs: 900,
   postLineMs: 160,
@@ -40,14 +43,14 @@ export const INTRO_BOOT_MODULES = [
 
 export const INTRO_CAMERA = {
   initial: {
-    position: [0, 0.08, 2.35] as [number, number, number],
-    fov: 42,
-    lookAt: [0, 0.1, 0] as [number, number, number],
+    position: [0, 0.02, 0.95] as [number, number, number],
+    fov: 36,
+    lookAt: [0, 0.01, 0.05] as [number, number, number],
   },
   transitionEnd: {
-    position: [0, 0.12, 0.04] as [number, number, number],
-    fov: 28,
-    lookAt: [0, 0.12, 0.2] as [number, number, number],
+    position: [0, 0.015, 0.165] as [number, number, number],
+    fov: 24,
+    lookAt: [0, 0.015, 0.38] as [number, number, number],
   },
 } as const;
 

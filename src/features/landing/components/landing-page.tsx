@@ -10,7 +10,7 @@ import { HeroSection } from "@/features/landing/sections/hero-section";
 import { ManifestoSection } from "@/features/landing/sections/manifesto-section";
 import { ProcessSection } from "@/features/landing/sections/process-section";
 import { ProjectsSection } from "@/features/landing/sections/projects-section";
-import { SkillsSection } from "@/features/landing/sections/skills-section";
+import { KnowledgeGraphSection } from "@/features/knowledge-graph/components/knowledge-graph-section";
 import { TimelineSection } from "@/features/landing/sections/timeline-section";
 
 export function LandingPage() {
@@ -26,7 +26,7 @@ export function LandingPage() {
         <ManifestoSection />
         <ProjectsSection />
         <ProcessSection />
-        <SkillsSection />
+        <KnowledgeGraphSection />
         <TimelineSection />
         <ContactSection />
         <FooterSection />

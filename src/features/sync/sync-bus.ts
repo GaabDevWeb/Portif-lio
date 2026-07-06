@@ -1,7 +1,7 @@
 import { SECTION_TERMINAL_ECHO } from "@/features/sync/section-map";
-import type { SectionId, SyncEvent } from "@/types/root-os";
+import type { CommandOutputLine, SectionId, SyncEvent } from "@/types/root-os";
 
-type TerminalWriter = (lines: string[]) => void;
+type TerminalWriter = (lines: CommandOutputLine[]) => void;
 
 let terminalWriter: TerminalWriter | null = null;
 let scrollToSectionHandler: ((section: SectionId) => void) | null = null;
@@ -29,6 +29,11 @@ export function registerFocusContact(handler: () => void): () => void {
 }
 
 export function writelnToTerminal(lines: string[]): void {
+  if (!lines.length || !terminalWriter) return;
+  terminalWriter(lines.map((text) => ({ stream: "stdout", text })));
+}
+
+export function writelnToTerminalLines(lines: CommandOutputLine[]): void {
   if (!lines.length || !terminalWriter) return;
   terminalWriter(lines);
 }
