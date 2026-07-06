@@ -5,12 +5,11 @@ import { success, stdout } from "../shared";
 
 export const projectsCommand: CommandDefinition = {
   name: "projects",
-  description: "List portfolio projects and open Projects.app",
+  description: "List portfolio projects and navigate to projects section",
   usage: "projects [filter]",
   category: "portfolio",
   chapter: 5,
-  opensApp: "projects",
-  execute(ctx, argv) {
+  execute(_ctx, argv) {
     const filter = argv[0]?.toLowerCase();
     const projects = loadProjects().filter((p) =>
       filter ? p.title.toLowerCase().includes(filter) || p.slug.includes(filter) : true,
@@ -21,7 +20,7 @@ export const projectsCommand: CommandDefinition = {
     );
 
     return success(lines, {
-      openApp: "projects",
+      gotoSection: "projects",
       cwd: `${SYSTEM.homeDir}/projects`,
       chapterComplete: 5,
       selectedProject: projects[0]?.slug ?? null,

@@ -6,18 +6,32 @@
 }
 
 :root {
-  --bg-void: oklch(0.08 0.01 260);
+  --bg-void: oklch(0.07 0.01 260);
+  --bg-panel: oklch(0.11 0.015 260);
   --bg-terminal: oklch(0.12 0.02 145);
   --phosphor-primary: oklch(0.78 0.18 145);
   --phosphor-dim: oklch(0.55 0.1 145);
   --amber-led: oklch(0.75 0.16 75);
+  --amber-warm: oklch(0.7 0.12 65);
   --stderr: oklch(0.65 0.2 25);
-  --ui-chrome: oklch(0.18 0.01 260);
-  --ui-border: oklch(0.35 0.02 260);
+  --ui-chrome: oklch(0.16 0.01 260);
+  --ui-border: oklch(0.32 0.02 260);
   --ui-text: oklch(0.88 0.01 260);
+  --ui-text-dim: oklch(0.62 0.01 260);
+  --accent-data: oklch(0.72 0.08 230);
   --accent-link: oklch(0.72 0.12 230);
-  --taskbar-height: 32px;
+  --grid-line: oklch(0.22 0.01 260 / 0.55);
+  --space-unit: 4px;
+  --grid-gap: 8px;
+  --border-width: 1px;
+  --radius-sm: 2px;
   --titlebar-height: 28px;
+  --taskbar-height: 36px;
+  --hud-height: 48px;
+  --terminal-min-height: 180px;
+  --terminal-default-height: 240px;
+  --scanline-opacity: 0.06;
+  --section-padding-y: clamp(4rem, 12vh, 8rem);
 }
 
 @layer base {
@@ -27,6 +41,15 @@
 
   html {
     color-scheme: dark;
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
   }
 
   body {
@@ -104,6 +127,27 @@
       rgba(0, 0, 0, 0.15) 3px
     );
     mix-blend-mode: multiply;
+  }
+
+  .grid-overlay {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .scanline-hero::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: var(--scanline-opacity);
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(0, 0, 0, 0.4) 3px
+    );
   }
 }
 

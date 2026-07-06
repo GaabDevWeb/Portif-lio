@@ -1,11 +1,51 @@
 import { WINDOW_DEFAULTS } from "@/constants/window-manager";
 import type { AppId, WindowState } from "@/types/root-os";
 
-export function createDefaultWindow(
+export { WINDOW_DEFAULTS };
+
+export const TERMINAL_WINDOW = {
+  defaultHeight: 240,
+  minHeight: 180,
+  maxHeightRatio: 0.8,
+} as const;
+
+export function createInitialWindow(
   appId: AppId,
   zIndex: number,
   index: number,
 ): WindowState {
+  if (appId === "terminal" && typeof window !== "undefined") {
+    const margin = 16;
+    const taskbar = 36;
+    const height = TERMINAL_WINDOW.defaultHeight;
+    return {
+      appId,
+      x: margin,
+      y: window.innerHeight - taskbar - height - margin,
+      width: window.innerWidth - margin * 2,
+      height,
+      minimized: false,
+      maximized: false,
+      zIndex,
+    };
+  }
+
+  if (typeof appId === "string" && appId.startsWith("project-")) {
+    const offset = index * WINDOW_DEFAULTS.cascadeOffset;
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    return {
+      appId,
+      x: Math.min(64 + offset, vw - WINDOW_DEFAULTS.width - 24),
+      y: Math.min(48 + offset, vh - WINDOW_DEFAULTS.height - 80),
+      width: Math.min(820, vw - 48),
+      height: Math.min(560, vh - 120),
+      minimized: false,
+      maximized: false,
+      zIndex,
+    };
+  }
+
   const offset = index * WINDOW_DEFAULTS.cascadeOffset;
   return {
     appId,
@@ -18,6 +58,9 @@ export function createDefaultWindow(
     zIndex,
   };
 }
+
+/** @deprecated use createInitialWindow */
+export const createDefaultWindow = createInitialWindow;
 
 export function getNextFocusedApp(
   focusStack: AppId[],

@@ -15,6 +15,7 @@ import { timelineCommand } from "../commands/timeline";
 import { topCommand } from "../commands/top";
 import { treeCommand } from "../commands/tree";
 import { lsCommand } from "../commands/ls";
+import { aboutCommand, gotoCommand, terminalCommand } from "../commands/goto";
 import { closeCommand, openCommand } from "../commands/open";
 import { whoamiCommand } from "../commands/whoami";
 import { EASTER_COMMANDS } from "../commands/easter";
@@ -42,6 +43,9 @@ const DEFAULT_COMMANDS: CommandDefinition[] = [
   manCommand,
   treeCommand,
   historyCommand,
+  gotoCommand,
+  aboutCommand,
+  terminalCommand,
   ...EASTER_COMMANDS,
   ...SYSTEM_COMMANDS,
 ];

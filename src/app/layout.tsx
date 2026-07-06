@@ -71,8 +71,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
       <body>
-        <a href="#main-terminal" className="skip-link">
-          Skip to terminal
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
+        <a href="#projects" className="skip-link" style={{ top: "3rem" }}>
+          Skip to projects
         </a>
         <RootOSProvider>{children}</RootOSProvider>
       </body>

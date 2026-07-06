@@ -1,6 +1,6 @@
 "use client";
 
-import { APP_TITLES } from "@/constants/window-manager";
+import { getAppTitle } from "@/lib/app-id";
 import { renderApp } from "@/features/apps/app-registry";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/providers/session-store";
@@ -39,14 +39,14 @@ export function MobileAppDrawer({ open }: MobileAppDrawerProps) {
                   : "text-[var(--phosphor-dim)]",
               )}
             >
-              {APP_TITLES[appId]}
+              {getAppTitle(appId)}
             </button>
           ))}
         </div>
         <button
           type="button"
           aria-label="Close application"
-          onClick={() => activeApp && closeApp(activeApp)}
+          onClick={() => activeApp && closeApp(activeApp, "wm")}
           className="min-h-11 min-w-11 cursor-pointer px-3 font-mono text-sm text-[var(--stderr)]"
         >
           X
