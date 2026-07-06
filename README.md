@@ -65,7 +65,27 @@ Landing-first ROOT OS v2 — see [`docs/architecture/ROOT-OS-MASTERPLAN.md`](doc
 
 ## Troubleshooting
 
-**`ENOENT` / manifest errors in `npm run dev`**
+### Windows — `Can't resolve './cjs/react-is.development.js'`
+
+Esse erro vem do Turbopack ao resolver `react-is` (via `prop-types` → `react-force-graph-2d`). O projeto já inclui alias em `next.config.ts` e `react-is` como dependência direta.
+
+Se ainda falhar:
+
+```bash
+npm run clean
+rmdir /s /q node_modules
+del package-lock.json
+npm install
+npm run dev
+```
+
+Fallback sem Turbopack (mais estável no Windows):
+
+```bash
+npm run dev:webpack
+```
+
+### `ENOENT` / manifest errors in `npm run dev`
 
 Stop the dev server, clear the cache, and restart:
 

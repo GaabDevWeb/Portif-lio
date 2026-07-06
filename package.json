@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "clean": "rm -rf .next out",
+    "dev:webpack": "next dev",
+    "clean": "node scripts/clean.mjs",
     "prebuild": "node scripts/generate-music-manifest.mjs",
     "build": "next build",
     "start": "next start",
@@ -33,11 +34,15 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-force-graph-2d": "^1.29.1",
+    "react-is": "^19.1.0",
     "react-hook-form": "^7.56.4",
     "tailwind-merge": "^3.3.0",
     "three": "^0.185.1",
     "zod": "^3.25.36",
     "zustand": "^5.0.5"
+  },
+  "overrides": {
+    "react-is": "$react-is"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
