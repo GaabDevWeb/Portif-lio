@@ -5,7 +5,6 @@ import { CHROME, SYSTEM } from "@/constants/system";
 import { WINDOW_DEFAULTS } from "@/constants/window-manager";
 import { dispatchSyncEvent, handleSyncSideEffects } from "@/features/sync/sync-bus";
 import {
-  clampWindowPosition,
   createInitialWindow,
   cycleFocusApp,
   TERMINAL_WINDOW,

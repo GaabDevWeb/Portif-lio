@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "clean": "rm -rf .next out",
     "prebuild": "node scripts/generate-music-manifest.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "validate": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
