@@ -5,10 +5,12 @@ import { CHROME, SYSTEM } from "@/constants/system";
 import { WINDOW_DEFAULTS } from "@/constants/window-manager";
 import { dispatchSyncEvent, handleSyncSideEffects } from "@/features/sync/sync-bus";
 import {
+  clampWindowPosition,
   createInitialWindow,
   cycleFocusApp,
   TERMINAL_WINDOW,
 } from "@/features/wm/lib/window-utils";
+import { getLastPointerPosition } from "@/features/wm/lib/pointer-tracker";
 import { projectAppId, getProjectSlugFromAppId } from "@/lib/app-id";
 import { getProjectBySlug } from "@/lib/content/projects";
 import { trackAppOpen, trackEasterEgg } from "@/lib/analytics/track";
@@ -79,13 +81,14 @@ const initialFlags: SessionFlags = {
 function bumpZIndex(state: SessionState, appId: AppId) {
   const nextZ = state.maxZIndex + 1;
   const existing = state.windows[appId];
+  const pointer = getLastPointerPosition();
   return {
     maxZIndex: nextZ,
     windows: {
       ...state.windows,
       [appId]: existing
         ? { ...existing, zIndex: nextZ, minimized: false }
-        : createInitialWindow(appId, nextZ, state.openApps.length),
+        : createInitialWindow(appId, nextZ, state.openApps.length, pointer),
     },
   };
 }
@@ -238,7 +241,10 @@ export const useSessionStore = create<SessionState>()(
           const viewportW = typeof window !== "undefined" ? window.innerWidth : win.width;
           const maxHeight =
             appId === "terminal"
-              ? Math.floor(viewportH * TERMINAL_WINDOW.maxHeightRatio)
+              ? Math.min(
+                  Math.floor(viewportH * 0.75),
+                  TERMINAL_WINDOW.maxHeight,
+                )
               : viewportH - taskbar - margin * 2;
 
           return {

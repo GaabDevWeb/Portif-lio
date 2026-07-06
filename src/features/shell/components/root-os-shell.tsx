@@ -11,6 +11,7 @@ import {
 } from "@/features/mobile/mobile-shell";
 import { SyncBusListener } from "@/features/sync/sync-listener";
 import { WindowManager } from "@/features/wm/components/window-manager";
+import { subscribePointerTracker } from "@/features/wm/lib/pointer-tracker";
 import { getAppTitle } from "@/lib/app-id";
 import { useKonamiCode } from "@/hooks/use-konami-code";
 import { useMobileLayout } from "@/hooks/use-mobile-layout";
@@ -143,6 +144,8 @@ export function RootOSShell() {
   const [mobileDrawer, setMobileDrawer] = useState(false);
 
   useKonamiCode();
+
+  useEffect(() => subscribePointerTracker(), []);
 
   const injectMobileCommand = useCallback((command: string) => {
     if (!useSessionStore.getState().openApps.includes("terminal")) {

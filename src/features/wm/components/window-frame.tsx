@@ -6,6 +6,7 @@ import { CHROME } from "@/constants/system";
 import { WINDOW_DEFAULTS } from "@/constants/window-manager";
 import { animateWindowOpen } from "@/animations/wm/window-transitions";
 import { renderApp } from "@/features/apps/app-registry";
+import { clampWindowPosition } from "@/features/wm/lib/window-utils";
 import { getAppTitle } from "@/lib/app-id";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/providers/session-store";
@@ -38,8 +39,13 @@ export function WindowFrame({ appId }: WindowFrameProps) {
 
   const startDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (windowState.maximized) return;
+    if (event.button !== 0) return;
     event.preventDefault();
+    event.stopPropagation();
     focusApp(appId);
+
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -47,19 +53,29 @@ export function WindowFrame({ appId }: WindowFrameProps) {
     const originY = windowState.y;
 
     const onMove = (moveEvent: PointerEvent) => {
-      updateWindow(appId, {
-        x: Math.max(0, originX + moveEvent.clientX - startX),
-        y: Math.max(0, originY + moveEvent.clientY - startY),
-      });
+      if (moveEvent.pointerId !== event.pointerId) return;
+      const nextX = originX + moveEvent.clientX - startX;
+      const nextY = originY + moveEvent.clientY - startY;
+      const clamped = clampWindowPosition(
+        nextX,
+        nextY,
+        windowState.width,
+        windowState.height,
+      );
+      updateWindow(appId, clamped);
     };
 
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+    const onUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== event.pointerId) return;
+      target.releasePointerCapture(event.pointerId);
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
     };
 
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
   };
 
   return (
@@ -69,7 +85,7 @@ export function WindowFrame({ appId }: WindowFrameProps) {
       role="dialog"
       aria-label={title}
       className={cn(
-        "absolute flex flex-col overflow-hidden border bg-[var(--ui-chrome)] shadow-none",
+        "pointer-events-auto absolute flex flex-col overflow-hidden border bg-[var(--ui-chrome)] shadow-none",
         isFocused ? "border-[var(--phosphor-primary)]" : "border-[var(--ui-border)]",
       )}
       style={{
@@ -82,7 +98,7 @@ export function WindowFrame({ appId }: WindowFrameProps) {
       onMouseDown={() => focusApp(appId)}
     >
       <header
-        className="wm-titlebar flex cursor-grab items-center justify-between border-b border-[var(--ui-border)] px-3 active:cursor-grabbing"
+        className="wm-titlebar flex shrink-0 cursor-grab items-center justify-between border-b border-[var(--ui-border)] px-3 select-none active:cursor-grabbing"
         style={{ height: CHROME.titlebarHeight }}
         onPointerDown={startDrag}
       >
