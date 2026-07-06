@@ -1,0 +1,9 @@
+{
+  "frontend": { "level": 95, "process": "node" },
+  "typescript": { "level": 92, "process": "tsc" },
+  "gsap": { "level": 88, "process": "gsap" },
+  "react": { "level": 90, "process": "react" },
+  "three": { "level": 75, "process": "webgl" },
+  "motion": { "level": 85, "process": "motion" },
+  "terminal": { "level": 80, "process": "bash" }
+}

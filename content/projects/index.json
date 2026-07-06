@@ -1,0 +1,27 @@
+[
+  {
+    "slug": "root-os",
+    "title": "ROOT OS Portfolio",
+    "year": 2026,
+    "role": "Lead Developer",
+    "stack": ["Next.js", "TypeScript", "GSAP", "R3F", "xterm.js", "Zustand"],
+    "summary": "Diegetic OS experience — boot cinema, functional terminal with 56+ commands, window manager, and narrative shutdown arc.",
+    "featured": true,
+    "links": {
+      "demo": "https://root-os.vercel.app",
+      "repo": "https://github.com/gaab/Portifolio"
+    }
+  },
+  {
+    "slug": "design-system",
+    "title": "Engineering Design System",
+    "year": 2025,
+    "role": "Front-end Architect",
+    "stack": ["React", "Tailwind CSS v4", "OKLCH", "shadcn/ui"],
+    "summary": "Token-driven component library — IBM Plex, phosphor palette, accessible primitives for product teams.",
+    "featured": true,
+    "links": {
+      "repo": "https://github.com/gaab/design-system"
+    }
+  }
+]

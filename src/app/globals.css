@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+:root {
+  --bg-void: oklch(0.08 0.01 260);
+  --bg-terminal: oklch(0.12 0.02 145);
+  --phosphor-primary: oklch(0.78 0.18 145);
+  --phosphor-dim: oklch(0.55 0.1 145);
+  --amber-led: oklch(0.75 0.16 75);
+  --stderr: oklch(0.65 0.2 25);
+  --ui-chrome: oklch(0.18 0.01 260);
+  --ui-border: oklch(0.35 0.02 260);
+  --ui-text: oklch(0.88 0.01 260);
+  --accent-link: oklch(0.72 0.12 230);
+  --taskbar-height: 32px;
+  --titlebar-height: 28px;
+}
+
+@layer base {
+  * {
+    border-color: var(--ui-border);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg-void);
+    color: var(--ui-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .xterm {
+    padding: 0.5rem;
+  }
+
+  .xterm-viewport {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-border) transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--phosphor-primary);
+    outline-offset: 2px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    background: var(--ui-chrome);
+    color: var(--phosphor-primary);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+
+  .skip-link:focus {
+    left: 0.5rem;
+    top: 0.5rem;
+  }
+
+  @keyframes matrix-fall {
+    0% {
+      transform: translateY(-20%);
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: translateY(20%);
+      opacity: 0.2;
+    }
+  }
+
+  .animate-matrix-fall {
+    animation: matrix-fall 2.4s linear infinite;
+  }
+
+  .crt-screen {
+    position: relative;
+  }
+
+  .crt-screen::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.15) 3px
+    );
+    mix-blend-mode: multiply;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

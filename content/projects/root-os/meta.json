@@ -1,0 +1,9 @@
+{
+  "slug": "root-os",
+  "title": "ROOT OS Portfolio",
+  "year": 2026,
+  "role": "Lead Developer",
+  "stack": ["Next.js", "TypeScript", "GSAP", "R3F", "xterm.js"],
+  "summary": "Interactive OS-themed portfolio with functional terminal and cinematic boot.",
+  "featured": true
+}

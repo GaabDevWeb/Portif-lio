@@ -1,0 +1,11 @@
+{
+  "name": "ROOT OS",
+  "tagline": "personal kernel space",
+  "description": "Interactive OS-themed portfolio with a functional terminal, cinematic boot, and explorable GUI apps.",
+  "url": "https://root-os.vercel.app",
+  "locale": "en_US",
+  "author": {
+    "name": "[NOME]",
+    "twitter": "@[HANDLE]"
+  }
+}

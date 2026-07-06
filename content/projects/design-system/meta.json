@@ -1,0 +1,9 @@
+{
+  "slug": "design-system",
+  "title": "Engineering Design System",
+  "year": 2025,
+  "role": "Front-end Architect",
+  "stack": ["React", "Tailwind CSS", "shadcn/ui"],
+  "summary": "Token-driven component library for product teams.",
+  "featured": false
+}
