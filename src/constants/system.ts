@@ -1,6 +1,6 @@
 export const SYSTEM = {
   name: "ROOT OS",
-  version: "0.1.0",
+  version: "0.2.0",
   tagline: "personal kernel space",
   hostname: "devbox.local",
   defaultUser: "guest",
@@ -35,5 +35,6 @@ export const EXIT_CODES = {
 
 export const CHROME = {
   titlebarHeight: 28,
-  taskbarHeight: 32,
+  taskbarHeight: 36,
+  hudHeight: 48,
 } as const;

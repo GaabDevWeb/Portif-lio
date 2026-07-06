@@ -138,9 +138,10 @@ export const emacsCommand = egg("emacs", {
 });
 
 export const asciiCommand = egg("ascii", {
-  name: "ascii",
+  name: "logo",
+  aliases: ["ascii-art"],
   description: "Random ASCII art",
-  usage: "ascii",
+  usage: "logo",
   category: "easter",
   execute() {
     return success(stdout(NEOFETCH_LOGO));

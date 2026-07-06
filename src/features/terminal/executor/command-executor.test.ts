@@ -15,6 +15,7 @@ const baseContext: CommandContext = {
   focusedApp: null,
   chaptersComplete: [],
   easterEggs: [],
+  activeSection: "hero",
 };
 
 describe("command executor", () => {
@@ -45,13 +46,13 @@ describe("command executor", () => {
   it("executes contact", async () => {
     const result = await executeInput("contact", baseContext);
     expect(result.exitCode).toBe(0);
-    expect(result.openApp).toBe("mail");
+    expect(result.gotoSection).toBe("contact");
   });
 
   it("executes projects", async () => {
     const result = await executeInput("projects", baseContext);
     expect(result.exitCode).toBe(0);
-    expect(result.openApp).toBe("projects");
+    expect(result.gotoSection).toBe("projects");
   });
 
   it("executes git log", async () => {

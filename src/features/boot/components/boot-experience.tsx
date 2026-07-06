@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { animateSkipFade } from "@/animations/boot/boot-timeline";
 import { BootLogin } from "@/features/boot/components/boot-login";

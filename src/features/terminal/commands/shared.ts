@@ -30,6 +30,10 @@ export function stdout(text: string): CommandResult["lines"] {
   return [{ stream: "stdout", text }];
 }
 
+export function stderr(text: string): CommandResult["lines"] {
+  return [{ stream: "stderr", text }];
+}
+
 import { normalizePath } from "@/lib/utils";
 
 export function resolvePathArg(

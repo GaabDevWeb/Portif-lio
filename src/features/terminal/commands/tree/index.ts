@@ -1,31 +1,17 @@
 import { getVirtualFilesystem } from "@/features/vfs";
 import type { CommandDefinition, VfsNode } from "@/types/root-os";
+import { ascii } from "@/features/ascii";
+import type { AsciiTreeNode } from "@/features/ascii";
 import { error, resolvePathArg, success, stdout } from "../shared";
 
-function buildTreeLines(
-  node: VfsNode,
-  prefix: string,
-  isLast: boolean,
-  depth: number,
-  maxDepth: number,
-): string[] {
-  if (depth > maxDepth) return [];
-
-  const connector = isLast ? "└── " : "├── ";
-  const lines = [`${prefix}${connector}${node.name}${node.type === "directory" ? "/" : ""}`];
-
-  if (node.type !== "directory") return lines;
-
-  const childPrefix = prefix + (isLast ? "    " : "│   ");
-  const children = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
-
-  children.forEach((child, index) => {
-    lines.push(
-      ...buildTreeLines(child, childPrefix, index === children.length - 1, depth + 1, maxDepth),
-    );
-  });
-
-  return lines;
+function vfsToAscii(node: VfsNode, maxDepth: number, depth: number = 0): AsciiTreeNode {
+  if (node.type === "file" || depth >= maxDepth) {
+    return { type: "file", name: node.name };
+  }
+  const children = Object.values(node.children)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((child) => vfsToAscii(child, maxDepth, depth + 1));
+  return { type: "dir", name: `${node.name}/`, children };
 }
 
 export const treeCommand: CommandDefinition = {
@@ -51,13 +37,15 @@ export const treeCommand: CommandDefinition = {
       return success(stdout(node.name));
     }
 
-    const header = stdout(resolved.path);
-    const body = Object.values(node.children)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .flatMap((child, index, arr) =>
-        buildTreeLines(child, "", index === arr.length - 1, 1, maxDepth),
-      );
+    const root: AsciiTreeNode = {
+      type: "dir",
+      name: resolved.path,
+      children: Object.values(node.children)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((child) => vfsToAscii(child, maxDepth, 1)),
+    };
+    const rendered = ascii.tree(root, { maxDepth });
 
-    return success([...header, ...body.map((text) => ({ stream: "stdout" as const, text }))]);
+    return success(rendered.flatMap((l) => stdout(l)));
   },
 };

@@ -1,12 +1,29 @@
 export type SessionPhase =
+  | "LANDING"
+  | "CINEMA"
+  | "APP_OPEN"
+  | "SHUTDOWN"
+  /** @deprecated alias — use LANDING */
+  | "SHELL"
   | "BLACKOUT"
   | "BOOT"
-  | "LOGIN"
-  | "SHELL"
-  | "APP_OPEN"
-  | "SHUTDOWN";
+  | "LOGIN";
 
-export type AppId =
+export type SectionId =
+  | "hero"
+  | "manifesto"
+  | "projects"
+  | "process"
+  | "knowledge"
+  | "timeline"
+  | "contact"
+  | "footer";
+
+export type SyncOrigin = "landing" | "terminal" | "wm" | "system";
+
+export type CoreAppId =
+  | "terminal"
+  | "media"
   | "profile"
   | "projects"
   | "editor"
@@ -17,6 +34,8 @@ export type AppId =
   | "resume"
   | "architecture"
   | "help";
+
+export type AppId = CoreAppId | `project-${string}`;
 
 export type CommandCategory =
   | "navigation"
@@ -64,6 +83,7 @@ export interface CommandContext {
   focusedApp: AppId | null;
   chaptersComplete: number[];
   easterEggs: string[];
+  activeSection: SectionId;
 }
 
 export interface CommandOutputLine {
@@ -77,6 +97,7 @@ export interface CommandResult {
   cwd?: string;
   openApp?: AppId;
   closeApp?: AppId;
+  openProject?: string;
   clearScreen?: boolean;
   clearHistory?: boolean;
   chapterComplete?: number;
@@ -87,6 +108,8 @@ export interface CommandResult {
   visualEffect?: VisualEffect;
   isRoot?: boolean;
   setUser?: string;
+  gotoSection?: SectionId;
+  toggleTerminal?: boolean;
 }
 
 export interface CommandDefinition {
@@ -151,6 +174,12 @@ export interface ProjectMeta {
   };
 }
 
+export interface ProcessStep {
+  id: string;
+  title: string;
+  description: string;
+}
+
 export interface WindowState {
   appId: AppId;
   x: number;
@@ -162,3 +191,13 @@ export interface WindowState {
   zIndex: number;
   preMaximize?: Pick<WindowState, "x" | "y" | "width" | "height">;
 }
+
+export type SyncEvent =
+  | { type: "section.enter"; origin: SyncOrigin; section: SectionId }
+  | { type: "section.goto"; origin: SyncOrigin; section: SectionId }
+  | { type: "project.open"; origin: SyncOrigin; slug: string; title: string }
+  | { type: "project.close"; origin: SyncOrigin; slug: string; title: string }
+  | { type: "terminal.toggle"; origin: SyncOrigin; visible: boolean }
+  | { type: "terminal.writeln"; origin: SyncOrigin; lines: string[] }
+  | { type: "contact.compose"; origin: SyncOrigin }
+  | { type: "resume.download"; origin: SyncOrigin };

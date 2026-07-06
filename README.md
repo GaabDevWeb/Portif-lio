@@ -54,7 +54,12 @@ npx vercel --prod
 
 ## Architecture
 
-See [`docs/architecture/ROOT-OS-MASTERPLAN.md`](docs/architecture/ROOT-OS-MASTERPLAN.md).
+Landing-first ROOT OS v2 — see [`docs/architecture/ROOT-OS-MASTERPLAN.md`](docs/architecture/ROOT-OS-MASTERPLAN.md).
+
+- **Landing** — primary interface (scroll, 8 sections)
+- **Terminal.app** — optional dockable window (`Ctrl+`` ` or HUD)
+- **Window Manager** — projects open as `{Name}.app`
+- **Cinema boot** — first visit overlay; skip with `?fastboot=1` or Esc
 
 ## License
 

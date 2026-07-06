@@ -1,18 +1,26 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { trackAppOpen, trackEasterEgg } from "@/lib/analytics/track";
-import { SYSTEM, STORAGE_KEYS, CHROME } from "@/constants/system";
+import { CHROME, SYSTEM } from "@/constants/system";
 import { WINDOW_DEFAULTS } from "@/constants/window-manager";
+import { dispatchSyncEvent, handleSyncSideEffects } from "@/features/sync/sync-bus";
 import {
-  createDefaultWindow,
+  clampWindowPosition,
+  createInitialWindow,
   cycleFocusApp,
+  TERMINAL_WINDOW,
 } from "@/features/wm/lib/window-utils";
-import type { AppId, SessionPhase, WindowState } from "@/types/root-os";
+import { getLastPointerPosition } from "@/features/wm/lib/pointer-tracker";
+import { projectAppId, getProjectSlugFromAppId } from "@/lib/app-id";
+import { getProjectBySlug } from "@/lib/content/projects";
+import { trackAppOpen, trackEasterEgg } from "@/lib/analytics/track";
+import type { AppId, SectionId, SessionPhase, SyncEvent, SyncOrigin } from "@/types/root-os";
+import type { WindowState } from "@/types/root-os";
 
 interface SessionFlags {
   easterEggs: string[];
   chaptersComplete: number[];
+  cinemaSeen: boolean;
 }
 
 interface SessionState {
@@ -24,11 +32,12 @@ interface SessionState {
   openApps: AppId[];
   focusStack: AppId[];
   focusedApp: AppId | null;
-  windows: Partial<Record<AppId, WindowState>>;
+  windows: Record<string, WindowState>;
   maxZIndex: number;
   selectedProjectSlug: string | null;
   editorFile: string | null;
   fastboot: boolean;
+  activeSection: SectionId;
   flags: SessionFlags;
   lastExitCode: number | null;
   visualEffect: import("@/types/root-os").VisualEffect;
@@ -37,18 +46,22 @@ interface SessionState {
   setIsRoot: (value: boolean) => void;
   setCwd: (cwd: string) => void;
   setFastboot: (value: boolean) => void;
-  openApp: (appId: AppId) => void;
-  closeApp: (appId: AppId) => void;
+  setActiveSection: (section: SectionId) => void;
+  openApp: (appId: AppId, origin?: SyncOrigin) => void;
+  openProject: (slug: string, origin?: SyncOrigin) => void;
+  closeApp: (appId: AppId, origin?: SyncOrigin) => void;
   focusApp: (appId: AppId) => void;
   minimizeApp: (appId: AppId) => void;
   maximizeApp: (appId: AppId) => void;
   restoreApp: (appId: AppId) => void;
   updateWindow: (appId: AppId, patch: Partial<WindowState>) => void;
   cycleFocus: () => void;
+  toggleTerminal: (origin?: SyncOrigin) => void;
   setSelectedProject: (slug: string | null) => void;
   setEditorFile: (path: string | null) => void;
   markChapterComplete: (chapter: number) => void;
   markEasterEgg: (id: string) => void;
+  markCinemaSeen: () => void;
   setVisualEffect: (effect: import("@/types/root-os").VisualEffect) => void;
   addHistoryEntry: (entry: string) => void;
   clearHistory: () => void;
@@ -56,34 +69,45 @@ interface SessionState {
   initiateShutdown: () => void;
   rebootFromShutdown: () => void;
   resetSession: () => void;
+  emitSync: (event: SyncEvent) => void;
 }
 
 const initialFlags: SessionFlags = {
   easterEggs: [],
   chaptersComplete: [],
+  cinemaSeen: false,
 };
 
 function bumpZIndex(state: SessionState, appId: AppId) {
   const nextZ = state.maxZIndex + 1;
   const existing = state.windows[appId];
+  const pointer = getLastPointerPosition();
   return {
     maxZIndex: nextZ,
     windows: {
       ...state.windows,
       [appId]: existing
         ? { ...existing, zIndex: nextZ, minimized: false }
-        : createDefaultWindow(appId, nextZ, state.openApps.length),
+        : createInitialWindow(appId, nextZ, state.openApps.length, pointer),
     },
   };
 }
 
+function isTerminalOpen(state: SessionState): boolean {
+  return state.openApps.includes("terminal");
+}
+
+function landingPhase(openApps: AppId[]): SessionPhase {
+  return openApps.length === 0 ? "LANDING" : "APP_OPEN";
+}
+
 export const useSessionStore = create<SessionState>()(
   persist(
-    (set) => ({
-      phase: "BLACKOUT",
-      user: SYSTEM.defaultUser,
+    (set, get) => ({
+      phase: "LANDING",
+      user: "guest",
       isRoot: false,
-      cwd: SYSTEM.homeDir,
+      cwd: "/home/guest",
       history: [],
       openApps: [],
       focusStack: [],
@@ -93,6 +117,7 @@ export const useSessionStore = create<SessionState>()(
       selectedProjectSlug: null,
       editorFile: null,
       fastboot: false,
+      activeSection: "hero",
       flags: initialFlags,
       lastExitCode: null,
       visualEffect: null,
@@ -103,7 +128,22 @@ export const useSessionStore = create<SessionState>()(
       setCwd: (cwd) => set({ cwd }),
       setFastboot: (fastboot) => set({ fastboot }),
 
-      openApp: (appId) =>
+      setActiveSection: (section) =>
+        set((state) => {
+          if (state.activeSection === section) return state;
+          return { activeSection: section };
+        }),
+
+      emitSync: (event) => {
+        const state = get();
+        handleSyncSideEffects(event, {
+          terminalOpen: isTerminalOpen(state),
+          activeSection: state.activeSection,
+        });
+        dispatchSyncEvent(event);
+      },
+
+      openApp: (appId, origin = "system") =>
         set((state) => {
           trackAppOpen(appId);
           const zPatch = bumpZIndex(state, appId);
@@ -111,28 +151,60 @@ export const useSessionStore = create<SessionState>()(
             ? state.openApps
             : [...state.openApps, appId];
           const focusStack = [...state.focusStack.filter((id) => id !== appId), appId];
-          return {
+          const next = {
             ...zPatch,
             openApps,
             focusStack,
             focusedApp: appId,
-            phase: "APP_OPEN",
+            phase: landingPhase(openApps) as SessionPhase,
           };
+          queueMicrotask(() => {
+            get().emitSync({ type: "terminal.toggle", origin, visible: appId === "terminal" });
+          });
+          return next;
         }),
 
-      closeApp: (appId) =>
+      openProject: (slug, origin = "landing") => {
+        const project = getProjectBySlug(slug);
+        if (!project) return;
+        const appId = projectAppId(slug);
+        get().setSelectedProject(slug);
+        get().openApp(appId, origin);
+        get().emitSync({
+          type: "project.open",
+          origin,
+          slug,
+          title: project.title,
+        });
+      },
+
+      closeApp: (appId, origin = "system") =>
         set((state) => {
           const openApps = state.openApps.filter((id) => id !== appId);
           const focusStack = state.focusStack.filter((id) => id !== appId);
           const focusedApp = focusStack.at(-1) ?? null;
           const windows = { ...state.windows };
           delete windows[appId];
+
+          const slug = getProjectSlugFromAppId(appId);
+          if (slug && origin === "wm") {
+            const project = getProjectBySlug(slug);
+            queueMicrotask(() => {
+              get().emitSync({
+                type: "project.close",
+                origin: "wm",
+                slug,
+                title: project?.title ?? slug,
+              });
+            });
+          }
+
           return {
             openApps,
             focusStack,
             focusedApp,
             windows,
-            phase: openApps.length === 0 ? "SHELL" : "APP_OPEN",
+            phase: landingPhase(openApps),
           };
         }),
 
@@ -165,6 +237,16 @@ export const useSessionStore = create<SessionState>()(
           if (!win || win.maximized) return state;
           const margin = 16;
           const taskbar = CHROME.taskbarHeight;
+          const viewportH = typeof window !== "undefined" ? window.innerHeight : win.height;
+          const viewportW = typeof window !== "undefined" ? window.innerWidth : win.width;
+          const maxHeight =
+            appId === "terminal"
+              ? Math.min(
+                  Math.floor(viewportH * 0.75),
+                  TERMINAL_WINDOW.maxHeight,
+                )
+              : viewportH - taskbar - margin * 2;
+
           return {
             windows: {
               ...state.windows,
@@ -174,12 +256,8 @@ export const useSessionStore = create<SessionState>()(
                 preMaximize: { x: win.x, y: win.y, width: win.width, height: win.height },
                 x: margin,
                 y: margin,
-                width: typeof window !== "undefined"
-                  ? window.innerWidth - margin * 2
-                  : win.width,
-                height: typeof window !== "undefined"
-                  ? window.innerHeight - taskbar - margin * 2
-                  : win.height,
+                width: viewportW - margin * 2,
+                height: maxHeight,
               },
             },
           };
@@ -238,6 +316,15 @@ export const useSessionStore = create<SessionState>()(
           };
         }),
 
+      toggleTerminal: (origin = "landing") => {
+        const state = get();
+        if (isTerminalOpen(state)) {
+          get().closeApp("terminal", origin);
+        } else {
+          get().openApp("terminal", origin);
+        }
+      },
+
       setSelectedProject: (slug) => set({ selectedProjectSlug: slug }),
       setEditorFile: (path) => set({ editorFile: path }),
 
@@ -264,6 +351,11 @@ export const useSessionStore = create<SessionState>()(
           };
         }),
 
+      markCinemaSeen: () =>
+        set((state) => ({
+          flags: { ...state.flags, cinemaSeen: true },
+        })),
+
       setVisualEffect: (visualEffect) => set({ visualEffect }),
 
       addHistoryEntry: (entry) =>
@@ -279,7 +371,7 @@ export const useSessionStore = create<SessionState>()(
 
       rebootFromShutdown: () =>
         set((state) => ({
-          phase: "BLACKOUT",
+          phase: "LANDING",
           openApps: [],
           focusStack: [],
           focusedApp: null,
@@ -291,14 +383,15 @@ export const useSessionStore = create<SessionState>()(
           flags: state.flags,
           history: state.history,
           fastboot: state.fastboot,
+          activeSection: "hero",
         })),
 
       resetSession: () =>
         set({
-          phase: "BLACKOUT",
-          user: SYSTEM.defaultUser,
+          phase: "LANDING",
+          user: "guest",
           isRoot: false,
-          cwd: SYSTEM.homeDir,
+          cwd: "/home/guest",
           openApps: [],
           focusStack: [],
           focusedApp: null,
@@ -307,11 +400,12 @@ export const useSessionStore = create<SessionState>()(
           selectedProjectSlug: null,
           editorFile: null,
           lastExitCode: null,
+          activeSection: "hero",
           flags: initialFlags,
         }),
     }),
     {
-      name: STORAGE_KEYS.user,
+      name: "rootos:user",
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (state) => ({
@@ -336,6 +430,7 @@ export function buildCommandContext(): import("@/types/root-os").CommandContext 
     focusedApp: state.focusedApp,
     chaptersComplete: state.flags.chaptersComplete,
     easterEggs: state.flags.easterEggs,
+    activeSection: state.activeSection,
   };
 }
 
@@ -345,8 +440,9 @@ export function applyCommandResult(
   const store = useSessionStore.getState();
 
   if (result.cwd) store.setCwd(result.cwd);
-  if (result.openApp) store.openApp(result.openApp);
-  if (result.closeApp) store.closeApp(result.closeApp);
+  if (result.openApp) store.openApp(result.openApp, "terminal");
+  if (result.openProject) store.openProject(result.openProject, "terminal");
+  if (result.closeApp) store.closeApp(result.closeApp, "terminal");
   if (result.chapterComplete) store.markChapterComplete(result.chapterComplete);
   if (result.selectedProject !== undefined) {
     store.setSelectedProject(result.selectedProject);
@@ -360,6 +456,18 @@ export function applyCommandResult(
   if (result.visualEffect !== undefined) store.setVisualEffect(result.visualEffect);
   if (result.setUser) store.setUser(result.setUser);
   if (result.isRoot !== undefined) store.setIsRoot(result.isRoot);
+  if (result.gotoSection) {
+    store.setActiveSection(result.gotoSection);
+    store.emitSync({
+      type: "section.goto",
+      origin: "terminal",
+      section: result.gotoSection,
+    });
+    if (result.gotoSection === "contact") {
+      store.emitSync({ type: "contact.compose", origin: "terminal" });
+    }
+  }
+  if (result.toggleTerminal) store.toggleTerminal("terminal");
   store.setLastExitCode(result.exitCode);
 }
 

@@ -10,18 +10,26 @@ import { helpCommand } from "../commands/help";
 import { historyCommand } from "../commands/history";
 import { manCommand } from "../commands/man";
 import { projectsCommand } from "../commands/projects";
-import { skillsCommand } from "../commands/skills";
+import { knowledgeCommand, indexKnowledgeCommand, skillsCommand } from "../commands/knowledge";
 import { timelineCommand } from "../commands/timeline";
 import { topCommand } from "../commands/top";
 import { treeCommand } from "../commands/tree";
+import { asciiCommand } from "../commands/ascii";
+import { neofetchCommand } from "../commands/neofetch";
+import { cheatsheetCommand } from "../commands/cheatsheet";
 import { lsCommand } from "../commands/ls";
+import { aboutCommand, gotoCommand, terminalCommand } from "../commands/goto";
 import { closeCommand, openCommand } from "../commands/open";
 import { whoamiCommand } from "../commands/whoami";
 import { EASTER_COMMANDS } from "../commands/easter";
 import { SYSTEM_COMMANDS } from "../commands/system";
+import { MEDIA_COMMANDS } from "../commands/media";
 
 const DEFAULT_COMMANDS: CommandDefinition[] = [
   helpCommand,
+  cheatsheetCommand,
+  asciiCommand,
+  neofetchCommand,
   lsCommand,
   pwdCommand,
   cdCommand,
@@ -38,12 +46,18 @@ const DEFAULT_COMMANDS: CommandDefinition[] = [
   gitCommand,
   timelineCommand,
   topCommand,
+  knowledgeCommand,
+  indexKnowledgeCommand,
   skillsCommand,
   manCommand,
   treeCommand,
   historyCommand,
+  gotoCommand,
+  aboutCommand,
+  terminalCommand,
   ...EASTER_COMMANDS,
   ...SYSTEM_COMMANDS,
+  ...MEDIA_COMMANDS,
 ];
 
 export class CommandRegistry {

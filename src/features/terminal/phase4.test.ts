@@ -19,6 +19,7 @@ const ctx: CommandContext = {
   focusedApp: null,
   chaptersComplete: [],
   easterEggs: [],
+  activeSection: "hero",
 };
 
 describe("phase 4 — easter eggs", () => {

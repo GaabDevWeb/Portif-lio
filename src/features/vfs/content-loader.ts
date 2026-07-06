@@ -1,5 +1,6 @@
 import profile from "../../../content/profile.json";
 import skills from "../../../content/skills.json";
+import knowledgeGraph from "../../../content/knowledge-graph.json";
 import projectsIndex from "../../../content/projects/index.json";
 import { manifestoContent } from "@/content-data/manifesto";
 import { motdContent } from "@/content-data/motd";
@@ -82,6 +83,11 @@ export function buildVfsTree(): VfsNode {
                 type: "file",
                 name: "skills.json",
                 content: JSON.stringify(skills, null, 2),
+              },
+              "knowledge-graph.json": {
+                type: "file",
+                name: "knowledge-graph.json",
+                content: JSON.stringify(knowledgeGraph, null, 2),
               },
               "contact.sh": {
                 type: "file",

@@ -5,17 +5,21 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal } from "@xterm/xterm";
 
-import { TERMINAL } from "@/constants/system";
+import { SYSTEM, TERMINAL } from "@/constants/system";
 import { phosphorTerminalTheme } from "@/config/theme";
+import { registerTerminalWriter } from "@/features/sync/sync-bus";
 import { getAutocompleteCandidates, executeInput } from "@/features/terminal/executor/command-executor";
 import { CommandHistory } from "@/features/terminal/history/command-history";
 import { buildPrompt } from "@/lib/utils";
+import { ascii } from "@/features/ascii";
+import { ansi } from "@/features/ascii/ansi";
 import {
   applyCommandResult,
   buildCommandContext,
   useSessionStore,
 } from "@/providers/session-store";
 import { trackCommand } from "@/lib/analytics/track";
+import type { CommandOutputLine } from "@/types/root-os";
 
 import "@xterm/xterm/css/xterm.css";
 
@@ -64,8 +68,11 @@ export function TerminalShell({ className, mobile = false }: TerminalShellProps)
     }
 
     for (const line of result.lines) {
-      const color = line.stream === "stderr" ? "\x1b[31m" : "\x1b[32m";
-      term.writeln(`${color}${line.text}\x1b[0m`);
+      const shouldColorize = ascii.shouldColorizeStream(line.text);
+      const color =
+        line.stream === "stderr" ? (shouldColorize ? ansi("red") : "") : shouldColorize ? ansi("green") : "";
+      const reset = shouldColorize ? ansi("reset") : "";
+      term.writeln(`${color}${line.text}${reset}`);
     }
   }, []);
 
@@ -129,6 +136,19 @@ export function TerminalShell({ className, mobile = false }: TerminalShellProps)
   }, []);
 
   useEffect(() => {
+    return registerTerminalWriter((lines: CommandOutputLine[]) => {
+      const term = terminalRef.current;
+      if (!term) return;
+      const normalized = ascii.renderCommandResult({ exitCode: 0, lines }).lines;
+      for (const line of normalized) {
+        const dim = ansi("dim");
+        const reset = ansi("reset");
+        term.writeln(`${dim}${line.text}${reset}`);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     const sessionHistory = useSessionStore.getState().history;
     const loaded = CommandHistory.load().list();
     const merged = [...new Set([...sessionHistory, ...loaded])];
@@ -163,10 +183,10 @@ export function TerminalShell({ className, mobile = false }: TerminalShellProps)
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
 
-    term.writeln("\x1b[32mROOT OS 0.1.0 — personal kernel space\x1b[0m");
-    term.writeln("\x1b[2m(c) 2026 [NOME]. All bugs reserved.\x1b[0m");
+    term.writeln(`\x1b[32mROOT OS ${SYSTEM.version} — ${SYSTEM.tagline}\x1b[0m`);
+    term.writeln("\x1b[2m(c) 2026 Gabriel. All bugs reserved.\x1b[0m");
     term.writeln("");
-    term.writeln("Welcome, guest. Type 'help' to begin.");
+    term.writeln("Landing active. Type 'help' or open Terminal from HUD.");
     writePrompt(term);
 
     term.onData((data) => {

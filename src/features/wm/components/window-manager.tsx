@@ -2,12 +2,15 @@
 
 import { useEffect } from "react";
 
+import { subscribePointerTracker } from "@/features/wm/lib/pointer-tracker";
 import { WindowFrame } from "@/features/wm/components/window-frame";
 import { useSessionStore } from "@/providers/session-store";
 
 export function WindowManager() {
   const openApps = useSessionStore((s) => s.openApps);
   const cycleFocus = useSessionStore((s) => s.cycleFocus);
+
+  useEffect(() => subscribePointerTracker(), []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -21,11 +24,9 @@ export function WindowManager() {
   }, [cycleFocus]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20">
+    <div className="pointer-events-none fixed inset-0 z-20">
       {openApps.map((appId) => (
-        <div key={appId} className="pointer-events-auto">
-          <WindowFrame appId={appId} />
-        </div>
+        <WindowFrame key={appId} appId={appId} />
       ))}
     </div>
   );

@@ -1,7 +1,13 @@
+import { projectAppId } from "@/lib/app-id";
+import { getProjectBySlug, loadProjects } from "@/lib/content/projects";
 import type { AppId, CommandDefinition } from "@/types/root-os";
 import { error, misuse, success, stdout } from "../shared";
 
 const APP_ALIASES: Record<string, AppId> = {
+  terminal: "terminal",
+  music: "media",
+  player: "media",
+  media: "media",
   profile: "profile",
   projects: "projects",
   project: "projects",
@@ -20,30 +26,53 @@ const APP_ALIASES: Record<string, AppId> = {
   man: "help",
 };
 
+function resolveOpenTarget(target: string): { appId?: AppId; projectSlug?: string } {
+  const lower = target.toLowerCase();
+  const appId = APP_ALIASES[lower];
+  if (appId) return { appId };
+
+  const project = getProjectBySlug(lower) ?? loadProjects().find(
+    (p) => p.title.toLowerCase().replace(/\s+/g, "-") === lower,
+  );
+  if (project) return { projectSlug: project.slug };
+
+  return {};
+}
+
 export const openCommand: CommandDefinition = {
   name: "open",
-  description: "Open application or file",
-  usage: "open <app|file>",
+  description: "Open application or project",
+  usage: "open <app|project>",
   category: "navigation",
   execute(ctx, argv) {
     if (argv.length === 0) {
       return misuse("open: missing operand");
     }
 
-    const target = argv[0].toLowerCase();
-    const appId = APP_ALIASES[target];
+    const target = argv[0];
+    const resolved = resolveOpenTarget(target);
 
-    if (appId) {
-      return success(
-        stdout(`Opening ${appId}.app...`),
-        { openApp: appId },
-      );
+    if (resolved.appId) {
+      return success(stdout(`Opening ${resolved.appId}.app...`), {
+        openApp: resolved.appId,
+      });
+    }
+
+    if (resolved.projectSlug) {
+      const project = getProjectBySlug(resolved.projectSlug)!;
+      return success(stdout(`Launching ${project.title}.app...`), {
+        openProject: resolved.projectSlug,
+        selectedProject: resolved.projectSlug,
+      });
     }
 
     return error(`open: ${target}: No such application`);
   },
   autocomplete(_ctx, partial) {
-    return Object.keys(APP_ALIASES).filter((key) => key.startsWith(partial));
+    const projectSlugs = loadProjects().map((p) => p.slug);
+    return [...Object.keys(APP_ALIASES), ...projectSlugs].filter((key) =>
+      key.startsWith(partial.toLowerCase()),
+    );
   },
 };
 
@@ -54,16 +83,23 @@ export const closeCommand: CommandDefinition = {
   category: "navigation",
   execute(ctx, argv) {
     const target = argv[0]?.toLowerCase();
-    const appId = target ? APP_ALIASES[target] : ctx.focusedApp;
+    let appId: AppId | null = null;
+
+    if (target) {
+      const resolved = resolveOpenTarget(target);
+      appId = resolved.appId ?? (resolved.projectSlug ? projectAppId(resolved.projectSlug) : null);
+    } else {
+      appId = ctx.focusedApp;
+    }
 
     if (!appId) {
       return error("close: no application focused");
     }
 
     if (!ctx.openApps.includes(appId)) {
-      return error(`close: ${appId}.app is not running`);
+      return error(`close: ${appId} is not running`);
     }
 
-    return success(stdout(`Closed ${appId}.app`), { closeApp: appId });
+    return success(stdout("Application terminated."), { closeApp: appId });
   },
 };
