@@ -16,6 +16,8 @@ npm run dev -- --turbo
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Development server |
+| `npm run clean` | Remove `.next` build cache (use if dev errors after `build`) |
+| `npm run validate` | typecheck + lint + test + build |
 | `npm run build` | Production build |
 | `npm run start` | Serve production build |
 | `npm test` | Vitest unit tests |
@@ -60,6 +62,45 @@ Landing-first ROOT OS v2 — see [`docs/architecture/ROOT-OS-MASTERPLAN.md`](doc
 - **Terminal.app** — optional dockable window (`Ctrl+`` ` or HUD)
 - **Window Manager** — projects open as `{Name}.app`
 - **Cinema boot** — first visit overlay; skip with `?fastboot=1` or Esc
+
+## Troubleshooting
+
+### Windows — `Can't resolve './cjs/react-is.development.js'`
+
+Esse erro vem do Turbopack ao resolver `react-is` (via `prop-types` → `react-force-graph-2d`). O projeto já inclui alias em `next.config.ts` e `react-is` como dependência direta.
+
+Se ainda falhar:
+
+```bash
+npm run clean
+rmdir /s /q node_modules
+del package-lock.json
+npm install
+npm run dev
+```
+
+Fallback sem Turbopack (mais estável no Windows):
+
+```bash
+npm run dev:webpack
+```
+
+### `ENOENT` / manifest errors in `npm run dev`
+
+Stop the dev server, clear the cache, and restart:
+
+```bash
+npm run clean
+npm run dev
+```
+
+This usually happens when `npm run build` runs while `npm run dev` is still active — both write to `.next` and can corrupt the cache.
+
+**Port 3000 already in use**
+
+```bash
+npm run dev -- -p 3001
+```
 
 ## License
 
