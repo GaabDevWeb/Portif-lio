@@ -5,9 +5,12 @@ import { motion } from "motion/react";
 import gsap from "gsap";
 import { ArrowDown, Github, Linkedin } from "lucide-react";
 
+import { AsciiInteractionEngine } from "@/features/ascii-interaction";
+import { HERO_ASCII_INTERACTION_CONFIG } from "@/features/ascii-interaction/config";
 import { HudReadout } from "@/features/landing/components/module-panel";
 import { computeHeroTelemetry } from "@/features/landing/lib/hero-telemetry";
 import { loadProfileContent } from "@/features/vfs/content-loader";
+import { heroAsciiArt } from "@/content-data/hero-ascii";
 import { SYSTEM } from "@/constants/system";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
@@ -34,9 +37,18 @@ export function HeroSection() {
       style={{ paddingTop: "var(--section-padding-y)" }}
       aria-labelledby="hero-title"
     >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <AsciiInteractionEngine
+          source={heroAsciiArt}
+          config={HERO_ASCII_INTERACTION_CONFIG}
+          className="h-full w-full opacity-90"
+          interactive={!reducedMotion}
+        />
+      </div>
+
       <div className="pointer-events-none absolute inset-0 grid-overlay opacity-40" aria-hidden />
 
-      <div className="relative mx-auto w-full max-w-6xl">
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
         <div className="mb-6 flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--phosphor-dim)]">
           <span className="inline-flex items-center gap-1.5 border border-[var(--ui-border)] px-2 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--amber-led)] animate-pulse" />
@@ -82,7 +94,7 @@ export function HeroSection() {
           <HudReadout label="Experiments" value={telemetry.experiments} />
         </div>
 
-        <div data-reveal className="mt-8 flex flex-wrap gap-3">
+        <div data-reveal className="mt-8 flex flex-wrap gap-3 pointer-events-auto">
           <a
             href={profile.github}
             target="_blank"
