@@ -10,7 +10,7 @@ import {
   TERMINAL_WINDOW,
 } from "@/features/wm/lib/window-utils";
 import { getLastPointerPosition } from "@/features/wm/lib/pointer-tracker";
-import { projectAppId, getProjectSlugFromAppId } from "@/lib/app-id";
+import { getProjectSlugFromAppId } from "@/lib/app-id";
 import { getProjectBySlug } from "@/lib/content/projects";
 import { trackAppOpen, trackEasterEgg } from "@/lib/analytics/track";
 import type { AppId, SectionId, SessionPhase, SyncEvent, SyncOrigin } from "@/types/root-os";
@@ -166,15 +166,16 @@ export const useSessionStore = create<SessionState>()(
       openProject: (slug, origin = "landing") => {
         const project = getProjectBySlug(slug);
         if (!project) return;
-        const appId = projectAppId(slug);
         get().setSelectedProject(slug);
-        get().openApp(appId, origin);
         get().emitSync({
           type: "project.open",
           origin,
           slug,
           title: project.title,
         });
+        if (typeof window !== "undefined") {
+          window.location.assign(`/projects/${slug}`);
+        }
       },
 
       closeApp: (appId, origin = "system") =>

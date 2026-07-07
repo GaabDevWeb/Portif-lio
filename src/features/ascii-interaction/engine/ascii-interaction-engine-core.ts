@@ -1,4 +1,6 @@
 import type {
+  AsciiDebugSnapshot,
+  AsciiEngineStats,
   AsciiInteractionConfig,
   EmitFieldInput,
   Influencer,
@@ -44,6 +46,11 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
   private width = 0;
   private height = 0;
   private destroyed = false;
+
+  private lastFrameNow = 0;
+  private frameTimeMs = 0;
+  private renderTimeMs = 0;
+  private fpsSmoothed = 60;
 
   private readonly forceSamples: { fx: number; fy: number; intensity: number }[] = [];
 
@@ -102,8 +109,12 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
 
   updateConfig(partial: Partial<AsciiInteractionConfig>): void {
     Object.assign(this.baseConfig, partial);
+    if (partial.parallax) {
+      this.baseConfig.parallax = [...partial.parallax];
+    }
     this.applyResponsiveConfig();
-    this.loop.setMaxFPS(this.config.maxFPS);
+    this.renderer.applyConfig(this.config);
+    this.renderer.requestFullRedraw();
   }
 
   private applyResponsiveConfig(): void {
@@ -187,8 +198,69 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
     return this.reducedMotion;
   }
 
+  getStats(): AsciiEngineStats {
+    const cursor = this.mouseInfluencer.getCursor();
+    const r = this.config.radius;
+    const perfMemory = (
+      performance as Performance & { memory?: { usedJSHeapSize: number } }
+    ).memory;
+
+    return {
+      fps: Math.round(this.fpsSmoothed),
+      frameTimeMs: this.frameTimeMs,
+      renderTimeMs: this.renderTimeMs,
+      characterCount: this.grid.count,
+      activeCharacterCount: this.grid.activeCount,
+      dirtyCount: this.grid.dirtyCount,
+      cursorX: cursor.x,
+      cursorY: cursor.y,
+      cursorRadius: r,
+      cursorActive: cursor.active,
+      influencedArea: Math.PI * r * r * 2.25,
+      surfaceState: this.surface.state,
+      memoryMb: perfMemory
+        ? Math.round(perfMemory.usedJSHeapSize / 1048576)
+        : undefined,
+    };
+  }
+
+  getDebugSnapshot(maxCells = 512): AsciiDebugSnapshot {
+    const grid = this.grid;
+    const limit = Math.min(grid.activeCount, maxCells);
+    const activeCells: { x: number; y: number; vx: number; vy: number }[] = [];
+
+    for (let a = 0; a < limit; a += 1) {
+      const i = grid.activeIndices[a]!;
+      activeCells.push({
+        x: grid.getPosX(i),
+        y: grid.getPosY(i),
+        vx: grid.velX[i]!,
+        vy: grid.velY[i]!,
+      });
+    }
+
+    return {
+      width: this.width,
+      height: this.height,
+      cols: grid.cols,
+      rows: grid.rows,
+      cellWidth: grid.cellWidth,
+      cellHeight: grid.cellHeight,
+      layoutOffsetX: grid.layoutOffsetX,
+      layoutOffsetY: grid.layoutOffsetY,
+      activeCells,
+    };
+  }
+
   private onFrame(now: number): void {
     if (this.destroyed) return;
+
+    if (this.lastFrameNow > 0) {
+      this.frameTimeMs = now - this.lastFrameNow;
+      const instantFps = 1000 / Math.max(this.frameTimeMs, 0.001);
+      this.fpsSmoothed = this.fpsSmoothed * 0.88 + instantFps * 0.12;
+    }
+    this.lastFrameNow = now;
 
     const grid = this.grid;
     const cursor = this.mouseInfluencer.getCursor();
@@ -272,6 +344,7 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
       );
     });
 
+    const renderStart = performance.now();
     this.renderer.renderFrame({
       grid,
       dirtyIndices: grid.dirtyIndices,
@@ -280,6 +353,7 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
       height: this.height,
       opacity: this.config.opacity,
     });
+    this.renderTimeMs = performance.now() - renderStart;
   }
 
   private buildActiveSet(

@@ -1,6 +1,9 @@
 export { AsciiInteractionEngine } from "@/features/ascii-interaction/AsciiInteractionEngine";
 export type { AsciiInteractionEngineProps } from "@/features/ascii-interaction/AsciiInteractionEngine";
 
+export { AsciiInteractionSurface } from "@/features/ascii-interaction/components/ascii-interaction-surface";
+export type { AsciiInteractionSurfaceProps } from "@/features/ascii-interaction/components/ascii-interaction-surface";
+
 export { AsciiInteractionEngineCore } from "@/features/ascii-interaction/engine/ascii-interaction-engine-core";
 
 export {
@@ -12,6 +15,8 @@ export {
 export type {
   AsciiInteractionConfig,
   AsciiInteractionEngineHandle,
+  AsciiDebugSnapshot,
+  AsciiEngineStats,
   EmitFieldInput,
   FalloffCurve,
   Influencer,

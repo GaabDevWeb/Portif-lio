@@ -136,6 +136,21 @@
     background-size: 32px 32px;
   }
 
+  .progress-rail {
+    position: relative;
+    height: 2px;
+    background: var(--ui-border);
+  }
+
+  .progress-rail::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--progress, 0%);
+    background: var(--phosphor-primary);
+    transition: width 0.05s linear;
+  }
+
   .scanline-hero::before {
     content: "";
     pointer-events: none;

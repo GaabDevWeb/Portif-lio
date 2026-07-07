@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { CinemaOverlay } from "@/features/shell/components/cinema-overlay";
 import { RootOSShell } from "@/features/shell/components/root-os-shell";
@@ -55,6 +56,13 @@ function AppGate() {
 }
 
 export function RootOSProvider({ children }: { children?: React.ReactNode }) {
-  void children;
+  const pathname = usePathname();
+  const isProjectRoute = pathname?.startsWith("/projects/");
+  const isLabRoute = pathname?.startsWith("/labs/");
+
+  if (isProjectRoute || isLabRoute) {
+    return <>{children}</>;
+  }
+
   return <AppGate />;
 }

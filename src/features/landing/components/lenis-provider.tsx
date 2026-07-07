@@ -58,7 +58,10 @@ export function LenisProvider({ children }: LenisProviderProps) {
 
 export function scrollToSectionId(sectionId: string): void {
   const el = document.getElementById(sectionId);
-  if (!el) return;
+  if (!el) {
+    window.location.href = `/#${sectionId}`;
+    return;
+  }
 
   const lenis = (window as Window & { __lenis?: Lenis }).__lenis;
   if (lenis) {

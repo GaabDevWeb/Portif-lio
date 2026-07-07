@@ -5,8 +5,7 @@ import { motion } from "motion/react";
 import gsap from "gsap";
 import { ArrowDown, Github, Linkedin } from "lucide-react";
 
-import { AsciiInteractionEngine } from "@/features/ascii-interaction";
-import { HERO_ASCII_INTERACTION_CONFIG } from "@/features/ascii-interaction/config";
+import { AsciiInteractionSurface } from "@/features/ascii-interaction";
 import { HudReadout } from "@/features/landing/components/module-panel";
 import { computeHeroTelemetry } from "@/features/landing/lib/hero-telemetry";
 import { loadProfileContent } from "@/features/vfs/content-loader";
@@ -37,14 +36,7 @@ export function HeroSection() {
       style={{ paddingTop: "var(--section-padding-y)" }}
       aria-labelledby="hero-title"
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <AsciiInteractionEngine
-          source={heroAsciiArt}
-          config={HERO_ASCII_INTERACTION_CONFIG}
-          className="h-full w-full opacity-90"
-          interactive={!reducedMotion}
-        />
-      </div>
+      <AsciiInteractionSurface source={heroAsciiArt} layout="hero" />
 
       <div className="pointer-events-none absolute inset-0 grid-overlay opacity-40" aria-hidden />
 

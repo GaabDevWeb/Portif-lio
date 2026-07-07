@@ -110,6 +110,36 @@ export interface AsciiInteractionConfig {
   };
 }
 
+/** Métricas de runtime para debug e laboratório. */
+export interface AsciiEngineStats {
+  fps: number;
+  frameTimeMs: number;
+  renderTimeMs: number;
+  characterCount: number;
+  activeCharacterCount: number;
+  dirtyCount: number;
+  cursorX: number;
+  cursorY: number;
+  cursorRadius: number;
+  cursorActive: boolean;
+  influencedArea: number;
+  surfaceState: SurfaceState;
+  memoryMb?: number;
+}
+
+/** Snapshot leve para overlays de debug (lab). */
+export interface AsciiDebugSnapshot {
+  width: number;
+  height: number;
+  cols: number;
+  rows: number;
+  cellWidth: number;
+  cellHeight: number;
+  layoutOffsetX: number;
+  layoutOffsetY: number;
+  activeCells: readonly { x: number; y: number; vx: number; vy: number }[];
+}
+
 /** Handle imperativo exposto pelo componente React. */
 export interface AsciiInteractionEngineHandle {
   emitField: (input: EmitFieldInput) => string;
@@ -121,6 +151,9 @@ export interface AsciiInteractionEngineHandle {
   clearFields: () => void;
   setSurfaceState: (state: SurfaceState) => void;
   getSurfaceState: () => SurfaceState;
+  updateConfig: (partial: Partial<AsciiInteractionConfig>) => void;
+  getStats: () => AsciiEngineStats;
+  getDebugSnapshot: (maxCells?: number) => AsciiDebugSnapshot;
   destroy: () => void;
 }
 

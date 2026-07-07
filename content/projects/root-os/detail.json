@@ -1,0 +1,87 @@
+{
+  "slug": "root-os",
+  "hero": {
+    "subtitle": "An interactive operating system built in the browser — not a metaphor, a working subsystem.",
+    "quickFacts": [
+      { "label": "YEAR", "value": "2026" },
+      { "label": "ROLE", "value": "Lead Developer" },
+      { "label": "STATUS", "value": "LIVE" },
+      { "label": "COMMANDS", "value": "56+" }
+    ],
+    "titleAsciiKey": "root-os-hero",
+    "heroVideo": "/z-arts/root-os-home.mp4",
+    "asciiConfig": {
+      "opacity": 0.42,
+      "radius": 130,
+      "strength": 210,
+      "cellWidth": 6,
+      "cellHeight": 10,
+      "fontSize": 10,
+      "damping": 0.86,
+      "spring": 0.09,
+      "trailDeposit": 0.24
+    }
+  },
+  "architecture": {
+    "panels": [
+      {
+        "id": "problem",
+        "type": "problem",
+        "title": "Problem",
+        "order": 1,
+        "body": "Traditional portfolios show work. ROOT OS lets visitors operate it: boot sequence, terminal, GUI apps, easter eggs, and a narrative shutdown arc. The challenge was making depth accessible without gating content behind CLI literacy."
+      },
+      {
+        "id": "architecture",
+        "type": "architecture",
+        "title": "Architecture",
+        "order": 2,
+        "body": "Two synchronized layers: a landing-first scroll experience and an optional terminal subsystem. Boot cinema (R3F + CRT shader), xterm.js parser with VFS, GSAP window manager, and JSON/MD content — zero hardcoded copy in components.",
+        "code": "Landing ←→ SyncBus ←→ Terminal\n         ↓\n    Window Manager\n         ↓\n    /content JSON"
+      },
+      {
+        "id": "pipeline",
+        "type": "pipeline",
+        "title": "Pipeline",
+        "order": 3,
+        "body": "Visitor flow: optional boot cinema → landing scroll → project cards → WM apps OR terminal commands. Session state persists via Zustand. Shutdown arc closes the narrative loop. Every surface emits sync events for bidirectional CLI integration."
+      },
+      {
+        "id": "stack",
+        "type": "stack",
+        "title": "Stack",
+        "order": 4,
+        "body": "Next.js 15 App Router · TypeScript strict · Tailwind CSS v4 · GSAP + ScrollTrigger · Motion · Lenis · React Three Fiber · xterm.js · Zustand · AsciiInteractionEngine (custom canvas physics)."
+      },
+      {
+        "id": "decisions",
+        "type": "decision",
+        "title": "Key Decisions",
+        "order": 5,
+        "body": "ADR-010 Landing-first: navigation never blocked by terminal. ADR-012 Projects as applications evolved into dedicated case-study routes. ADR-016 Single AsciiInteractionEngine library — influence fields, not mouse-coupled physics."
+      },
+      {
+        "id": "performance",
+        "type": "performance",
+        "title": "Performance",
+        "order": 6,
+        "body": "prefers-reduced-motion fast paths across Lenis, GSAP reveals, and ASCII physics. Active-set culling on character grid. Dirty-rect canvas rendering. Code-split WM and terminal. Target LCP < 2.5s on landing."
+      },
+      {
+        "id": "ascii-engine",
+        "type": "flow",
+        "title": "ASCII Interaction",
+        "order": 7,
+        "body": "Influencers emit scalar fields → physics integrates spring/damping per character → glyphs evolve and restore elastically. Home position is permanent. No GSAP on character positions — organic return via residual energy decay (800–2000ms)."
+      }
+    ]
+  },
+  "footer": {
+    "asciiSourceKey": "root-os-footer",
+    "links": [
+      { "label": "demo", "href": "https://root-os.vercel.app" },
+      { "label": "repo", "href": "https://github.com/gaab/Portifolio" },
+      { "label": "← projects", "href": "/#projects" }
+    ]
+  }
+}

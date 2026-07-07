@@ -65,6 +65,36 @@ export const AsciiInteractionEngine = forwardRef<
     },
     getSurfaceState: () =>
       engineRef.current?.getSurfaceState() ?? SurfaceState.Idle,
+    updateConfig: (partial) => {
+      engineRef.current?.updateConfig(partial);
+    },
+    getStats: () =>
+      engineRef.current?.getStats() ?? {
+        fps: 0,
+        frameTimeMs: 0,
+        renderTimeMs: 0,
+        characterCount: 0,
+        activeCharacterCount: 0,
+        dirtyCount: 0,
+        cursorX: 0,
+        cursorY: 0,
+        cursorRadius: 0,
+        cursorActive: false,
+        influencedArea: 0,
+        surfaceState: SurfaceState.Idle,
+      },
+    getDebugSnapshot: (maxCells) =>
+      engineRef.current?.getDebugSnapshot(maxCells) ?? {
+        width: 0,
+        height: 0,
+        cols: 0,
+        rows: 0,
+        cellWidth: 0,
+        cellHeight: 0,
+        layoutOffsetX: 0,
+        layoutOffsetY: 0,
+        activeCells: [],
+      },
     destroy: () => {
       engineRef.current?.destroy();
       engineRef.current = null;

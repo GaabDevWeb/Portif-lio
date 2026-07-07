@@ -41,6 +41,31 @@ export class CanvasRenderer implements AsciiRenderer {
     this.accent = accent;
   }
 
+  applyConfig(config: AsciiInteractionConfig): void {
+    const prev = this.config;
+    const needsAtlasRebuild =
+      !prev ||
+      config.characterSet !== prev.characterSet ||
+      config.fontFamily !== prev.fontFamily ||
+      config.fontSize !== prev.fontSize ||
+      config.cellWidth !== prev.cellWidth ||
+      config.cellHeight !== prev.cellHeight;
+
+    this.config = config;
+    this.setColors(config.colorPrimary, config.colorDim, config.colorAccent);
+
+    if (needsAtlasRebuild && this.displayCtx) {
+      this.atlas.build(
+        config.characterSet,
+        config.fontFamily,
+        config.fontSize,
+        config.cellWidth,
+        config.cellHeight,
+      );
+      this.fullRedraw = true;
+    }
+  }
+
   requestFullRedraw(): void {
     this.fullRedraw = true;
   }

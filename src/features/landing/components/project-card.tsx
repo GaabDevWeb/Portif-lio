@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef } from "react";
 import gsap from "gsap";
 
@@ -8,10 +9,9 @@ import { cn } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: ProjectMeta;
-  onOpen: (slug: string) => void;
 }
 
-export function ProjectCard({ project, onOpen }: ProjectCardProps) {
+export function ProjectCard({ project }: ProjectCardProps) {
   const barRef = useRef<HTMLSpanElement>(null);
 
   const handleEnter = () => {
@@ -25,13 +25,13 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(project.slug)}
+    <Link
+      href={`/projects/${project.slug}`}
+      prefetch
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       className={cn(
-        "group relative w-full cursor-pointer border border-[var(--ui-border)] bg-[var(--bg-void)] p-4 text-left transition-colors hover:bg-[var(--bg-panel)]",
+        "group relative block w-full cursor-pointer border border-[var(--ui-border)] bg-[var(--bg-void)] p-4 text-left transition-colors hover:bg-[var(--bg-panel)]",
         project.featured && "md:col-span-2",
       )}
     >
@@ -64,7 +64,7 @@ export function ProjectCard({ project, onOpen }: ProjectCardProps) {
           </span>
         ))}
       </div>
-    </button>
+    </Link>
   );
 }
 

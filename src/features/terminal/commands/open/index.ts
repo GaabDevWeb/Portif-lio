@@ -60,7 +60,7 @@ export const openCommand: CommandDefinition = {
 
     if (resolved.projectSlug) {
       const project = getProjectBySlug(resolved.projectSlug)!;
-      return success(stdout(`Launching ${project.title}.app...`), {
+      return success(stdout(`Opening case study /projects/${project.slug}...`), {
         openProject: resolved.projectSlug,
         selectedProject: resolved.projectSlug,
       });

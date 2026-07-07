@@ -16,7 +16,7 @@ import { TimelineSection } from "@/features/landing/sections/timeline-section";
 export function LandingPage() {
   useScrollSpy();
   useSectionReveal();
-  useStaggerReveal("#projects-grid", ":scope > button");
+  useStaggerReveal("#projects-grid", ":scope > a");
 
   return (
     <LenisProvider>
