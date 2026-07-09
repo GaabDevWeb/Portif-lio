@@ -92,17 +92,23 @@ export class PlaybackController {
     const now = performance.now();
     const dt = now - this.lastTs;
     this.lastTs = now;
-    const fps = this.timeline.getState(this.status).fps;
-    const frameInterval = 1000 / Math.max(1, fps);
-    if (dt >= frameInterval * 0.85) {
-      const ended = this.timeline.advance(frameInterval);
-      this.emit();
-      if (ended) {
-        this.status = "stopped";
-        cancelAnimationFrame(this.rafId);
-        return;
-      }
+    if (dt <= 0) {
+      this.rafId = requestAnimationFrame(this.tick);
+      return;
     }
+
+    const prevFrame = this.timeline.currentFrame;
+    const ended = this.timeline.advance(dt);
+    if (this.timeline.currentFrame !== prevFrame || ended) {
+      this.emit();
+    }
+
+    if (ended) {
+      this.status = "stopped";
+      cancelAnimationFrame(this.rafId);
+      return;
+    }
+
     this.rafId = requestAnimationFrame(this.tick);
   };
 

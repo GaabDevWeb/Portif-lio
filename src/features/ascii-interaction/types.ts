@@ -112,18 +112,12 @@ export interface AsciiInteractionConfig {
   };
 }
 
-<<<<<<< Updated upstream
 /** Métricas de runtime para debug e laboratório. */
 export interface AsciiEngineStats {
-=======
-/** Métricas de runtime para laboratório e profiling. */
-export interface AsciiInteractionDebugMetrics {
->>>>>>> Stashed changes
   fps: number;
   frameTimeMs: number;
   renderTimeMs: number;
   characterCount: number;
-<<<<<<< Updated upstream
   activeCharacterCount: number;
   dirtyCount: number;
   cursorX: number;
@@ -146,16 +140,10 @@ export interface AsciiDebugSnapshot {
   layoutOffsetX: number;
   layoutOffsetY: number;
   activeCells: readonly { x: number; y: number; vx: number; vy: number }[];
-=======
-  activeCells: number;
-  activeFields: number;
-  cursorX: number;
-  cursorY: number;
-  cursorRadius: number;
-  influenceArea: number;
-  memoryMb: number | null;
->>>>>>> Stashed changes
 }
+
+/** @deprecated Use AsciiEngineStats — mantido para compatibilidade. */
+export type AsciiInteractionDebugMetrics = AsciiEngineStats;
 
 /** Handle imperativo exposto pelo componente React. */
 export interface AsciiInteractionEngineHandle {

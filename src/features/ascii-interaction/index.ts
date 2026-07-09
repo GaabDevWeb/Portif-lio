@@ -4,6 +4,8 @@ export type { AsciiInteractionEngineProps } from "@/features/ascii-interaction/A
 export { AsciiInteractionSurface } from "@/features/ascii-interaction/components/ascii-interaction-surface";
 export type { AsciiInteractionSurfaceProps } from "@/features/ascii-interaction/components/ascii-interaction-surface";
 
+export { AsciiAnimationHero } from "@/features/ascii-interaction/components/ascii-animation-hero";
+
 export { AsciiInteractionEngineCore } from "@/features/ascii-interaction/engine/ascii-interaction-engine-core";
 
 export type { AsciiGridSource } from "@/features/ascii-interaction/grid/character-grid";

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
-import { AsciiInteractionSurface } from "@/features/ascii-interaction";
+import { AsciiAnimationHero, AsciiInteractionSurface } from "@/features/ascii-interaction";
 import { mergeAsciiConfig } from "@/features/ascii-interaction/config";
 import { PROJECT_ASCII_DEFAULTS } from "@/features/project-page/config/motion-presets";
 import { ProjectMetaStrip } from "@/features/project-page/components/project-meta-strip";
@@ -18,9 +18,10 @@ export function ProjectHeroSection({ data }: ProjectHeroSectionProps) {
   const { meta, detail, titleAscii, heroVisualAscii } = data;
   const reducedMotion = useReducedMotion();
   const metaRef = useRef<HTMLDivElement>(null);
+  const heroAsciiAnimation = detail.hero.heroAsciiAnimation;
   const heroVideo = detail.hero.heroVideo;
   const heroGif = detail.hero.heroGif;
-  const heroMedia = heroVideo ?? heroGif;
+  const heroMedia = heroAsciiAnimation ?? heroVideo ?? heroGif;
 
   const asciiConfig = mergeAsciiConfig({
     ...PROJECT_ASCII_DEFAULTS,
@@ -48,7 +49,12 @@ export function ProjectHeroSection({ data }: ProjectHeroSectionProps) {
       >
         {heroMedia ? (
           <div className="relative w-full">
-            {heroVideo ? (
+            {heroAsciiAnimation ? (
+              <AsciiAnimationHero
+                basePath={heroAsciiAnimation}
+                className="block h-auto w-full max-w-none opacity-90"
+              />
+            ) : heroVideo ? (
               <video
                 src={heroVideo}
                 className="block h-auto w-full max-w-none opacity-90"

@@ -9,7 +9,7 @@
       { "label": "COMMANDS", "value": "56+" }
     ],
     "titleAsciiKey": "root-os-hero",
-    "heroVideo": "/z-arts/root-os-home.mp4",
+    "heroAsciiAnimation": "/animations/root-os-home",
     "asciiConfig": {
       "opacity": 0.42,
       "radius": 130,

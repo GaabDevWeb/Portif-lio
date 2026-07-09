@@ -22,7 +22,9 @@ export interface ProjectHeroDetail {
   titleAsciiKey: string;
   /** @deprecated use titleAsciiKey */
   asciiSourceKey?: string;
-  /** Arte principal no canvas — vídeo em loop (preferido). */
+  /** Arte principal — animação ASCII exportada (preferido). */
+  heroAsciiAnimation?: string;
+  /** Arte principal no canvas — vídeo em loop. */
   heroVideo?: string;
   /** @deprecated use heroVideo */
   heroGif?: string;

@@ -55,32 +55,12 @@ function AppGate() {
   );
 }
 
-function useIsLabRoute(): boolean | null {
-  const [isLab, setIsLab] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    setIsLab(window.location.pathname.startsWith("/labs"));
-  }, []);
-
-  return isLab;
-}
-
 export function RootOSProvider({ children }: { children?: React.ReactNode }) {
-<<<<<<< Updated upstream
   const pathname = usePathname();
-  const isProjectRoute = pathname?.startsWith("/projects/");
-  const isLabRoute = pathname?.startsWith("/labs/");
+  const bypassShell =
+    pathname?.startsWith("/labs") || pathname?.startsWith("/projects/");
 
-  if (isProjectRoute || isLabRoute) {
-=======
-  const isLab = useIsLabRoute();
-
-  if (isLab === null) {
-    return <div className="min-h-dvh bg-[var(--bg-void)]" aria-hidden />;
-  }
-
-  if (isLab) {
->>>>>>> Stashed changes
+  if (bypassShell) {
     return <>{children}</>;
   }
 
