@@ -1,4 +1,6 @@
 import { SYSTEM } from "@/constants/system";
+import { isWorkspaceModeActive } from "@/hooks/use-workspace-mode";
+import { useWorkspaceStore } from "@/providers/workspace-store";
 import type { CommandDefinition } from "@/types/root-os";
 import { getManPageNames } from "@/features/terminal/man/man-pages";
 import { loadProfileContent } from "@/features/vfs/content-loader";
@@ -119,20 +121,6 @@ export const calCommand: CommandDefinition = {
   },
 };
 
-export const psCommand: CommandDefinition = {
-  name: "ps",
-  description: "Process snapshot",
-  usage: "ps aux",
-  category: "system",
-  execute() {
-    return success([
-      ...stdout("USER       PID  %CPU %MEM    VSZ   RSS COMMAND"),
-      ...stdout("guest     1001   2.0  1.2  42000  8192 terminal"),
-      ...stdout("guest     1002   0.5  0.8  32000  4096 wm"),
-    ]);
-  },
-};
-
 export const whichCommand: CommandDefinition = {
   name: "which",
   description: "Locate command",
@@ -192,10 +180,14 @@ export const socialCommand: CommandDefinition = {
 
 export const rebootCommand: CommandDefinition = {
   name: "reboot",
-  description: "Restart session (fast boot)",
+  description: "Restart session (reset workspace / fast boot)",
   usage: "reboot",
   category: "system",
   execute() {
+    if (isWorkspaceModeActive()) {
+      useWorkspaceStore.getState().resetWorkspace();
+      return success(stdout("Rebooting workspace... reload page or wait for boot sequence."));
+    }
     return success(stdout("Rebooting... (use Power on after shutdown for full boot)"));
   },
 };
@@ -210,7 +202,6 @@ export const SYSTEM_COMMANDS: CommandDefinition[] = [
   dfCommand,
   freeCommand,
   calCommand,
-  psCommand,
   whichCommand,
   aproposCommand,
   aboutCommand,

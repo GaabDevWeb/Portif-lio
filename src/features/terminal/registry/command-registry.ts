@@ -19,6 +19,7 @@ import { neofetchCommand } from "../commands/neofetch";
 import { cheatsheetCommand } from "../commands/cheatsheet";
 import { lsCommand } from "../commands/ls";
 import { aboutCommand, gotoCommand, terminalCommand } from "../commands/goto";
+import { WORKSPACE_COMMANDS } from "../commands/ps-kill";
 import { closeCommand, openCommand } from "../commands/open";
 import { whoamiCommand } from "../commands/whoami";
 import { EASTER_COMMANDS } from "../commands/easter";
@@ -55,6 +56,7 @@ const DEFAULT_COMMANDS: CommandDefinition[] = [
   gotoCommand,
   aboutCommand,
   terminalCommand,
+  ...WORKSPACE_COMMANDS,
   ...EASTER_COMMANDS,
   ...SYSTEM_COMMANDS,
   ...MEDIA_COMMANDS,

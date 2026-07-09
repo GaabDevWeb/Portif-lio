@@ -6,9 +6,10 @@ Interactive OS-themed portfolio — personal kernel space.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+npm run dev          # http://localhost:3000 (workspace shell)
 npm run dev -- --turbo
 # Skip boot: http://localhost:3000?fastboot=1
+# Legacy scroll UI: http://localhost:3000?landing=1
 ```
 
 ## Scripts
@@ -56,12 +57,22 @@ npx vercel --prod
 
 ## Architecture
 
-Landing-first ROOT OS v2 — see [`docs/architecture/ROOT-OS-MASTERPLAN.md`](docs/architecture/ROOT-OS-MASTERPLAN.md).
+**Workspace-first ROOT OS v0.2** — spatial module shell (default). See [`docs/architecture/ROOT-OS-MASTERPLAN.md`](docs/architecture/ROOT-OS-MASTERPLAN.md).
 
-- **Landing** — primary interface (scroll, 8 sections)
-- **Terminal.app** — optional dockable window (`Ctrl+`` ` or HUD)
-- **Window Manager** — projects open as `{Name}.app`
+- **Workspace** — default UI: modules as processes on a pannable canvas (no scroll navigation)
+- **Boot** — ASCII dissolve → `/proc/self` identity module mounts
+- **Discovery** — pan/drag to reveal module ghosts; `mount`, `goto`, HUD to spawn
+- **Terminal** — `ps`, `kill`, `mount`, `explore`, `goto` (+ full command set)
+- **Legacy landing** — opt-in only: `?landing=1` (scroll sections, old layout)
 - **Cinema boot** — first visit overlay; skip with `?fastboot=1` or Esc
+
+### URLs
+
+| URL | Mode |
+|-----|------|
+| `/` | Workspace (default) |
+| `/?fastboot=1` | Skip cinema boot |
+| `/?landing=1` | Legacy scroll landing |
 
 ## Troubleshooting
 
