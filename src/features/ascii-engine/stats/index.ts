@@ -2,6 +2,17 @@ import type { AsciiEngineStats } from "@/features/ascii-interaction/types";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import type { PipelineBenchmark } from "@/features/ascii-interaction/image-pipeline/types";
 
+import {
+  buildLuminanceHeatmap,
+  type LuminanceHeatmap,
+} from "@/features/ascii-engine/stats/heatmap";
+
+export type { LuminanceHeatmap, BuildLuminanceHeatmapOptions } from "@/features/ascii-engine/stats/heatmap";
+export {
+  buildLuminanceHeatmap,
+  formatHeatmapPreview,
+} from "@/features/ascii-engine/stats/heatmap";
+
 export interface AsciiEngineStatsPanelModel {
   fps: number;
   frameTimeMs: number;
@@ -16,6 +27,8 @@ export interface AsciiEngineStatsPanelModel {
   cols?: number;
   rows?: number;
   histogram: Array<{ char: string; count: number }>;
+  /** Heatmap de luminância (null se sem matriz). */
+  heatmap: LuminanceHeatmap | null;
 }
 
 export function estimateMatrixMemoryBytes(matrix: AsciiMatrix | null): number {
@@ -61,5 +74,6 @@ export function buildStatsPanelModel(input: {
     cols: input.benchmark?.cols ?? matrix?.cols,
     rows: input.benchmark?.rows ?? matrix?.rows,
     histogram: buildCharacterHistogram(matrix),
+    heatmap: buildLuminanceHeatmap(matrix),
   };
 }

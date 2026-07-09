@@ -6,10 +6,12 @@ import { createAsciiEngine } from "@/features/ascii-engine";
 const engine = createAsciiEngine();
 // P6: engine.nodes — NodeGraphRunner headless
 // P9: engine.plugins — PluginHost (charset/theme contributions)
+// P11: engine.ai — AiProvider stub (sem rede; injectável)
 await engine.nodes.execute(graph, { bindings: { src: { image: buffer } } });
+await engine.ai.suggestCharset(matrix); // { status: "stub", ... }
 ```
 
-Ver também [nodes.md](./nodes.md).
+Ver também [nodes.md](./nodes.md), [ai.md](./ai.md).
 
 ## CLI (P10)
 

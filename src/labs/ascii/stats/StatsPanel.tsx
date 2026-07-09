@@ -2,6 +2,7 @@
 
 import { PanelMetric, PanelSection } from "@/labs/ascii/ui/controls";
 import type { AsciiEngineStatsPanelModel } from "@/features/ascii-engine/stats";
+import { formatHeatmapPreview } from "@/features/ascii-engine/stats";
 import type { BenchmarkResult } from "@/features/ascii-engine/benchmark";
 import { EDITOR_TOOLS } from "@/features/ascii-engine/editor";
 import { EXPORTER_CATALOG } from "@/features/ascii-engine/exporters";
@@ -23,6 +24,8 @@ export function StatsPanel({
   benchmarkRunning,
 }: StatsPanelProps) {
   const converters = defaultConverterRegistry.list();
+  const heatmapPreview =
+    model.heatmap != null ? formatHeatmapPreview(model.heatmap) : null;
 
   return (
     <div className="h-full space-y-4 overflow-y-auto px-4 py-3">
@@ -47,6 +50,29 @@ export function StatsPanel({
         />
         <PanelMetric label="Charset" value={model.charset ?? "—"} />
         <PanelMetric label="Frames" value={model.frameCount != null ? String(model.frameCount) : "—"} />
+      </PanelSection>
+
+      <PanelSection title="Luminance heatmap">
+        {model.heatmap == null ? (
+          <p className="text-[9px] text-[var(--ui-text-dim)]">Sem matriz ativa.</p>
+        ) : (
+          <>
+            <PanelMetric
+              label="Min / Max"
+              value={`${model.heatmap.min.toFixed(2)} / ${model.heatmap.max.toFixed(2)}`}
+            />
+            <PanelMetric label="Mean" value={model.heatmap.mean.toFixed(3)} />
+            <PanelMetric
+              label="Coverage"
+              value={`${(model.heatmap.coverage * 100).toFixed(1)}%`}
+            />
+            {heatmapPreview ? (
+              <pre className="mt-2 overflow-x-auto whitespace-pre font-mono text-[8px] leading-tight text-[var(--phosphor-primary)]">
+                {heatmapPreview}
+              </pre>
+            ) : null}
+          </>
+        )}
       </PanelSection>
 
       <PanelSection title="Character histogram">

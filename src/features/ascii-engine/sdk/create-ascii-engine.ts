@@ -1,3 +1,4 @@
+import { defaultAiProvider, type AiProvider } from "@/features/ascii-engine/ai";
 import { ConverterRegistry, defaultConverterRegistry } from "@/features/ascii-engine/converters";
 import { ProjectDocument } from "@/features/ascii-engine/document";
 import { PlaygroundRegistry, defaultPlaygroundRegistry } from "@/features/ascii-engine/playground";
@@ -18,6 +19,8 @@ export interface AsciiEngineOptions {
   storage?: ProjectStore;
   plugins?: PluginHost;
   nodes?: NodeGraphRunner;
+  /** Provider de IA; default = StubAiProvider (sem rede). */
+  ai?: AiProvider;
 }
 
 /**
@@ -36,6 +39,7 @@ export function createAsciiEngine(options: AsciiEngineOptions = {}) {
   const storage = options.storage ?? defaultProjectStore;
   const plugins = options.plugins ?? defaultPluginHost;
   const nodes = options.nodes ?? createNodeGraphRunner();
+  const ai = options.ai ?? defaultAiProvider;
 
   return {
     version: "3.0.0-platform",
@@ -47,8 +51,8 @@ export function createAsciiEngine(options: AsciiEngineOptions = {}) {
     storage,
     plugins,
     nodes,
-    /** Placeholder — preenchido em P11. */
-    ai: null,
+    /** AiProvider stub por default — App injeta provider real (§3.15). */
+    ai,
     exporters: EXPORTER_CATALOG,
     importers: IMPORTER_CATALOG,
     themes: ASCII_ENGINE_THEMES,

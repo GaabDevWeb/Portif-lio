@@ -59,9 +59,10 @@ flowchart TB
 | Shell tabs Convert/Animate/Playground/Engine/Stats/Studio | `labs/ascii/AsciiLab.tsx` | Next OK |
 | Fachada registries/stubs | `src/features/ascii-engine/*` | Esqueleto produto |
 | Converters | `ascii-engine/converters` | image, gif, **svg ready**; batch stub; video/webcam/… stubs |
-| SDK factory | `sdk/create-ascii-engine.ts` | Mínimo + `plugins` (P9) |
+| SDK factory | `sdk/create-ascii-engine.ts` | Mínimo + `plugins` (P9) + `ai` stub (P11) |
 | PluginHost + charset pack | `ascii-engine/plugins/` | P9 same-origin |
-| Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Parcial |
+| AI adapters | `ascii-engine/ai/` | P11 stubs (sem rede) |
+| Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Heatmap luminância (P11) |
 | EditorDocument + tool stubs | `ascii-engine/editor` | Histórico real; tools não pintam |
 | Animator ops | duplicate/insert/remove/merge + keyframes/onion (P4) | OK |
 | Node graph | `ascii-engine/nodes` NodeGraphRunner + 16 built-ins (P6) | Headless OK; UI = P7 |
@@ -92,7 +93,7 @@ flowchart TB
 
 ### 1.5 Lacunas vs visão plataforma
 
-Video/webcam/PDF/screen reais · tools de edição que mutam células · node editor UI (P7; runner P6 OK) · plugin runtime (P9 OK) · AI adapters · CLI binário (P10: convert/info/benchmark) · infinite canvas · masks/blend · GPU stats.
+Video/webcam/PDF/screen reais · tools de edição que mutam células · node editor UI (P7; runner P6 OK) · plugin runtime (P9 OK) · AI providers reais (stubs P11 OK) · CLI binário (P10: convert/info/benchmark) · infinite canvas · masks/blend · GPU stats.
 
 ### 1.6 Decisão de migração
 
@@ -276,7 +277,7 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 ### 3.11 Benchmark / Statistics
 
 **Benchmark:** suite de casos (já); adicionar renderer compare, memory samples, compression ratio (TXT vs ZIP).  
-**Statistics:** histogram (já); heatmap overlay; coverage; GPU (quando WebGL); frame stats timeline.  
+**Statistics:** histogram (já); **heatmap luminância + coverage** (`buildLuminanceHeatmap`, P11); GPU (quando WebGL); frame stats timeline.  
 **Painel Stats** no shell = consumidor único.
 
 ### 3.12 Storage
@@ -320,6 +321,7 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 ### 3.15 AI Ready (só arquitetura)
 
 **Adapters:** `AiProvider` com métodos stub: `promptToAscii`, `suggestCharset`, `suggestParams`, `enhance`, `reverseAscii`, `ocrAscii`.  
+**P11:** módulo `ascii-engine/ai/` + `createAsciiEngine().ai = StubAiProvider` (payloads `status: "stub"`; zero rede).  
 **Nunca** chamar rede no Core; App injeta provider.  
 **Nodes:** `AiEnhanceNode` (disabled sem provider).
 
