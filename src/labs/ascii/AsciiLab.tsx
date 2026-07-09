@@ -41,6 +41,7 @@ import { applyPreset } from "@/labs/ascii/Presets";
 import { StatsPanel } from "@/labs/ascii/stats/StatsPanel";
 import { getScenarioSource } from "@/labs/ascii/test-sources";
 import { ThemesPresetsPanel } from "@/labs/ascii/themes/ThemesPresetsPanel";
+import { EditorToolsPanel } from "@/labs/ascii/studio/EditorToolsPanel";
 import { ProjectPanel } from "@/labs/ascii/studio/ProjectPanel";
 import { DEFAULT_DEBUG_OPTIONS } from "@/labs/ascii/types";
 import { useWorkspaceViewport } from "@/labs/ascii/workspace/useWorkspaceViewport";
@@ -63,6 +64,7 @@ export function AsciiLab() {
   const [projectDoc, setProjectDoc] = useState(() =>
     ProjectDocument.create({ name: "Untitled Project", themeId: "root-os" }),
   );
+  const [, setEditorTick] = useState(0);
   const [activePreset, setActivePreset] = useState("default");
   const [config, setConfig] = useState<AsciiInteractionConfig>(() => applyPreset("default"));
   const [scenarioId, setScenarioId] = useState("logo");
@@ -349,6 +351,10 @@ export function AsciiLab() {
                   setThemeId(tid as AsciiEngineThemeId);
                 }
               }}
+            />
+            <EditorToolsPanel
+              document={projectDoc.editor}
+              onChange={() => setEditorTick((n) => n + 1)}
             />
             <ThemesPresetsPanel
               themeId={themeId}

@@ -1,9 +1,23 @@
 # Editor
 
-`EditorDocument` com layers, selection, clipboard, undo/redo.
+`EditorDocument` com layers, selection, clipboard e histórico **command-pattern** (SSOT §3.3).
 
 ## Tools
-select (ready); brush/eraser/fill/stamp/text/transform (stubs com descriptors).
+| Tool | Status | Comportamento |
+|------|--------|---------------|
+| select | ready | `setSelection` / `applyToolAt` → região 1×1 |
+| brush | ready | `paintAt(col,row)` — pinta `strokeChar` |
+| eraser | ready | `eraseAt` — escreve `eraseChar` (default espaço) |
+| fill | ready | `fillAt` — flood fill 4-conectado |
+| stamp / text / transform | stub | descriptors apenas |
 
-## Limites
-Não pinta células ainda — histórico cobre config + matrix swap.
+## History
+- `CommandHistory` (max default 64) com `EditorCommand { execute, undo }`
+- Path preferido: `applyCommand` / `paintAt` / `eraseAt` / `fillAt`
+- APIs legadas (`setLayerMatrix`, `setConfig`, …) empilham `LegacySnapshotCommand` — undo/redo unificado
+
+## ToolContext
+`{ layer, selection, stroke: { char, eraseChar }, col, row }`
+
+## Mutação
+Células via `patchMatrixCells` (clone + patch imutável). Fill via `floodFillPatches`.
