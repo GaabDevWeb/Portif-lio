@@ -3,6 +3,7 @@ import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipe
 import type { AsciiInteractionConfig } from "@/features/ascii-interaction/types";
 import type { EditorLayer, EditorSelection } from "@/features/ascii-engine/editor";
 import type { TimelineDocument } from "@/features/ascii-engine/animator/types";
+import type { NodeGraph } from "@/features/ascii-engine/nodes/types";
 
 /** Workspace viewport serializado no projeto (espelha lab WorkspaceState). */
 export interface ProjectWorkspaceState {
@@ -38,11 +39,12 @@ export type TimelineDocumentStub = TimelineDocument;
 
 export type { TimelineDocument };
 
-export interface NodeGraphStub {
-  version: 1;
-  nodes: unknown[];
-  edges: unknown[];
-}
+/**
+ * @deprecated Use `NodeGraph` from nodes (P6). Kept as alias for additive compat.
+ */
+export type NodeGraphStub = NodeGraph;
+
+export type { NodeGraph };
 
 export interface HistoryStackStub {
   pastCount: number;
@@ -64,7 +66,7 @@ export interface ProjectDocumentData {
   selection: EditorSelection | null;
   interactionConfig: Partial<AsciiInteractionConfig>;
   timeline?: TimelineDocument;
-  nodeGraph?: NodeGraphStub;
+  nodeGraph?: NodeGraph;
   history: HistoryStackStub;
   assets: ProjectAssetRef[];
   /** Animação opcional embutida (frames em document; assets separados se grandes). */

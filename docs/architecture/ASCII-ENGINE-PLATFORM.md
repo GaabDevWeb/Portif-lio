@@ -63,7 +63,8 @@ flowchart TB
 | PluginHost + charset pack | `ascii-engine/plugins/` | P9 same-origin |
 | Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Parcial |
 | EditorDocument + tool stubs | `ascii-engine/editor` | Histórico real; tools não pintam |
-| Animator ops | duplicate/insert/remove/merge | Sem interpolação |
+| Animator ops | duplicate/insert/remove/merge + keyframes/onion (P4) | OK |
+| Node graph | `ascii-engine/nodes` NodeGraphRunner + 16 built-ins (P6) | Headless OK; UI = P7 |
 | Playground | 10 ready (matrix/ripple/smoke/gravity/fire/wind/particles/explosion/water/noise) + stubs tornado/cloth | Via `emitField` |
 
 ### 1.2 Duplicações
@@ -91,7 +92,7 @@ flowchart TB
 
 ### 1.5 Lacunas vs visão plataforma
 
-Video/webcam/PDF/screen reais · tools de edição que mutam células · keyframe interpolation · node editor · plugin runtime · AI adapters · CLI binário · storage de projeto · infinite canvas · masks/blend · GPU stats.
+Video/webcam/PDF/screen reais · tools de edição que mutam células · node editor UI (P7; runner P6 OK) · plugin runtime (P9 OK) · AI adapters · CLI binário · infinite canvas · masks/blend · GPU stats.
 
 ### 1.6 Decisão de migração
 
@@ -291,8 +292,8 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 **Nodes built-in:** ImageSource, Resize, Brightness, Contrast, Gamma, Exposure, Blur, Sharpen, Edge, Threshold, Invert, Dither, CharsetMap, ColorMode, Effect, Export.  
 **Grafo:** DAG; validação de tipos de porta (`ImageBuffer|RgbaFrame[]|AsciiMatrix|AsciiAnimation|Blob`).  
 **Serialização:** dentro do ProjectDocument.  
-**Execução:** `NodeGraphRunner` reutiliza image-pipeline steps (já desacoplados em processor).  
-**UI:** canvas de nodes na tab Studio (fase tardia); headless runner primeiro.
+**Execução:** `NodeGraphRunner` reutiliza image-pipeline steps (já desacoplados em processor). **P6:** headless runner + 16 built-ins + DAG validation/memo.  
+**UI:** canvas de nodes na tab Studio (P7); headless runner primeiro.
 
 ### 3.14 Plugin System
 

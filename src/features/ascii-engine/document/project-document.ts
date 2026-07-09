@@ -6,7 +6,7 @@ import {
   type ProjectDocumentData,
   type ProjectMeta,
   type ProjectWorkspaceState,
-  type NodeGraphStub,
+  type NodeGraph,
   type TimelineDocument,
 } from "@/features/ascii-engine/document/types";
 
@@ -55,7 +55,7 @@ export class ProjectDocument {
   private workspace: ProjectWorkspaceState;
   private assets: ProjectAssetRef[] = [];
   private timeline: TimelineDocument | undefined;
-  private nodeGraph: NodeGraphStub | undefined;
+  private nodeGraph: NodeGraph | undefined;
   private animation: AsciiAnimation | null = null;
   readonly editor: EditorDocument;
 
@@ -67,7 +67,7 @@ export class ProjectDocument {
     editor: EditorDocument;
     assets?: ProjectAssetRef[];
     timeline?: TimelineDocument;
-    nodeGraph?: NodeGraphStub;
+    nodeGraph?: NodeGraph;
     animation?: AsciiAnimation | null;
   }) {
     this.id = data.id;
@@ -212,11 +212,11 @@ export class ProjectDocument {
     this.touch();
   }
 
-  getNodeGraph(): NodeGraphStub | undefined {
+  getNodeGraph(): NodeGraph | undefined {
     return this.nodeGraph ? structuredClone(this.nodeGraph) : undefined;
   }
 
-  setNodeGraph(graph: NodeGraphStub | undefined): void {
+  setNodeGraph(graph: NodeGraph | undefined): void {
     this.nodeGraph = graph ? structuredClone(graph) : undefined;
     this.touch();
   }

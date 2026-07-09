@@ -15,6 +15,7 @@ export * from "@/features/ascii-engine/editor";
 export * from "@/features/ascii-engine/document";
 export * from "@/features/ascii-engine/storage";
 export * from "@/features/ascii-engine/animator";
+export * from "@/features/ascii-engine/nodes";
 export * from "@/features/ascii-engine/playground";
 export * from "@/features/ascii-engine/presets";
 export * from "@/features/ascii-engine/themes";

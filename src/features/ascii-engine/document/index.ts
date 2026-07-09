@@ -5,6 +5,7 @@ export type {
   ProjectAssetRef,
   TimelineDocument,
   TimelineDocumentStub,
+  NodeGraph,
   NodeGraphStub,
   HistoryStackStub,
 } from "@/features/ascii-engine/document/types";
