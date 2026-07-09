@@ -423,13 +423,13 @@ src/features/ascii-engine/docs/             # por módulo (já iniciado)
 
 ## 6. Checklist de implementação (executor)
 
-- [ ] Branch dedicada a partir de `ascii-engine-next` (ex.: `ascii-engine-platform`)  
-- [ ] SSOT gravado e referenciado em README do módulo  
-- [ ] Nenhuma remoção de exports públicos  
-- [ ] Hero/ROOT OS intocado  
-- [ ] Cada fase: testes + nota em `docs/architecture/phase-logs/`  
-- [ ] Relatório final de extração atualizado  
-- [ ] Prompt de implementação cumprido fase a fase  
+- [x] Branch dedicada a partir de `ascii-engine-next` (`ascii-engine-platform`)  
+- [x] SSOT gravado e referenciado em README do módulo  
+- [x] Nenhuma remoção de exports públicos  
+- [x] Hero/ROOT OS intocado  
+- [x] Cada fase: testes + nota em `docs/architecture/phase-logs/`  
+- [x] Relatório final de extração atualizado  
+- [x] Prompt de implementação cumprido fase a fase  
 
 ---
 

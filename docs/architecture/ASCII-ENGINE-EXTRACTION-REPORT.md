@@ -1,61 +1,91 @@
-# ASCII Engine — Relatório de Extração
+# ASCII Engine — Relatório de Extração (Platform)
 
-**Branch:** `ascii-engine-next`  
+**Branch:** `ascii-engine-platform` (from `ascii-engine-next`)  
 **Data:** 2026-07-09  
-**Baseline:** V2.1 lab + pipelines
+**Baseline:** V2.1 + fachada Next → Platform 3.0.0  
+**SSOT:** [`ASCII-ENGINE-PLATFORM.md`](./ASCII-ENGINE-PLATFORM.md)  
+**Estado:** P0–P12 concluídos nesta branch. **Não mergear para `main`.**
 
-## Decisões
+## Decisões (histórico)
 
 1. Fachada `src/features/ascii-engine/` em vez de mover `ascii-interaction` (zero breakage).
-2. Branch dedicada `ascii-engine-next` (nome `feature/...` bloqueado por ref `feature` existente).
-3. Rota permanece `/labs/ascii` para não afetar ROOT OS.
-4. Identidade UI: ASCII Engine (tabs Convert/Animate/Playground/Engine/Stats/Studio).
-5. Themes via CSS variables mapeadas aos tokens existentes do lab.
-6. Playground usa `emitField` — sem segundo renderer.
-7. Image conversion: yield cancelável; worker RGBA continua no path GIF.
-8. GIF worker: `postMessage` com transferables quando possível; remount por `key` removido.
+2. Branches `ascii-engine-next` / `ascii-engine-platform` (evitam prefixo `feature/` bloqueado).
+3. Rota permanece `/labs/ascii`.
+4. `ProjectDocument` = SSOT de sessão; `EditorDocument` = motor de edição.
+5. Playground / nodes / plugins / AI nunca alteram o Core runtime além de paths additive (`patchSource`, workers).
+6. Exporters Blob-first; download só em adapters browser/CLI FS.
 
-## Melhorias implementadas
+## Fases Platform (P0–P12)
 
-- Namespace produto + `createAsciiEngine`
-- Converter/Exporter/Importer registries (+ stubs)
-- EditorDocument + history + tool catalog
-- Animator frame ops + keyframe types
-- Playground (10 efeitos ready + stubs tornado/cloth)
-- Presets session store + themes (10 packs)
-- Stats panel + benchmark suite
-- CLI command stubs + docs por módulo
-- UI controls partilhados (`labs/ascii/ui/controls.tsx`)
-- `reducedMotion` prop no React wrapper
+| Fase | Commit (tip) | Entrega |
+|------|----------------|---------|
+| P0 | `beebda7` | SSOT + prompt + pointer NEXT |
+| P1 | `a3b2a88` | ProjectDocument + IDB + `.ascii-project.zip` |
+| P2 | `0f4668e` | brush/eraser/fill + CommandHistory |
+| P3 | `3d1634e` | image worker, `patchSource`, GIF pool N |
+| P4 | `3025c32` | keyframes, interpolação, onion skin |
+| P5 | `338bcd4` | +6 playground effects (10 ready) |
+| P6 | `9987953` | NodeGraphRunner headless + 16 nodes |
+| P7 | `7c55821` | NodeGraphPanel Studio |
+| P8 | `a582d1d` | SVG converter + batch stub |
+| P9 | `342b789` | PluginHost + charset pack |
+| P10 | `6be9c4a` | CLI `convert|info|benchmark` |
+| P11 | `d1ce4dc` | AiProvider stubs + heatmap |
+| P12 | (este) | hardening, docs, checklist |
 
-## Pendentes (próximas iterações)
+## SDK surface (`createAsciiEngine`)
 
-- Worker dedicado Image (OffscreenCanvas / ImageBitmap)
-- Pool multi-worker real
-- Tools de edição que mutam células
-- Interpolação de keyframes
-- Video/webcam/PDF implementações
-- Package npm + bin CLI
-- Extrair `@ascii-engine/core` para repo próprio
+```
+version: "3.0.0-platform"
+document, storage, editor, converters, nodes, plugins, ai,
+playground, presets, exporters, importers, themes
+```
+
+## Verificação final (P12)
+
+| Check | Resultado |
+|-------|-----------|
+| `npx tsc --noEmit` | OK |
+| `npx vitest run src/features/ascii-engine` | **41 passed** |
+| patchSource + worker-pool tests | **11 passed** |
+| `npm run ascii-engine -- info` | OK |
+| eslint paths core SDK/CLI/nodes/ai/document/storage | OK |
+| Hero / ROOT OS produção | intocado |
+
+## Duplicações remanescentes (dívida consciente)
+
+| Item | Estado | Notas |
+|------|--------|-------|
+| `downloadBlob` | 2 cópias | `ascii-engine/browser` (produto) + `animation-pipeline/utilities/zip` (runtime). **Não** inverter deps (interaction ↛ engine). Unificar só na extração `@ascii-engine/browser`. |
+| Slider/Toggle | N painéis | Lab path principal usa `ui/controls.tsx`; `ControlPanel` / converters image/gif ainda têm cópias locais — migração gradual. |
+| Presets física vs produto | Parcial | Schema v2 unificado ainda futuro. |
+
+## Melhorias vs relatório Next
+
+- Worker de imagem + pool GIF multi-worker + `patchSource`
+- Tools de edição mutantes + command history
+- Keyframe interpolation + onion skin
+- Node graph headless + UI mínima
+- SVG converter real; project ZIP; PluginHost; CLI Node; AI stubs; heatmap
+- Storage IndexedDB **ligado** via `ProjectStore`
+
+## Ainda pendente (pós-Platform)
+
+- Video/webcam/PDF/screen reais
+- Node editor canvas (não form UI)
+- Plugin sandbox iframe/worker
+- AI provider com rede (App-injected)
+- Packages npm `@ascii-engine/*`
+- PNG convert no CLI (precisa canvas/sharp)
+- Unificar `downloadBlob` na extração de packages
 
 ## Recomendações open-source
 
-1. Publicar monorepo `packages/core|react|browser|cli`
-2. Remover aliases `@/` → imports relativos no package
-3. Injetar `reducedMotion` sempre por prop
-4. Exporters só retornam `Blob`; CLI escreve FS
-5. Manter formato `animation.ascii.zip` como interop estável
-6. Licença MIT/Apache + fixtures de benchmark públicos
-7. Visual regression em `/labs/ascii` como app de referência
+1. Monorepo `packages/core|react|browser|cli`
+2. Remover aliases `@/` no package
+3. Exporters só `Blob`; CLI escreve FS
+4. Manter `animation.ascii.zip` + `*.ascii-project.zip` como interop
+5. Visual regression `/labs/ascii`
+6. Licença + fixtures de benchmark
 
-## Revisão arquitetural
-
-| Achado | Ação |
-|--------|------|
-| Controles UI duplicados | Extraídos para `ui/controls.tsx` (migração gradual dos painéis) |
-| Download DOM espalhado | Centralizado em `ascii-engine/browser` |
-| Storage IndexedDB morto | Mantido no interaction; wiring futuro via browser adapter |
-| Previews legados | Mantidos mas não usados pelo shell (Workspace é o path) |
-| Acoplamento Next na surface | Fora do SDK; Hero continua no app |
-
-*Não mergear para main até review do produto.*
+*Não mergear para main até review de produto.*
