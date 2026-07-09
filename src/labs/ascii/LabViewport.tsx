@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { AsciiInteractionEngine } from "@/features/ascii-interaction";
+import type { AsciiGridSource } from "@/features/ascii-interaction";
 import type {
   AsciiDebugSnapshot,
   AsciiEngineStats,
@@ -11,10 +12,11 @@ import type {
 } from "@/features/ascii-interaction/types";
 
 export interface LabViewportProps {
-  source: string;
+  source: AsciiGridSource;
   config: AsciiInteractionConfig;
   label?: string;
   debugEnabled?: boolean;
+  className?: string;
   onStats?: (stats: AsciiEngineStats) => void;
   onDebugSnapshot?: (snapshot: AsciiDebugSnapshot) => void;
 }
@@ -25,6 +27,7 @@ export function LabViewport({
   config,
   label,
   debugEnabled = false,
+  className,
   onStats,
   onDebugSnapshot,
 }: LabViewportProps) {
@@ -54,8 +57,12 @@ export function LabViewport({
     return () => cancelAnimationFrame(raf);
   }, [onStats, onDebugSnapshot, debugEnabled]);
 
+  const interactive = config.enableInteraction !== false;
+
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#050805]">
+    <div
+      className={`relative h-full min-h-0 w-full overflow-hidden bg-[#050805] ${className ?? ""}`}
+    >
       {label ? (
         <div className="pointer-events-none absolute left-3 top-3 z-10 rounded border border-[#2a4a2a] bg-[#0a120a]/80 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-[#7dff7d]">
           {label}
@@ -66,7 +73,7 @@ export function LabViewport({
         source={source}
         config={config}
         className="h-full w-full"
-        interactive
+        interactive={interactive}
       />
     </div>
   );

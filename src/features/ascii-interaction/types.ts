@@ -157,6 +157,8 @@ export interface AsciiInteractionEngineHandle {
   setSurfaceState: (state: SurfaceState) => void;
   getSurfaceState: () => SurfaceState;
   updateConfig: (partial: Partial<AsciiInteractionConfig>) => void;
+  /** Troca a fonte ASCII (string ou matriz) sem desmontar o canvas. */
+  setSource: (source: import("@/features/ascii-interaction/grid/character-grid").AsciiGridSource) => void;
   getStats: () => AsciiEngineStats;
   getDebugSnapshot: (maxCells?: number) => AsciiDebugSnapshot;
   destroy: () => void;

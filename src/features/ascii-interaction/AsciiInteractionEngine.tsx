@@ -9,6 +9,7 @@ import {
 
 import { mergeAsciiConfig } from "@/features/ascii-interaction/config";
 import { AsciiInteractionEngineCore } from "@/features/ascii-interaction/engine/ascii-interaction-engine-core";
+import type { AsciiGridSource } from "@/features/ascii-interaction/grid/character-grid";
 import {
   SurfaceState,
   type AsciiInteractionConfig,
@@ -17,10 +18,15 @@ import {
 } from "@/features/ascii-interaction/types";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
+function isEmptySource(source: AsciiGridSource): boolean {
+  if (typeof source === "string") return source.length === 0;
+  return !source || source.cells.length === 0;
+}
+
 export interface AsciiInteractionEngineProps {
-  /** Arte ASCII multilinha (fonte primária). */
-  source: string;
-  /** Alias de `source` para compatibilidade. */
+  /** Arte ASCII (texto multilinha ou matriz do pipeline). */
+  source: AsciiGridSource;
+  /** Alias de `source` para compatibilidade (apenas string). */
   image?: string;
   config?: Partial<AsciiInteractionConfig>;
   className?: string;
@@ -41,9 +47,13 @@ export const AsciiInteractionEngine = forwardRef<
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<AsciiInteractionEngineCore | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
+  const configRef = useRef(config);
+  configRef.current = config;
   const reducedMotion = useReducedMotion();
 
-  const asciiSource = source || image || "";
+  const asciiSource: AsciiGridSource =
+    !isEmptySource(source) ? source : image && image.length > 0 ? image : "";
 
   useImperativeHandle(ref, () => ({
     emitField: (input: EmitFieldInput) => {
@@ -67,6 +77,9 @@ export const AsciiInteractionEngine = forwardRef<
       engineRef.current?.getSurfaceState() ?? SurfaceState.Idle,
     updateConfig: (partial) => {
       engineRef.current?.updateConfig(partial);
+    },
+    setSource: (next) => {
+      engineRef.current?.setSource(next);
     },
     getStats: () =>
       engineRef.current?.getStats() ?? {
@@ -96,35 +109,46 @@ export const AsciiInteractionEngine = forwardRef<
         activeCells: [],
       },
     destroy: () => {
+      roRef.current?.disconnect();
+      roRef.current = null;
       engineRef.current?.destroy();
       engineRef.current = null;
     },
   }));
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !asciiSource) return;
-
-    const merged = mergeAsciiConfig(config);
-
-    const engine = new AsciiInteractionEngineCore(asciiSource, merged);
-    engineRef.current = engine;
-    engine.mount(canvas, reducedMotion);
-
-    const ro = new ResizeObserver(() => {
-      engine.resize();
-    });
-    const parent = canvas.parentElement;
-    if (parent) ro.observe(parent);
-
     return () => {
-      ro.disconnect();
-      engine.destroy();
+      roRef.current?.disconnect();
+      roRef.current = null;
+      engineRef.current?.destroy();
       engineRef.current = null;
     };
-    // config omitido — objeto parcial instável; overrides via ref/imperative API
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || isEmptySource(asciiSource)) return;
+
+    let engine = engineRef.current;
+    if (!engine) {
+      const merged = mergeAsciiConfig(configRef.current);
+      engine = new AsciiInteractionEngineCore(asciiSource, merged);
+      engineRef.current = engine;
+      engine.mount(canvas, reducedMotion);
+
+      roRef.current?.disconnect();
+      const ro = new ResizeObserver(() => {
+        engineRef.current?.resize();
+      });
+      roRef.current = ro;
+      const parent = canvas.parentElement;
+      if (parent) ro.observe(parent);
+    } else {
+      engine.setSource(asciiSource);
+    }
+    // reducedMotion aplicado via setReducedMotion; mount inicial usa valor atual
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asciiSource, reducedMotion]);
+  }, [asciiSource]);
 
   useEffect(() => {
     engineRef.current?.setReducedMotion(reducedMotion);

@@ -163,12 +163,30 @@ export type CopyAsciiResult = "copied" | "unsupported" | "error";
 
 /** Copia arte ASCII para clipboard preservando formatação exata. */
 export async function copyAsciiToClipboard(text: string): Promise<CopyAsciiResult> {
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    return "unsupported";
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return "copied";
+    } catch {
+      // fallback abaixo (ex.: permissões / contexto inseguro)
+    }
   }
+
+  if (typeof document === "undefined") return "unsupported";
+
   try {
-    await navigator.clipboard.writeText(text);
-    return "copied";
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    ta.style.top = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok ? "copied" : "unsupported";
   } catch {
     return "error";
   }

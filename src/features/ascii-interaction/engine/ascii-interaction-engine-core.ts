@@ -8,8 +8,10 @@ import type {
 } from "@/features/ascii-interaction/types";
 import { SurfaceState } from "@/features/ascii-interaction/types";
 import { mergeAsciiConfig } from "@/features/ascii-interaction/config";
-import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
-import { CharacterGrid } from "@/features/ascii-interaction/grid/character-grid";
+import {
+  CharacterGrid,
+  type AsciiGridSource,
+} from "@/features/ascii-interaction/grid/character-grid";
 import { InfluenceLayer } from "@/features/ascii-interaction/influence/influence-layer";
 import { TrailField } from "@/features/ascii-interaction/influence/trail-field";
 import { MouseInfluencer } from "@/features/ascii-interaction/influence/influencers/mouse-influencer";
@@ -29,11 +31,11 @@ import { resolveResponsiveConfig } from "@/features/ascii-interaction/utils/resp
 export class AsciiInteractionEngineCore implements InfluencerSurface {
   private readonly baseConfig: AsciiInteractionConfig;
   private config: AsciiInteractionConfig;
-  private readonly grid: CharacterGrid;
+  private grid: CharacterGrid;
   private readonly influence: InfluenceLayer;
   private readonly trail = new TrailField();
   private readonly physics: PhysicsSystem;
-  private readonly evolution: CharacterEvolution;
+  private evolution: CharacterEvolution;
   private readonly surface = new SurfaceStateController();
   private readonly renderer = new CanvasRenderer();
   private readonly loop = new FrameLoop();
@@ -55,7 +57,7 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
 
   private readonly forceSamples: { fx: number; fy: number; intensity: number }[] = [];
 
-  constructor(source: string | AsciiMatrix, configPartial?: Partial<AsciiInteractionConfig>) {
+  constructor(source: AsciiGridSource, configPartial?: Partial<AsciiInteractionConfig>) {
     this.baseConfig = mergeAsciiConfig(configPartial);
     this.config = { ...this.baseConfig };
     this.grid = new CharacterGrid(source, this.config);
@@ -69,6 +71,35 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
     }
 
     this.registerInfluencer(this.mouseInfluencer);
+  }
+
+  /** Substitui a arte ASCII sem desmontar o canvas — usado por playback GIF e reconversão. */
+  setSource(source: AsciiGridSource): void {
+    if (this.destroyed) return;
+
+    try {
+      this.grid = new CharacterGrid(source, this.config);
+    } catch (err) {
+      console.error("AsciiInteractionEngine.setSource:", err);
+      return;
+    }
+
+    this.evolution = new CharacterEvolution(this.grid.count);
+    this.evolution.init(this.grid);
+
+    this.forceSamples.length = 0;
+    for (let i = 0; i < this.grid.count; i += 1) {
+      this.forceSamples.push({ fx: 0, fy: 0, intensity: 0 });
+    }
+
+    this.trail.reset();
+    this.influence.clear();
+    this.surface.setState(SurfaceState.Idle);
+
+    if (this.width > 0 && this.height > 0) {
+      this.grid.centerIn(this.width, this.height);
+    }
+    this.renderer.requestFullRedraw();
   }
 
   mount(canvas: HTMLCanvasElement, reducedMotion: boolean): void {

@@ -7,6 +7,7 @@ import { ASCII_TEST_SCENARIOS } from "@/labs/ascii/test-sources";
 import { StressTest } from "@/labs/ascii/StressTest";
 import { downloadLabConfig } from "@/labs/ascii/Exporter";
 import { pickAndImportLabConfig } from "@/labs/ascii/Importer";
+import { LabInteractiveCursorToggle } from "@/labs/ascii/LabInteractiveCursorToggle";
 import type { LabDebugOptions } from "@/labs/ascii/types";
 
 export interface ControlPanelProps {
@@ -18,6 +19,8 @@ export interface ControlPanelProps {
   splitPresetA: string;
   splitPresetB: string;
   debug: LabDebugOptions;
+  /** Quando false, omite o header (tabs no AsciiLab). */
+  showHeader?: boolean;
   onConfigChange: (patch: Partial<AsciiInteractionConfig>) => void;
   onPresetChange: (presetId: string) => void;
   onScenarioChange: (scenarioId: string) => void;
@@ -105,6 +108,7 @@ export function ControlPanel({
   splitPresetA,
   splitPresetB,
   debug,
+  showHeader = true,
   onConfigChange,
   onPresetChange,
   onScenarioChange,
@@ -116,17 +120,26 @@ export function ControlPanel({
   onImport,
 }: ControlPanelProps) {
   return (
-    <aside className="flex h-full flex-col border-r border-[#1a3d1a] bg-[#0a120a]">
-      <header className="border-b border-[#1a3d1a] px-4 py-3">
-        <h1 className="font-mono text-xs uppercase tracking-[0.2em] text-[#7dff7d]">
-          ASCII Lab
-        </h1>
-        <p className="mt-1 text-[9px] leading-relaxed text-[#5a8a5a]">
-          Laboratório isolado · engine compartilhada
-        </p>
-      </header>
+    <div className="flex h-full flex-col bg-[var(--bg-panel)]">
+      {showHeader ? (
+        <header className="border-b border-[var(--ui-border)] px-4 py-3">
+          <h1 className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--phosphor-primary)]">
+            ASCII Lab
+          </h1>
+          <p className="mt-1 text-[9px] leading-relaxed text-[var(--ui-text-dim)]">
+            Laboratório isolado · engine compartilhada
+          </p>
+        </header>
+      ) : null}
 
       <div className="flex-1 overflow-y-auto px-4 pb-6">
+        <div className="border-b border-[var(--ui-border)]/50 py-3">
+          <LabInteractiveCursorToggle
+            checked={config.enableInteraction !== false}
+            onChange={(value) => onConfigChange({ enableInteraction: value })}
+          />
+        </div>
+
         <Section title="Presets">
           <div className="flex flex-wrap gap-1.5">
             {ASCII_PRESETS.map((preset) => (
@@ -320,11 +333,11 @@ export function ControlPanel({
         </Section>
       </div>
 
-      <footer className="flex gap-2 border-t border-[#1a3d1a] p-3">
+      <footer className="flex gap-2 border-t border-[var(--ui-border)] p-3">
         <button
           type="button"
           onClick={() => downloadLabConfig(config)}
-          className="flex-1 rounded border border-[#2a4a2a] px-2 py-2 font-mono text-[10px] text-[#7dff7d] hover:border-[#3d6b3d]"
+          className="flex-1 cursor-pointer rounded border border-[var(--ui-border)] px-2 py-2 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
         >
           Export Config
         </button>
@@ -334,11 +347,11 @@ export function ControlPanel({
             const imported = await pickAndImportLabConfig();
             if (imported) onImport(imported);
           }}
-          className="flex-1 rounded border border-[#2a4a2a] px-2 py-2 font-mono text-[10px] text-[#7dff7d] hover:border-[#3d6b3d]"
+          className="flex-1 cursor-pointer rounded border border-[var(--ui-border)] px-2 py-2 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
         >
           Import Config
         </button>
       </footer>
-    </aside>
+    </div>
   );
 }
