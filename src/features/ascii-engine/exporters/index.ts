@@ -1,6 +1,8 @@
 import { downloadBlob } from "@/features/ascii-engine/browser";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipeline/types";
+import type { ProjectDocument } from "@/features/ascii-engine/document";
+import { downloadProjectZip } from "@/features/ascii-engine/storage";
 import {
   downloadMatrix,
   downloadMatrixPng,
@@ -28,6 +30,7 @@ export type ExportFormatId =
   | "zip"
   | "gif"
   | "txt-sequence"
+  | "project"
   | "pdf"
   | "sprite-sheet";
 
@@ -35,7 +38,7 @@ export interface ExporterDescriptor {
   id: ExportFormatId;
   label: string;
   status: "ready" | "stub";
-  target: "matrix" | "animation" | "both";
+  target: "matrix" | "animation" | "project" | "both";
 }
 
 export const EXPORTER_CATALOG: ExporterDescriptor[] = [
@@ -49,9 +52,14 @@ export const EXPORTER_CATALOG: ExporterDescriptor[] = [
   { id: "zip", label: "ASCII ZIP", status: "ready", target: "animation" },
   { id: "gif", label: "GIF", status: "ready", target: "animation" },
   { id: "txt-sequence", label: "TXT Sequence", status: "ready", target: "animation" },
+  { id: "project", label: "Project ZIP", status: "ready", target: "project" },
   { id: "pdf", label: "PDF", status: "stub", target: "both" },
   { id: "sprite-sheet", label: "Sprite Sheet", status: "stub", target: "animation" },
 ];
+
+export async function exportProject(doc: ProjectDocument): Promise<void> {
+  await downloadProjectZip(doc);
+}
 
 function matrixToAnsi(matrix: AsciiMatrix): string {
   return matrixToAsciiSource(matrix);

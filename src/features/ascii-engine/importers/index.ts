@@ -1,9 +1,18 @@
 import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipeline/types";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
+import type { ProjectDocument } from "@/features/ascii-engine/document";
 import { importAsciiAnimationZip } from "@/features/ascii-interaction/animation-pipeline";
 import { parseAsciiMatrixFromText } from "@/features/ascii-interaction/animation-pipeline/importer/matrix-parser";
+import { importProjectZip } from "@/features/ascii-engine/storage";
 
-export type ImportFormatId = "ascii-zip" | "txt" | "json" | "html" | "svg" | "gif-ascii";
+export type ImportFormatId =
+  | "ascii-zip"
+  | "txt"
+  | "json"
+  | "project"
+  | "html"
+  | "svg"
+  | "gif-ascii";
 
 export interface ImporterDescriptor {
   id: ImportFormatId;
@@ -16,6 +25,12 @@ export const IMPORTER_CATALOG: ImporterDescriptor[] = [
   { id: "ascii-zip", label: "ASCII ZIP", status: "ready", extensions: [".ascii.zip", ".zip"] },
   { id: "txt", label: "TXT", status: "ready", extensions: [".txt"] },
   { id: "json", label: "JSON", status: "ready", extensions: [".json"] },
+  {
+    id: "project",
+    label: "Project ZIP",
+    status: "ready",
+    extensions: [".ascii-project.zip", ".zip"],
+  },
   { id: "html", label: "HTML", status: "stub", extensions: [".html"] },
   { id: "svg", label: "SVG", status: "stub", extensions: [".svg"] },
   { id: "gif-ascii", label: "GIF ASCII", status: "stub", extensions: [".gif"] },
@@ -37,10 +52,15 @@ export async function importAsciiJson(file: File): Promise<AsciiMatrix | AsciiAn
   throw new Error("JSON não reconhecido como AsciiMatrix ou AsciiAnimation.");
 }
 
+export async function importProject(file: File): Promise<ProjectDocument> {
+  const result = await importProjectZip(file);
+  return result.document;
+}
+
 export async function importByFormat(
   file: File,
   format: ImportFormatId,
-): Promise<{ matrix?: AsciiMatrix; animation?: AsciiAnimation }> {
+): Promise<{ matrix?: AsciiMatrix; animation?: AsciiAnimation; project?: ProjectDocument }> {
   switch (format) {
     case "ascii-zip":
       return { animation: await importAsciiZip(file) };
@@ -51,6 +71,8 @@ export async function importByFormat(
       if ("frames" in parsed) return { animation: parsed };
       return { matrix: parsed };
     }
+    case "project":
+      return { project: await importProject(file) };
     case "html":
     case "svg":
     case "gif-ascii":

@@ -189,4 +189,25 @@ export class EditorDocument {
     this.clipboard = next.clipboard;
     return true;
   }
+
+  setActiveLayerId(layerId: string): void {
+    if (!this.layers.some((l) => l.id === layerId)) return;
+    this.activeLayerId = layerId;
+  }
+
+  /**
+   * Hidrata o documento a partir de um snapshot serializado (sem empilhar histórico).
+   * Usado por ProjectDocument.fromJSON — additive, não remove APIs existentes.
+   */
+  hydrate(snapshot: EditorSnapshot, options: { clearHistory?: boolean } = {}): void {
+    this.layers = structuredClone(snapshot.layers);
+    this.activeLayerId = snapshot.activeLayerId;
+    this.selection = snapshot.selection ? structuredClone(snapshot.selection) : null;
+    this.config = structuredClone(snapshot.config);
+    this.clipboard = snapshot.clipboard ? structuredClone(snapshot.clipboard) : null;
+    if (options.clearHistory !== false) {
+      this.past = [];
+      this.future = [];
+    }
+  }
 }

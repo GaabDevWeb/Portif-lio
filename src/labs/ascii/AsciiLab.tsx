@@ -20,8 +20,10 @@ import {
   getTheme,
   themeToLabCssVars,
   type AsciiEngineThemeId,
+  ASCII_ENGINE_THEMES,
 } from "@/features/ascii-engine/themes";
 import type { AsciiEnginePreset } from "@/features/ascii-engine/presets";
+import { ProjectDocument } from "@/features/ascii-engine/document";
 import { AnimationConverterPanel } from "@/labs/ascii/animation/AnimationConverterPanel";
 import { AnimationResultView } from "@/labs/ascii/animation/AnimationResultView";
 import { useAnimationController } from "@/labs/ascii/animation/useAnimationController";
@@ -39,6 +41,7 @@ import { applyPreset } from "@/labs/ascii/Presets";
 import { StatsPanel } from "@/labs/ascii/stats/StatsPanel";
 import { getScenarioSource } from "@/labs/ascii/test-sources";
 import { ThemesPresetsPanel } from "@/labs/ascii/themes/ThemesPresetsPanel";
+import { ProjectPanel } from "@/labs/ascii/studio/ProjectPanel";
 import { DEFAULT_DEBUG_OPTIONS } from "@/labs/ascii/types";
 import { useWorkspaceViewport } from "@/labs/ascii/workspace/useWorkspaceViewport";
 
@@ -57,6 +60,9 @@ const TABS: { id: EngineTab; label: string }[] = [
 export function AsciiLab() {
   const [tab, setTab] = useState<EngineTab>("convert");
   const [themeId, setThemeId] = useState<AsciiEngineThemeId>("root-os");
+  const [projectDoc, setProjectDoc] = useState(() =>
+    ProjectDocument.create({ name: "Untitled Project", themeId: "root-os" }),
+  );
   const [activePreset, setActivePreset] = useState("default");
   const [config, setConfig] = useState<AsciiInteractionConfig>(() => applyPreset("default"));
   const [scenarioId, setScenarioId] = useState("logo");
@@ -333,14 +339,29 @@ export function AsciiLab() {
         ) : null}
 
         {tab === "studio" ? (
-          <ThemesPresetsPanel
-            themeId={themeId}
-            onThemeChange={setThemeId}
-            pipeline={imageOptions}
-            interaction={config}
-            workspace={imageWorkspace.state}
-            onApplyPreset={applyProductPreset}
-          />
+          <>
+            <ProjectPanel
+              document={projectDoc}
+              onDocumentChange={(doc) => {
+                setProjectDoc(doc);
+                const tid = doc.getThemeId();
+                if (ASCII_ENGINE_THEMES.some((t) => t.id === tid)) {
+                  setThemeId(tid as AsciiEngineThemeId);
+                }
+              }}
+            />
+            <ThemesPresetsPanel
+              themeId={themeId}
+              onThemeChange={(id) => {
+                setThemeId(id);
+                projectDoc.setThemeId(id);
+              }}
+              pipeline={imageOptions}
+              interaction={config}
+              workspace={imageWorkspace.state}
+              onApplyPreset={applyProductPreset}
+            />
+          </>
         ) : null}
 
         {tab === "playground" ? (
