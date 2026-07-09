@@ -73,7 +73,6 @@ export function AnimationResultView({
     >
       {currentFrame ? (
         <LabViewport
-          key={`anim-grid-${currentFrame.matrix.cols}x${currentFrame.matrix.rows}`}
           source={currentFrame.matrix}
           config={config}
           debugEnabled={debugEnabled}

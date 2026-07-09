@@ -17,6 +17,7 @@ export interface LabViewportProps {
   label?: string;
   debugEnabled?: boolean;
   className?: string;
+  engineRef?: React.MutableRefObject<AsciiInteractionEngineHandle | null>;
   onStats?: (stats: AsciiEngineStats) => void;
   onDebugSnapshot?: (snapshot: AsciiDebugSnapshot) => void;
 }
@@ -28,16 +29,18 @@ export function LabViewport({
   label,
   debugEnabled = false,
   className,
+  engineRef: externalEngineRef,
   onStats,
   onDebugSnapshot,
 }: LabViewportProps) {
-  const engineRef = useRef<AsciiInteractionEngineHandle>(null);
+  const internalRef = useRef<AsciiInteractionEngineHandle | null>(null);
+  const engineRef = externalEngineRef ?? internalRef;
   const configRef = useRef(config);
   configRef.current = config;
 
   useEffect(() => {
     engineRef.current?.updateConfig(configRef.current);
-  }, [config]);
+  }, [config, engineRef]);
 
   useEffect(() => {
     if (!onStats && !onDebugSnapshot) return;
@@ -55,7 +58,7 @@ export function LabViewport({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [onStats, onDebugSnapshot, debugEnabled]);
+  }, [onStats, onDebugSnapshot, debugEnabled, engineRef]);
 
   const interactive = config.enableInteraction !== false;
 

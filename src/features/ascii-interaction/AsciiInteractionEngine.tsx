@@ -32,6 +32,12 @@ export interface AsciiInteractionEngineProps {
   className?: string;
   /** Quando false, desativa captura de pointer (somente render estático). */
   interactive?: boolean;
+  /**
+   * Preferência de reduced motion.
+   * Se omitido, usa `useReducedMotion` do app shell (ROOT OS).
+   * Passar explicitamente desacopla o wrapper para SDK/extração.
+   */
+  reducedMotion?: boolean;
 }
 
 /**
@@ -42,7 +48,7 @@ export const AsciiInteractionEngine = forwardRef<
   AsciiInteractionEngineHandle,
   AsciiInteractionEngineProps
 >(function AsciiInteractionEngine(
-  { source, image, config, className, interactive = true },
+  { source, image, config, className, interactive = true, reducedMotion: reducedMotionProp },
   ref,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,7 +56,8 @@ export const AsciiInteractionEngine = forwardRef<
   const roRef = useRef<ResizeObserver | null>(null);
   const configRef = useRef(config);
   configRef.current = config;
-  const reducedMotion = useReducedMotion();
+  const reducedMotionHook = useReducedMotion();
+  const reducedMotion = reducedMotionProp ?? reducedMotionHook;
 
   const asciiSource: AsciiGridSource =
     !isEmptySource(source) ? source : image && image.length > 0 ? image : "";

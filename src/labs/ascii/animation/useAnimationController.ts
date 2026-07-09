@@ -14,6 +14,12 @@ import {
   type TimelineState,
   type DecodedGif,
 } from "@/features/ascii-interaction/animation-pipeline";
+import {
+  duplicateFrame,
+  insertBlankFrame,
+  removeFrame,
+  mergeFrames,
+} from "@/features/ascii-engine/animator";
 import { mergePipelineOptions } from "@/features/ascii-interaction/image-pipeline";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline";
 
@@ -165,6 +171,40 @@ export function useAnimationController() {
   const seekTime = useCallback((ms: number) => playbackRef.current?.seekTime(ms), []);
   const stepFrame = useCallback((d: number) => playbackRef.current?.stepFrame(d), []);
 
+  const applyAnimationEdit = useCallback((next: AsciiAnimation) => {
+    setAnimation(next);
+    playbackRef.current?.setFrameDelays(next.frameDelays);
+    playbackRef.current?.seekFrame(
+      Math.min(playbackRef.current?.getState().currentFrame ?? 0, next.frameCount - 1),
+    );
+    setFrameRevision((r) => r + 1);
+  }, []);
+
+  const duplicateCurrentFrame = useCallback(() => {
+    if (!animation) return;
+    const idx = timeline?.currentFrame ?? 0;
+    applyAnimationEdit(duplicateFrame(animation, idx));
+  }, [animation, timeline, applyAnimationEdit]);
+
+  const insertFrameAtCurrent = useCallback(() => {
+    if (!animation) return;
+    const idx = timeline?.currentFrame ?? 0;
+    applyAnimationEdit(insertBlankFrame(animation, idx));
+  }, [animation, timeline, applyAnimationEdit]);
+
+  const removeCurrentFrame = useCallback(() => {
+    if (!animation) return;
+    const idx = timeline?.currentFrame ?? 0;
+    applyAnimationEdit(removeFrame(animation, idx));
+  }, [animation, timeline, applyAnimationEdit]);
+
+  const mergeWithNextFrame = useCallback(() => {
+    if (!animation) return;
+    const idx = timeline?.currentFrame ?? 0;
+    if (idx >= animation.frameCount - 1) return;
+    applyAnimationEdit(mergeFrames(animation, idx, idx + 1));
+  }, [animation, timeline, applyAnimationEdit]);
+
   const frameIndex = timeline?.currentFrame ?? 0;
   const currentFrame =
     rendererRef.current?.resolveFrame(frameIndex, options) ??
@@ -194,5 +234,9 @@ export function useAnimationController() {
     seekFrame,
     seekTime,
     stepFrame,
+    duplicateCurrentFrame,
+    insertFrameAtCurrent,
+    removeCurrentFrame,
+    mergeWithNextFrame,
   };
 }

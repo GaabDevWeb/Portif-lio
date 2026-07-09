@@ -91,7 +91,10 @@ export class ConversionWorkerPool {
       };
 
       try {
-        worker.postMessage(payload);
+        const transferables = frames
+          .map((f) => f.pixels.buffer)
+          .filter((buf): buf is ArrayBuffer => buf instanceof ArrayBuffer);
+        worker.postMessage(payload, transferables);
       } catch {
         worker.removeEventListener("message", handler);
         resolve(convertRgbaFramesBatch(frames, options, onProgress));

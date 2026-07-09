@@ -31,6 +31,10 @@ interface AnimationConverterPanelProps {
   onAnimationOptionsChange: (patch: Partial<AnimationPipelineOptions>) => void;
   onCharsetChange: (id: string) => void;
   onImportZip: (file: File) => void;
+  onDuplicateFrame?: () => void;
+  onInsertFrame?: () => void;
+  onRemoveFrame?: () => void;
+  onMergeFrame?: () => void;
 }
 
 export function AnimationConverterPanel({
@@ -46,6 +50,10 @@ export function AnimationConverterPanel({
   onAnimationOptionsChange,
   onCharsetChange,
   onImportZip,
+  onDuplicateFrame,
+  onInsertFrame,
+  onRemoveFrame,
+  onMergeFrame,
 }: AnimationConverterPanelProps) {
   const [isExportingGif, setIsExportingGif] = useState(false);
   const [exportProgress, setExportProgress] = useState<ConversionProgress | null>(null);
@@ -156,6 +164,45 @@ export function AnimationConverterPanel({
           ))}
         </select>
       </Section>
+
+      {animation ? (
+        <Section title="Timeline Edit">
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              onClick={onDuplicateFrame}
+              disabled={!onDuplicateFrame}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
+            >
+              Duplicate
+            </button>
+            <button
+              type="button"
+              onClick={onInsertFrame}
+              disabled={!onInsertFrame}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
+            >
+              Insert
+            </button>
+            <button
+              type="button"
+              onClick={onRemoveFrame}
+              disabled={!onRemoveFrame}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
+            >
+              Remove
+            </button>
+            <button
+              type="button"
+              onClick={onMergeFrame}
+              disabled={!onMergeFrame}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
+            >
+              Merge next
+            </button>
+          </div>
+        </Section>
+      ) : null}
 
       {animation ? (
         <Section title="Exportar">

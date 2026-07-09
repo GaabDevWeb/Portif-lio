@@ -14,6 +14,14 @@ import type {
   AsciiEngineStats,
   AsciiInteractionConfig,
 } from "@/features/ascii-interaction/types";
+import { buildStatsPanelModel } from "@/features/ascii-engine/stats";
+import { runBenchmarkSuite, type BenchmarkResult } from "@/features/ascii-engine/benchmark";
+import {
+  getTheme,
+  themeToLabCssVars,
+  type AsciiEngineThemeId,
+} from "@/features/ascii-engine/themes";
+import type { AsciiEnginePreset } from "@/features/ascii-engine/presets";
 import { AnimationConverterPanel } from "@/labs/ascii/animation/AnimationConverterPanel";
 import { AnimationResultView } from "@/labs/ascii/animation/AnimationResultView";
 import { useAnimationController } from "@/labs/ascii/animation/useAnimationController";
@@ -26,21 +34,29 @@ import { useImagePipeline } from "@/labs/ascii/image/useImagePipeline";
 import { LabInteractiveCursorToggle } from "@/labs/ascii/LabInteractiveCursorToggle";
 import { LabMobileHeader } from "@/labs/ascii/LabMobileHeader";
 import { LabViewport } from "@/labs/ascii/LabViewport";
+import { PlaygroundPanel } from "@/labs/ascii/playground/PlaygroundPanel";
 import { applyPreset } from "@/labs/ascii/Presets";
+import { StatsPanel } from "@/labs/ascii/stats/StatsPanel";
 import { getScenarioSource } from "@/labs/ascii/test-sources";
+import { ThemesPresetsPanel } from "@/labs/ascii/themes/ThemesPresetsPanel";
 import { DEFAULT_DEBUG_OPTIONS } from "@/labs/ascii/types";
 import { useWorkspaceViewport } from "@/labs/ascii/workspace/useWorkspaceViewport";
 
-type LabTab = "engine" | "image" | "gif";
+type EngineTab = "convert" | "animate" | "playground" | "engine" | "stats" | "studio";
 
-const TABS: { id: LabTab; label: string }[] = [
+const TABS: { id: EngineTab; label: string }[] = [
+  { id: "convert", label: "Convert" },
+  { id: "animate", label: "Animate" },
+  { id: "playground", label: "Playground" },
   { id: "engine", label: "Engine" },
-  { id: "image", label: "Image" },
-  { id: "gif", label: "GIF" },
+  { id: "stats", label: "Stats" },
+  { id: "studio", label: "Studio" },
 ];
 
+/** Shell do produto ASCII Engine (rota /labs/ascii). */
 export function AsciiLab() {
-  const [tab, setTab] = useState<LabTab>("engine");
+  const [tab, setTab] = useState<EngineTab>("convert");
+  const [themeId, setThemeId] = useState<AsciiEngineThemeId>("root-os");
   const [activePreset, setActivePreset] = useState("default");
   const [config, setConfig] = useState<AsciiInteractionConfig>(() => applyPreset("default"));
   const [scenarioId, setScenarioId] = useState("logo");
@@ -51,6 +67,8 @@ export function AsciiLab() {
   const [debug, setDebug] = useState(DEFAULT_DEBUG_OPTIONS);
   const [stats, setStats] = useState<AsciiEngineStats | null>(null);
   const [snapshot, setSnapshot] = useState<AsciiDebugSnapshot | null>(null);
+  const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResult[]>([]);
+  const [benchmarkRunning, setBenchmarkRunning] = useState(false);
 
   const imageWorkspace = useWorkspaceViewport();
   const gifWorkspace = useWorkspaceViewport();
@@ -61,7 +79,7 @@ export function AsciiLab() {
   const [imageOptions, setImageOptions] = useState<ImagePipelineOptions>(DEFAULT_IMAGE_PIPELINE_OPTIONS);
   const [imageCharsetId, setImageCharsetId] = useState("classic");
   const [gifCharsetId, setGifCharsetId] = useState("classic");
-  const [engineSidebarOpen, setEngineSidebarOpen] = useState(false);
+  const [engineSidebarOpen, setEngineSidebarOpen] = useState(true);
 
   const { result: imageResult } = useImagePipeline(imageEl, imageOptions);
   const animation = useAnimationController();
@@ -77,6 +95,10 @@ export function AsciiLab() {
     restart,
     seekFrame,
     stepFrame,
+    duplicateCurrentFrame,
+    insertFrameAtCurrent,
+    removeCurrentFrame,
+    mergeWithNextFrame,
   } = animation;
 
   const source = useMemo(
@@ -84,7 +106,6 @@ export function AsciiLab() {
     [scenarioId, stressMultiplier],
   );
 
-  /** Conversões densas (até ~240×240) precisam de teto maior que o da Hero. */
   const converterConfig = useMemo(
     () =>
       mergeAsciiConfig({
@@ -94,16 +115,33 @@ export function AsciiLab() {
     [config],
   );
 
+  const themeStyle = useMemo(
+    () => themeToLabCssVars(getTheme(themeId)) as React.CSSProperties,
+    [themeId],
+  );
+
+  const statsModel = useMemo(
+    () =>
+      buildStatsPanelModel({
+        engine: stats,
+        matrix: imageResult?.matrix ?? animation.currentFrame?.matrix ?? null,
+        benchmark: imageResult?.benchmark ?? null,
+        charset: imageOptions.charset,
+        frameCount: animation.animation?.frameCount,
+      }),
+    [stats, imageResult, animation.currentFrame, animation.animation, imageOptions.charset],
+  );
+
   const focusMode =
-    (tab === "image" && imageWorkspace.state.focusMode) ||
-    (tab === "gif" && gifWorkspace.state.focusMode);
+    (tab === "convert" && imageWorkspace.state.focusMode) ||
+    (tab === "animate" && gifWorkspace.state.focusMode);
 
   const sidebarOpen =
-    tab === "engine"
-      ? engineSidebarOpen
-      : tab === "image"
-        ? imageWorkspace.state.sidebarOpen
-        : gifWorkspace.state.sidebarOpen;
+    tab === "convert"
+      ? imageWorkspace.state.sidebarOpen
+      : tab === "animate"
+        ? gifWorkspace.state.sidebarOpen
+        : engineSidebarOpen;
 
   const handlePresetChange = useCallback((presetId: string) => {
     setActivePreset(presetId);
@@ -125,9 +163,7 @@ export function AsciiLab() {
   }, []);
 
   const handleImageLoaded = useCallback((img: HTMLImageElement, previewUrl: string) => {
-    if (imagePreviewUrlRef.current) {
-      URL.revokeObjectURL(imagePreviewUrlRef.current);
-    }
+    if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
     imagePreviewUrlRef.current = previewUrl;
     setImagePreviewUrl(previewUrl);
     setImageEl(img);
@@ -140,51 +176,72 @@ export function AsciiLab() {
   const handleImageCharsetChange = useCallback((id: string) => {
     setImageCharsetId(id);
     const charset = IMAGE_CHARSETS[id];
-    if (charset) {
-      setImageOptions((prev) => mergePipelineOptions(prev, { charset }));
-    }
+    if (charset) setImageOptions((prev) => mergePipelineOptions(prev, { charset }));
   }, []);
 
   const handleGifCharsetChange = useCallback(
     (id: string) => {
       setGifCharsetId(id);
       const charset = IMAGE_CHARSETS[id];
-      if (charset) {
-        updatePipelineOptions({ charset });
-      }
+      if (charset) updatePipelineOptions({ charset });
     },
     [updatePipelineOptions],
   );
 
+  const applyProductPreset = useCallback(
+    (preset: AsciiEnginePreset) => {
+      if (preset.pipeline) setImageOptions((prev) => mergePipelineOptions(prev, preset.pipeline));
+      if (preset.interaction) setConfig((prev) => mergeAsciiConfig({ ...prev, ...preset.interaction }));
+      if (preset.themeId) setThemeId(preset.themeId as AsciiEngineThemeId);
+      if (preset.workspace) {
+        if (preset.workspace.focusMode) imageWorkspace.toggleFocusMode();
+      }
+    },
+    [imageWorkspace],
+  );
+
+  const runBenchmark = useCallback(async () => {
+    if (!imageEl || benchmarkRunning) return;
+    setBenchmarkRunning(true);
+    try {
+      const results = await runBenchmarkSuite(imageEl, undefined, {
+        width: imageOptions.width,
+      });
+      setBenchmarkResults(results);
+    } finally {
+      setBenchmarkRunning(false);
+    }
+  }, [imageEl, benchmarkRunning, imageOptions.width]);
+
   const toggleSidebar = useCallback(() => {
-    if (tab === "engine") setEngineSidebarOpen((v) => !v);
-    else if (tab === "image") imageWorkspace.toggleSidebar();
-    else if (tab === "gif") gifWorkspace.toggleSidebar();
+    if (tab === "convert") imageWorkspace.toggleSidebar();
+    else if (tab === "animate") gifWorkspace.toggleSidebar();
+    else setEngineSidebarOpen((v) => !v);
   }, [tab, imageWorkspace, gifWorkspace]);
 
   const closeSidebar = useCallback(() => {
-    if (tab === "engine") setEngineSidebarOpen(false);
-    else if (tab === "image") imageWorkspace.closeSidebar();
-    else if (tab === "gif") gifWorkspace.closeSidebar();
+    if (tab === "convert") imageWorkspace.closeSidebar();
+    else if (tab === "animate") gifWorkspace.closeSidebar();
+    else setEngineSidebarOpen(false);
   }, [tab, imageWorkspace, gifWorkspace]);
 
   useEffect(() => {
     return () => {
-      if (imagePreviewUrlRef.current) {
-        URL.revokeObjectURL(imagePreviewUrlRef.current);
-      }
+      if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
     };
   }, []);
 
+  const showDrawerChrome = tab === "convert" || tab === "animate";
+
   const sidebar = (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 border-b border-[var(--ui-border)]">
+      <div className="flex shrink-0 flex-wrap border-b border-[var(--ui-border)]">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`flex-1 cursor-pointer px-2 py-2.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+            className={`min-w-[4.5rem] flex-1 cursor-pointer px-1.5 py-2.5 font-mono text-[9px] uppercase tracking-wider transition-colors ${
               tab === t.id
                 ? "border-b-2 border-[var(--phosphor-primary)] text-[var(--phosphor-primary)]"
                 : "text-[var(--ui-text-dim)] hover:text-[var(--phosphor-dim)]"
@@ -219,7 +276,7 @@ export function AsciiLab() {
           />
         ) : null}
 
-        {tab === "image" ? (
+        {tab === "convert" ? (
           <div className="px-4 py-3">
             <LabInteractiveCursorToggle
               checked={config.enableInteraction !== false}
@@ -239,7 +296,7 @@ export function AsciiLab() {
           </div>
         ) : null}
 
-        {tab === "gif" ? (
+        {tab === "animate" ? (
           <div className="px-4 py-3">
             <LabInteractiveCursorToggle
               checked={config.enableInteraction !== false}
@@ -258,7 +315,37 @@ export function AsciiLab() {
               onAnimationOptionsChange={updateAnimationOptions}
               onCharsetChange={handleGifCharsetChange}
               onImportZip={(file) => void importZip(file)}
+              onDuplicateFrame={duplicateCurrentFrame}
+              onInsertFrame={insertFrameAtCurrent}
+              onRemoveFrame={removeCurrentFrame}
+              onMergeFrame={mergeWithNextFrame}
             />
+          </div>
+        ) : null}
+
+        {tab === "stats" ? (
+          <StatsPanel
+            model={statsModel}
+            benchmarkResults={benchmarkResults}
+            onRunBenchmark={imageEl ? () => void runBenchmark() : undefined}
+            benchmarkRunning={benchmarkRunning}
+          />
+        ) : null}
+
+        {tab === "studio" ? (
+          <ThemesPresetsPanel
+            themeId={themeId}
+            onThemeChange={setThemeId}
+            pipeline={imageOptions}
+            interaction={config}
+            workspace={imageWorkspace.state}
+            onApplyPreset={applyProductPreset}
+          />
+        ) : null}
+
+        {tab === "playground" ? (
+          <div className="px-4 py-3 font-mono text-[10px] text-[var(--ui-text-dim)]">
+            Selecione um efeito no painel principal. Playground é independente da conversão.
           </div>
         ) : null}
       </div>
@@ -266,12 +353,13 @@ export function AsciiLab() {
   );
 
   return (
-    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[var(--bg-void)] text-[var(--phosphor-primary)]">
+    <div
+      className="flex h-dvh w-full flex-col overflow-hidden bg-[var(--bg-void)] text-[var(--phosphor-primary)]"
+      style={themeStyle}
+    >
       <LabMobileHeader
-        title={
-          tab === "engine" ? "ASCII Lab · Engine" : tab === "image" ? "ASCII Lab · Image" : "ASCII Lab · GIF"
-        }
-        sidebarOpen={sidebarOpen}
+        title={`ASCII Engine · ${TABS.find((t) => t.id === tab)?.label ?? ""}`}
+        sidebarOpen={showDrawerChrome ? sidebarOpen : engineSidebarOpen}
         onToggleSidebar={toggleSidebar}
       />
 
@@ -280,17 +368,21 @@ export function AsciiLab() {
           <div
             className={[
               "z-40 flex w-[min(100%,360px)] shrink-0 flex-col border-r border-[var(--ui-border)] bg-[var(--bg-panel)]",
-              "max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:shadow-2xl",
-              sidebarOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full",
-              "max-md:transition-transform",
-              "md:relative md:translate-x-0",
+              showDrawerChrome
+                ? [
+                    "max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:shadow-2xl",
+                    sidebarOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full",
+                    "max-md:transition-transform",
+                    "md:relative md:translate-x-0",
+                  ].join(" ")
+                : "relative",
             ].join(" ")}
           >
             {sidebar}
           </div>
         ) : null}
 
-        {sidebarOpen && !focusMode ? (
+        {showDrawerChrome && sidebarOpen && !focusMode ? (
           <button
             type="button"
             aria-label="Fechar painel"
@@ -322,7 +414,7 @@ export function AsciiLab() {
             )
           ) : null}
 
-          {tab === "image" ? (
+          {tab === "convert" ? (
             imageResult ? (
               <ImageResultView
                 workspace={imageWorkspace}
@@ -343,7 +435,7 @@ export function AsciiLab() {
             )
           ) : null}
 
-          {tab === "gif" ? (
+          {tab === "animate" ? (
             animation.animation || animation.isConverting || animation.decoded ? (
               <AnimationResultView
                 workspace={gifWorkspace}
@@ -367,6 +459,12 @@ export function AsciiLab() {
             ) : (
               <EmptyCanvas message="Carregue um GIF ou importe um .ascii.zip" />
             )
+          ) : null}
+
+          {tab === "playground" ? <PlaygroundPanel config={converterConfig} /> : null}
+
+          {tab === "stats" || tab === "studio" ? (
+            <EmptyCanvas message="Use o painel lateral para Stats, Themes e Presets." />
           ) : null}
         </main>
       </div>

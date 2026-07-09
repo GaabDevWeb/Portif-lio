@@ -9,7 +9,7 @@ interface LabMobileHeaderProps {
 }
 
 export function LabMobileHeader({
-  title = "ASCII Lab",
+  title = "ASCII Engine",
   sidebarOpen,
   onToggleSidebar,
 }: LabMobileHeaderProps) {

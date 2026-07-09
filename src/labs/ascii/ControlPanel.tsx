@@ -124,10 +124,10 @@ export function ControlPanel({
       {showHeader ? (
         <header className="border-b border-[var(--ui-border)] px-4 py-3">
           <h1 className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--phosphor-primary)]">
-            ASCII Lab
+            ASCII Engine
           </h1>
           <p className="mt-1 text-[9px] leading-relaxed text-[var(--ui-text-dim)]">
-            Laboratório isolado · engine compartilhada
+            Produto modular · engine compartilhada
           </p>
         </header>
       ) : null}
