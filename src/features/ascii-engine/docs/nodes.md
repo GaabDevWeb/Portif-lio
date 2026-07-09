@@ -1,6 +1,7 @@
-# Nodes (P6)
+# Nodes (P6 + P7)
 
-Headless node graph — PLATFORM §3.13. UI do editor fica para P7.
+Headless node graph — PLATFORM §3.13.  
+**P7:** UI mínima em Studio (`labs/ascii/studio/NodeGraphPanel.tsx`) — lista/dropdowns, Run, Save via `projectDoc.setNodeGraph`.
 
 ## API
 

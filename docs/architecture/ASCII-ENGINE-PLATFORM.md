@@ -65,7 +65,7 @@ flowchart TB
 | Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Heatmap luminância (P11) |
 | EditorDocument + tool stubs | `ascii-engine/editor` | Histórico real; tools não pintam |
 | Animator ops | duplicate/insert/remove/merge + keyframes/onion (P4) | OK |
-| Node graph | `ascii-engine/nodes` NodeGraphRunner + 16 built-ins (P6) | Headless OK; UI = P7 |
+| Node graph | `ascii-engine/nodes` + Studio `NodeGraphPanel` (P6/P7) | Headless + UI mínima OK |
 | Playground | 10 ready (matrix/ripple/smoke/gravity/fire/wind/particles/explosion/water/noise) + stubs tornado/cloth | Via `emitField` |
 
 ### 1.2 Duplicações
@@ -93,7 +93,7 @@ flowchart TB
 
 ### 1.5 Lacunas vs visão plataforma
 
-Video/webcam/PDF/screen reais · tools de edição que mutam células · node editor UI (P7; runner P6 OK) · plugin runtime (P9 OK) · AI providers reais (stubs P11 OK) · CLI binário (P10: convert/info/benchmark) · infinite canvas · masks/blend · GPU stats.
+Video/webcam/PDF/screen reais · tools de edição que mutam células · node canvas rico (P7 UI mínima OK) · plugin runtime (P9 OK) · AI providers reais (stubs P11 OK) · CLI binário (P10: convert/info/benchmark) · infinite canvas · masks/blend · GPU stats.
 
 ### 1.6 Decisão de migração
 
@@ -294,7 +294,7 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 **Grafo:** DAG; validação de tipos de porta (`ImageBuffer|RgbaFrame[]|AsciiMatrix|AsciiAnimation|Blob`).  
 **Serialização:** dentro do ProjectDocument.  
 **Execução:** `NodeGraphRunner` reutiliza image-pipeline steps (já desacoplados em processor). **P6:** headless runner + 16 built-ins + DAG validation/memo.  
-**UI:** canvas de nodes na tab Studio (P7); headless runner primeiro.
+**UI:** editor mínimo na tab Studio (`NodeGraphPanel` — lista/dropdowns, Run, Save; P7). Canvas rico = futuro.
 
 ### 3.14 Plugin System
 

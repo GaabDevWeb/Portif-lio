@@ -42,6 +42,8 @@ import { StatsPanel } from "@/labs/ascii/stats/StatsPanel";
 import { getScenarioSource } from "@/labs/ascii/test-sources";
 import { ThemesPresetsPanel } from "@/labs/ascii/themes/ThemesPresetsPanel";
 import { EditorToolsPanel } from "@/labs/ascii/studio/EditorToolsPanel";
+import { NodeGraphPanel } from "@/labs/ascii/studio/NodeGraphPanel";
+import { NodeGraphSidebarHint } from "@/labs/ascii/studio/NodeGraphSidebarHint";
 import { PluginsPanel } from "@/labs/ascii/studio/PluginsPanel";
 import { ProjectPanel } from "@/labs/ascii/studio/ProjectPanel";
 import { DEFAULT_DEBUG_OPTIONS } from "@/labs/ascii/types";
@@ -353,6 +355,7 @@ export function AsciiLab() {
                 }
               }}
             />
+            <NodeGraphSidebarHint document={projectDoc} />
             <EditorToolsPanel
               document={projectDoc.editor}
               onChange={() => setEditorTick((n) => n + 1)}
@@ -493,8 +496,15 @@ export function AsciiLab() {
 
           {tab === "playground" ? <PlaygroundPanel config={converterConfig} /> : null}
 
-          {tab === "stats" || tab === "studio" ? (
+          {tab === "stats" ? (
             <EmptyCanvas message="Use o painel lateral para Stats, Themes e Presets." />
+          ) : null}
+
+          {tab === "studio" ? (
+            <NodeGraphPanel
+              document={projectDoc}
+              onDocumentChange={() => setEditorTick((n) => n + 1)}
+            />
           ) : null}
         </main>
       </div>
