@@ -263,4 +263,137 @@ export class CharacterGrid {
     }
     this.clearActive();
   }
+
+  /**
+   * Reutiliza buffers typed quando cols/rows/count coincidem.
+   * Matrizes sparse com count diferente → false (caller deve setSource).
+   */
+  canPatchFrom(source: AsciiGridSource): boolean {
+    if (isAsciiMatrix(source)) {
+      return (
+        source.cols === this.cols &&
+        source.rows === this.rows &&
+        source.cells.length === this.count
+      );
+    }
+    const parsed = parseAsciiSource(source, 1);
+    return (
+      parsed.cols === this.cols &&
+      parsed.rows === this.rows &&
+      parsed.cells.length === this.count
+    );
+  }
+
+  /** Patch in-place a partir de AsciiMatrix — false se dims/count não batem. */
+  patchFromMatrix(matrix: AsciiMatrix, config: AsciiInteractionConfig): boolean {
+    if (
+      matrix.cols !== this.cols ||
+      matrix.rows !== this.rows ||
+      matrix.cells.length !== this.count
+    ) {
+      return false;
+    }
+
+    const n = this.count;
+    const hasColors = this.cellColorR != null;
+
+    for (let i = 0; i < n; i += 1) {
+      const cell = matrix.cells[i]!;
+      const gx = cell.col * this.cellWidth + this.cellWidth * 0.5;
+      const gy = cell.row * this.cellHeight + this.cellHeight * 0.5;
+
+      this.originX[i] = gx;
+      this.originY[i] = gy;
+      this.gridCol[i] = cell.col;
+      this.gridRow[i] = cell.row;
+      this.layer[i] = charToLayer(cell.char, config.layerCount);
+
+      const density = cell.luminance;
+      this.intensity[i] = density;
+      this.baseIntensity[i] = density;
+      const baseAlpha = 0.35 + density * 0.55;
+      this.alpha[i] = baseAlpha;
+      this.baseAlpha[i] = baseAlpha;
+
+      if (hasColors) {
+        this.cellColorR![i] = cell.r / 255;
+        this.cellColorG![i] = cell.g / 255;
+        this.cellColorB![i] = cell.b / 255;
+      }
+
+      const baseIdx = glyphIndexForChar(cell.char, config.characterSet);
+      this.baseGlyphIndex[i] = baseIdx;
+      this.glyphIndex[i] = baseIdx;
+
+      this.offsetX[i] = 0;
+      this.offsetY[i] = 0;
+      this.velX[i] = 0;
+      this.velY[i] = 0;
+      this.accelX[i] = 0;
+      this.accelY[i] = 0;
+      this.energy[i] = 0;
+      this.peakEnergy[i] = 0;
+      this.trailEnergy[i] = 0;
+      this.restorationMs[i] = config.restorationMinMs;
+      this.markDirty(i);
+    }
+
+    this.clearActive();
+    return true;
+  }
+
+  /** Patch in-place a partir de string ou matriz — false se dims/count não batem. */
+  patchFromSource(source: AsciiGridSource, config: AsciiInteractionConfig): boolean {
+    if (isAsciiMatrix(source)) {
+      return this.patchFromMatrix(source, config);
+    }
+
+    const parsed = parseAsciiSource(source, config.layerCount);
+    if (
+      parsed.cols !== this.cols ||
+      parsed.rows !== this.rows ||
+      parsed.cells.length !== this.count
+    ) {
+      return false;
+    }
+
+    const n = this.count;
+    for (let i = 0; i < n; i += 1) {
+      const cell = parsed.cells[i]!;
+      const gx = cell.col * this.cellWidth + this.cellWidth * 0.5;
+      const gy = cell.row * this.cellHeight + this.cellHeight * 0.5;
+
+      this.originX[i] = gx;
+      this.originY[i] = gy;
+      this.gridCol[i] = cell.col;
+      this.gridRow[i] = cell.row;
+      this.layer[i] = cell.layer;
+
+      const density = cell.baseDensity;
+      this.intensity[i] = density;
+      this.baseIntensity[i] = density;
+      const baseAlpha = 0.35 + density * 0.55;
+      this.alpha[i] = baseAlpha;
+      this.baseAlpha[i] = baseAlpha;
+
+      const baseIdx = glyphIndexForChar(cell.char, config.characterSet);
+      this.baseGlyphIndex[i] = baseIdx;
+      this.glyphIndex[i] = baseIdx;
+
+      this.offsetX[i] = 0;
+      this.offsetY[i] = 0;
+      this.velX[i] = 0;
+      this.velY[i] = 0;
+      this.accelX[i] = 0;
+      this.accelY[i] = 0;
+      this.energy[i] = 0;
+      this.peakEnergy[i] = 0;
+      this.trailEnergy[i] = 0;
+      this.restorationMs[i] = config.restorationMinMs;
+      this.markDirty(i);
+    }
+
+    this.clearActive();
+    return true;
+  }
 }

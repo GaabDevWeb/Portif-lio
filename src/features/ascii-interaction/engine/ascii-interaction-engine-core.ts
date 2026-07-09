@@ -102,6 +102,27 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
     this.renderer.requestFullRedraw();
   }
 
+  /**
+   * Atualiza glifos reutilizando buffers quando cols/rows/count batem.
+   * Sparse com count diferente → fallback para `setSource`.
+   * @returns true se fez patch in-place; false se reconstruiu via setSource.
+   */
+  patchSource(source: AsciiGridSource): boolean {
+    if (this.destroyed) return false;
+
+    if (this.grid.canPatchFrom(source) && this.grid.patchFromSource(source, this.config)) {
+      this.evolution.syncAllHome(this.grid);
+      if (this.width > 0 && this.height > 0) {
+        this.grid.centerIn(this.width, this.height);
+      }
+      this.renderer.requestFullRedraw();
+      return true;
+    }
+
+    this.setSource(source);
+    return false;
+  }
+
   mount(canvas: HTMLCanvasElement, reducedMotion: boolean): void {
     this.canvas = canvas;
     this.reducedMotion = reducedMotion;

@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { ImagePipelineOptions, PipelineResult } from "@/features/ascii-interaction/image-pipeline";
-import { runImagePipeline } from "@/features/ascii-interaction/image-pipeline";
+import { runImagePipelineAsync } from "@/features/ascii-interaction/image-pipeline";
 
 /**
- * Conversão de imagem com yield ao main thread (cancelável).
- * Worker dedicado de imagem fica preparado via animation-pipeline path para RGBA;
- * HTMLImageElement ainda requer decode no main antes do processador.
+ * Conversão de imagem async via image worker (sample no main → RGBA→matrix no worker).
+ * Fallback automático para `runImagePipeline` sync se Worker indisponível.
  */
 export function useImagePipeline(
   image: HTMLImageElement | null,
@@ -30,25 +29,28 @@ export function useImagePipeline(
     }
 
     const generation = ++genRef.current;
-    let cancelled = false;
+    const signal = { cancelled: false };
     setIsProcessing(true);
 
-    const timer = window.setTimeout(() => {
-      try {
-        const pipelineResult = runImagePipeline(image, optionsRef.current);
-        if (!cancelled && generation === genRef.current) {
+    void runImagePipelineAsync(image, optionsRef.current, signal)
+      .then((pipelineResult) => {
+        if (!signal.cancelled && generation === genRef.current) {
           setResult(pipelineResult);
         }
-      } finally {
-        if (!cancelled && generation === genRef.current) {
+      })
+      .catch((err) => {
+        if (signal.cancelled) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("useImagePipeline:", err);
+      })
+      .finally(() => {
+        if (!signal.cancelled && generation === genRef.current) {
           setIsProcessing(false);
         }
-      }
-    }, 0);
+      });
 
     return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
+      signal.cancelled = true;
     };
   }, [image, options]);
 

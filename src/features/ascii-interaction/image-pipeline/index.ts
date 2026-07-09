@@ -68,3 +68,9 @@ export {
 export { runRgbaPipeline, sampleRgba, resolveOutputSizeFromDimensions } from "@/features/ascii-interaction/image-pipeline/rgba-processor";
 
 export { mergePipelineOptions, runImagePipeline } from "@/features/ascii-interaction/image-pipeline/pipeline";
+
+export {
+  runImagePipelineAsync,
+  sampleImagePixels,
+  destroyImageWorker,
+} from "@/features/ascii-interaction/image-pipeline/workers/image-worker-client";

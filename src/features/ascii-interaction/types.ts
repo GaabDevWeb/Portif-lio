@@ -159,6 +159,11 @@ export interface AsciiInteractionEngineHandle {
   updateConfig: (partial: Partial<AsciiInteractionConfig>) => void;
   /** Troca a fonte ASCII (string ou matriz) sem desmontar o canvas. */
   setSource: (source: import("@/features/ascii-interaction/grid/character-grid").AsciiGridSource) => void;
+  /**
+   * Preferir quando dims/count estáveis (ex.: frames GIF).
+   * Retorna true se fez patch in-place; false se caiu em setSource.
+   */
+  patchSource: (source: import("@/features/ascii-interaction/grid/character-grid").AsciiGridSource) => boolean;
   getStats: () => AsciiEngineStats;
   getDebugSnapshot: (maxCells?: number) => AsciiDebugSnapshot;
   destroy: () => void;

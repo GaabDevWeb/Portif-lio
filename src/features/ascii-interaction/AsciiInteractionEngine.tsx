@@ -88,6 +88,9 @@ export const AsciiInteractionEngine = forwardRef<
     setSource: (next) => {
       engineRef.current?.setSource(next);
     },
+    patchSource: (next) => {
+      return engineRef.current?.patchSource(next) ?? false;
+    },
     getStats: () =>
       engineRef.current?.getStats() ?? {
         fps: 0,
@@ -151,7 +154,7 @@ export const AsciiInteractionEngine = forwardRef<
       const parent = canvas.parentElement;
       if (parent) ro.observe(parent);
     } else {
-      engine.setSource(asciiSource);
+      engine.patchSource(asciiSource);
     }
     // reducedMotion aplicado via setReducedMotion; mount inicial usa valor atual
     // eslint-disable-next-line react-hooks/exhaustive-deps
