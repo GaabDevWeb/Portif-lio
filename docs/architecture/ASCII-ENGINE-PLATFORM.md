@@ -92,7 +92,7 @@ flowchart TB
 
 ### 1.5 Lacunas vs visão plataforma
 
-Video/webcam/PDF/screen reais · tools de edição que mutam células · node editor UI (P7; runner P6 OK) · plugin runtime (P9 OK) · AI adapters · CLI binário · infinite canvas · masks/blend · GPU stats.
+Video/webcam/PDF/screen reais · tools de edição que mutam células · node editor UI (P7; runner P6 OK) · plugin runtime (P9 OK) · AI adapters · CLI binário (P10: convert/info/benchmark) · infinite canvas · masks/blend · GPU stats.
 
 ### 1.6 Decisão de migração
 

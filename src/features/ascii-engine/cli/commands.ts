@@ -1,31 +1,31 @@
 /**
- * CLI stubs — estrutura preparada para binário futuro.
- * Comandos planeados (não executáveis nesta branch):
+ * CLI commands — P10: convert | info | benchmark executáveis em Node.
+ * export | play | analyze | serve permanecem stubs até fases futuras.
  *
- *   ascii-engine convert <input> -o <output>
- *   ascii-engine export <project> --format gif|zip|txt
- *   ascii-engine play <animation.ascii.zip>
- *   ascii-engine benchmark <image> [--cases ...]
- *   ascii-engine info
+ *   npm run ascii-engine -- info
+ *   npm run ascii-engine -- benchmark [--width 80]
+ *   npm run ascii-engine -- convert <input> -o <output> [--width 80]
  */
+
+export type CliCommandStatus = "ready" | "stub";
 
 export interface CliCommandStub {
   name: string;
   synopsis: string;
-  status: "stub";
+  status: CliCommandStatus;
   description: string;
 }
 
 export const ASCII_ENGINE_CLI_COMMANDS: CliCommandStub[] = [
   {
     name: "convert",
-    synopsis: "ascii-engine convert <input> -o <output> [--width 120]",
-    status: "stub",
-    description: "Converte imagem/GIF para ASCII (TXT/JSON/ZIP).",
+    synopsis: "ascii-engine convert <input> -o <output> [--width 80]",
+    status: "ready",
+    description: "Converte GIF/TXT/JSON (matrix|animation|project) → TXT/JSON. PNG/JPEG: browser-only.",
   },
   {
     name: "export",
-    synopsis: "ascii-engine export <project> --format gif|zip|txt|png",
+    synopsis: "ascii-engine export <project> --format gif|zip|txt",
     status: "stub",
     description: "Exporta projeto/animação no formato pedido.",
   },
@@ -37,14 +37,26 @@ export const ASCII_ENGINE_CLI_COMMANDS: CliCommandStub[] = [
   },
   {
     name: "benchmark",
-    synopsis: "ascii-engine benchmark <image> [--width 80]",
+    synopsis: "ascii-engine benchmark [--width 80]",
+    status: "ready",
+    description: "Suite RGBA sintética (Node) — tabela ms/cols/rows.",
+  },
+  {
+    name: "analyze",
+    synopsis: "ascii-engine analyze <input>",
     status: "stub",
-    description: "Compara algoritmos/charsets e imprime tabela.",
+    description: "Stats/histogram (futuro).",
   },
   {
     name: "info",
     synopsis: "ascii-engine info",
+    status: "ready",
+    description: "Mostra versão, converters, exporters e plugins.",
+  },
+  {
+    name: "serve",
+    synopsis: "ascii-engine serve",
     status: "stub",
-    description: "Mostra versão, converters e exporters disponíveis.",
+    description: "HTTP mínimo preview (futuro).",
   },
 ];
