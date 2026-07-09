@@ -2,7 +2,9 @@
 
 > **Baseline:** ASCII Engine V2.1 (Image/GIF pipelines, workspace, exports).  
 > **Objetivo:** produto modular extraível do ROOT OS (`import { AsciiEngine }`).  
-> **Branch:** `ascii-engine-next` (não mergear para `main` nesta fase).
+> **Branch:** `ascii-engine-next` (não mergear para `main` nesta fase).  
+> **Roadmap de produto:** superseded by [`ASCII-ENGINE-PLATFORM.md`](./ASCII-ENGINE-PLATFORM.md) (SSOT Platform 3.0.0). Este documento permanece válido como baseline da fachada Next; decisões de plataforma, `ProjectDocument`, nodes, plugins e fases P0–P12 vivem no PLATFORM SSOT.  
+> **Prompt do executor:** [`ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md`](./ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md).
 
 ---
 
