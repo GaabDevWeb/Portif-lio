@@ -55,6 +55,7 @@ export const DEFAULT_ASCII_INTERACTION_CONFIG: AsciiInteractionConfig = {
   enableTrail: true,
   enableEvolution: true,
   enablePhysics: true,
+  enableInteraction: true,
 
   breakpoints: {
     tablet: {

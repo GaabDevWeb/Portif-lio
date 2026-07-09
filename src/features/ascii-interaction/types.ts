@@ -103,6 +103,8 @@ export interface AsciiInteractionConfig {
   enableTrail: boolean;
   enableEvolution: boolean;
   enablePhysics: boolean;
+  /** Quando false, desativa mouse/física/trail/evolução — arte estática. */
+  enableInteraction: boolean;
 
   breakpoints: {
     mobile: Partial<AsciiInteractionConfig>;
@@ -110,12 +112,18 @@ export interface AsciiInteractionConfig {
   };
 }
 
+<<<<<<< Updated upstream
 /** Métricas de runtime para debug e laboratório. */
 export interface AsciiEngineStats {
+=======
+/** Métricas de runtime para laboratório e profiling. */
+export interface AsciiInteractionDebugMetrics {
+>>>>>>> Stashed changes
   fps: number;
   frameTimeMs: number;
   renderTimeMs: number;
   characterCount: number;
+<<<<<<< Updated upstream
   activeCharacterCount: number;
   dirtyCount: number;
   cursorX: number;
@@ -138,6 +146,15 @@ export interface AsciiDebugSnapshot {
   layoutOffsetX: number;
   layoutOffsetY: number;
   activeCells: readonly { x: number; y: number; vx: number; vy: number }[];
+=======
+  activeCells: number;
+  activeFields: number;
+  cursorX: number;
+  cursorY: number;
+  cursorRadius: number;
+  influenceArea: number;
+  memoryMb: number | null;
+>>>>>>> Stashed changes
 }
 
 /** Handle imperativo exposto pelo componente React. */

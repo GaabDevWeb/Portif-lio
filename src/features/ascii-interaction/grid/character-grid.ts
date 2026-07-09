@@ -3,7 +3,15 @@ import {
   glyphIndexForChar,
   parseAsciiSource,
 } from "@/features/ascii-interaction/grid/ascii-source";
+import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import type { AsciiInteractionConfig } from "@/features/ascii-interaction/types";
+import { charBaseDensity, charToLayer } from "@/features/ascii-interaction/utils/math";
+
+export type AsciiGridSource = string | AsciiMatrix;
+
+function isAsciiMatrix(source: AsciiGridSource): source is AsciiMatrix {
+  return typeof source === "object" && source !== null && "cells" in source;
+}
 
 /** Grade de caracteres com estado contíguo em typed arrays (zero GC por frame). */
 export class CharacterGrid {
@@ -53,9 +61,34 @@ export class CharacterGrid {
   readonly cellWidth: number;
   readonly cellHeight: number;
 
-  constructor(source: string, config: AsciiInteractionConfig) {
+  /** Cores por célula (pipeline de imagem); opcional. */
+  readonly cellColorR: Float32Array | null;
+  readonly cellColorG: Float32Array | null;
+  readonly cellColorB: Float32Array | null;
+
+  constructor(source: AsciiGridSource, config: AsciiInteractionConfig) {
     this.characterSet = config.characterSet;
-    const parsed = parseAsciiSource(source, config.layerCount);
+
+    const parsed = isAsciiMatrix(source)
+      ? {
+          cols: source.cols,
+          rows: source.rows,
+          cells: source.cells.map((cell) => ({
+            char: cell.char,
+            col: cell.col,
+            row: cell.row,
+            baseDensity: cell.luminance,
+            layer: charToLayer(cell.char, config.layerCount),
+            r: cell.r / 255,
+            g: cell.g / 255,
+            b: cell.b / 255,
+          })),
+          hasColors: true,
+        }
+      : {
+          ...parseAsciiSource(source, config.layerCount),
+          hasColors: false,
+        };
 
     if (parsed.cells.length > config.maxCharacters) {
       throw new Error(
@@ -96,13 +129,32 @@ export class CharacterGrid {
     this.activeIndices = new Uint32Array(Math.min(n, config.maxActiveCells));
     this.dirtyIndices = new Uint32Array(n);
 
+    if (parsed.hasColors) {
+      this.cellColorR = new Float32Array(n);
+      this.cellColorG = new Float32Array(n);
+      this.cellColorB = new Float32Array(n);
+    } else {
+      this.cellColorR = null;
+      this.cellColorG = null;
+      this.cellColorB = null;
+    }
+
     this.cellWidth = config.cellWidth;
     this.cellHeight = config.cellHeight;
     this.layoutWidth = parsed.cols * this.cellWidth;
     this.layoutHeight = parsed.rows * this.cellHeight;
 
     for (let i = 0; i < n; i += 1) {
-      const cell = parsed.cells[i]!;
+      const cell = parsed.cells[i]! as {
+        char: string;
+        col: number;
+        row: number;
+        baseDensity: number;
+        layer: number;
+        r?: number;
+        g?: number;
+        b?: number;
+      };
       const gx = cell.col * this.cellWidth + this.cellWidth * 0.5;
       const gy = cell.row * this.cellHeight + this.cellHeight * 0.5;
 
@@ -111,14 +163,21 @@ export class CharacterGrid {
       this.gridCol[i] = cell.col;
       this.gridRow[i] = cell.row;
       this.layer[i] = cell.layer;
-      this.intensity[i] = cell.baseDensity;
-      this.baseIntensity[i] = cell.baseDensity;
-      const baseAlpha = 0.35 + cell.baseDensity * 0.55;
+      const density = cell.baseDensity ?? charBaseDensity(cell.char);
+      this.intensity[i] = density;
+      this.baseIntensity[i] = density;
+      const baseAlpha = 0.35 + density * 0.55;
       this.alpha[i] = baseAlpha;
       this.baseAlpha[i] = baseAlpha;
       this.energy[i] = 0;
       this.peakEnergy[i] = 0;
       this.restorationMs[i] = config.restorationMinMs;
+
+      if (this.cellColorR && cell.r != null) {
+        this.cellColorR[i] = cell.r;
+        this.cellColorG![i] = cell.g ?? cell.r;
+        this.cellColorB![i] = cell.b ?? cell.r;
+      }
 
       const baseIdx = glyphIndexForChar(cell.char, config.characterSet);
       this.baseGlyphIndex[i] = baseIdx;
@@ -184,5 +243,24 @@ export class CharacterGrid {
 
   getPosY(index: number): number {
     return this.originY[index]! + this.offsetY[index]!;
+  }
+
+  /** Zera movimento e restaura glifos base — modo estático. */
+  settleMotion(): void {
+    for (let i = 0; i < this.count; i += 1) {
+      this.offsetX[i] = 0;
+      this.offsetY[i] = 0;
+      this.velX[i] = 0;
+      this.velY[i] = 0;
+      this.accelX[i] = 0;
+      this.accelY[i] = 0;
+      this.energy[i] = 0;
+      this.peakEnergy[i] = 0;
+      this.trailEnergy[i] = 0;
+      this.glyphIndex[i] = this.baseGlyphIndex[i]!;
+      this.intensity[i] = this.baseIntensity[i]!;
+      this.markDirty(i);
+    }
+    this.clearActive();
   }
 }

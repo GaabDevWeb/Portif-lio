@@ -119,7 +119,19 @@ export class CanvasRenderer implements AsciiRenderer {
     const alpha = grid.alpha[index]! * opacity;
     const intensity = grid.intensity[index]!;
 
-    const color = intensity > 0.55 ? this.accent : intensity > 0.3 ? this.primary : this.dim;
+    let color: string;
+    if (
+      grid.cellColorR &&
+      grid.cellColorG &&
+      grid.cellColorB
+    ) {
+      const cr = Math.round(grid.cellColorR[index]! * 255);
+      const cg = Math.round(grid.cellColorG[index]! * 255);
+      const cb = Math.round(grid.cellColorB[index]! * 255);
+      color = `rgb(${cr},${cg},${cb})`;
+    } else {
+      color = intensity > 0.55 ? this.accent : intensity > 0.3 ? this.primary : this.dim;
+    }
     const drawX = x - rect.w * 0.5;
     const drawY = y - rect.h * 0.5;
 

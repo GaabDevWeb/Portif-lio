@@ -2,12 +2,14 @@ import type {
   AsciiDebugSnapshot,
   AsciiEngineStats,
   AsciiInteractionConfig,
+  AsciiInteractionDebugMetrics,
   EmitFieldInput,
   Influencer,
   InfluencerSurface,
 } from "@/features/ascii-interaction/types";
 import { SurfaceState } from "@/features/ascii-interaction/types";
 import { mergeAsciiConfig } from "@/features/ascii-interaction/config";
+import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import { CharacterGrid } from "@/features/ascii-interaction/grid/character-grid";
 import { InfluenceLayer } from "@/features/ascii-interaction/influence/influence-layer";
 import { TrailField } from "@/features/ascii-interaction/influence/trail-field";
@@ -47,14 +49,21 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
   private height = 0;
   private destroyed = false;
 
+<<<<<<< Updated upstream
   private lastFrameNow = 0;
   private frameTimeMs = 0;
   private renderTimeMs = 0;
   private fpsSmoothed = 60;
+=======
+  private lastFrameMs = 0;
+  private lastRenderMs = 0;
+  private fpsSmoothed = 0;
+  private frameTimeSmoothed = 0;
+>>>>>>> Stashed changes
 
   private readonly forceSamples: { fx: number; fy: number; intensity: number }[] = [];
 
-  constructor(source: string, configPartial?: Partial<AsciiInteractionConfig>) {
+  constructor(source: string | AsciiMatrix, configPartial?: Partial<AsciiInteractionConfig>) {
     this.baseConfig = mergeAsciiConfig(configPartial);
     this.config = { ...this.baseConfig };
     this.grid = new CharacterGrid(source, this.config);
@@ -108,13 +117,80 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
   }
 
   updateConfig(partial: Partial<AsciiInteractionConfig>): void {
+    const visualKeys: (keyof AsciiInteractionConfig)[] = [
+      "characterSet",
+      "fontFamily",
+      "fontSize",
+      "cellWidth",
+      "cellHeight",
+      "colorPrimary",
+      "colorDim",
+      "colorAccent",
+      "opacity",
+    ];
+    const needsRenderer = Object.keys(partial).some((key) =>
+      visualKeys.includes(key as keyof AsciiInteractionConfig),
+    );
+
+    if (partial.parallax) {
+      this.baseConfig.parallax = [...partial.parallax];
+    }
+
+    const wasInteractive = this.baseConfig.enableInteraction;
     Object.assign(this.baseConfig, partial);
     if (partial.parallax) {
       this.baseConfig.parallax = [...partial.parallax];
     }
     this.applyResponsiveConfig();
+<<<<<<< Updated upstream
     this.renderer.applyConfig(this.config);
     this.renderer.requestFullRedraw();
+=======
+    this.loop.setMaxFPS(this.config.maxFPS);
+
+    if (partial.enableInteraction === false || (wasInteractive && !this.config.enableInteraction)) {
+      this.trail.reset();
+      this.influence.clear();
+      this.grid.settleMotion();
+      this.surface.setState(SurfaceState.Idle);
+      this.renderer.requestFullRedraw();
+    }
+
+    if (needsRenderer && this.ctx) {
+      this.renderer.attach(this.ctx, this.config);
+      this.renderer.setColors(
+        this.config.colorPrimary,
+        this.config.colorDim,
+        this.config.colorAccent,
+      );
+      this.renderer.requestFullRedraw();
+    }
+  }
+
+  getDebugMetrics(): AsciiInteractionDebugMetrics {
+    const cursor = this.mouseInfluencer.getCursor();
+    const radius = this.config.radius;
+    const memory =
+      typeof performance !== "undefined" &&
+      "memory" in performance &&
+      performance.memory
+        ? (performance.memory as { usedJSHeapSize: number }).usedJSHeapSize / (1024 * 1024)
+        : null;
+
+    return {
+      fps: this.fpsSmoothed,
+      frameTimeMs: this.frameTimeSmoothed,
+      renderTimeMs: this.lastRenderMs,
+      characterCount: this.grid.count,
+      activeCells: this.grid.activeCount,
+      activeFields: this.influence.activeFields.length,
+      cursorX: cursor.x,
+      cursorY: cursor.y,
+      cursorRadius: radius,
+      influenceArea: Math.PI * radius * radius,
+      memoryMb: memory,
+    };
+>>>>>>> Stashed changes
   }
 
   private applyResponsiveConfig(): void {
@@ -255,12 +331,36 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
   private onFrame(now: number): void {
     if (this.destroyed) return;
 
+<<<<<<< Updated upstream
     if (this.lastFrameNow > 0) {
       this.frameTimeMs = now - this.lastFrameNow;
       const instantFps = 1000 / Math.max(this.frameTimeMs, 0.001);
       this.fpsSmoothed = this.fpsSmoothed * 0.88 + instantFps * 0.12;
     }
     this.lastFrameNow = now;
+=======
+    const frameStart = performance.now();
+    if (this.lastFrameMs > 0) {
+      const delta = frameStart - this.lastFrameMs;
+      this.frameTimeSmoothed = this.frameTimeSmoothed * 0.9 + delta * 0.1;
+      this.fpsSmoothed = this.fpsSmoothed * 0.9 + (1000 / delta) * 0.1;
+    }
+    this.lastFrameMs = frameStart;
+
+    if (!this.config.enableInteraction) {
+      const renderStart = performance.now();
+      this.renderer.renderFrame({
+        grid: this.grid,
+        dirtyIndices: this.grid.dirtyIndices,
+        dirtyCount: this.grid.dirtyCount,
+        width: this.width,
+        height: this.height,
+        opacity: this.config.opacity,
+      });
+      this.lastRenderMs = performance.now() - renderStart;
+      return;
+    }
+>>>>>>> Stashed changes
 
     const grid = this.grid;
     const cursor = this.mouseInfluencer.getCursor();
@@ -353,7 +453,11 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
       height: this.height,
       opacity: this.config.opacity,
     });
+<<<<<<< Updated upstream
     this.renderTimeMs = performance.now() - renderStart;
+=======
+    this.lastRenderMs = performance.now() - renderStart;
+>>>>>>> Stashed changes
   }
 
   private buildActiveSet(

@@ -6,6 +6,8 @@ export type { AsciiInteractionSurfaceProps } from "@/features/ascii-interaction/
 
 export { AsciiInteractionEngineCore } from "@/features/ascii-interaction/engine/ascii-interaction-engine-core";
 
+export type { AsciiGridSource } from "@/features/ascii-interaction/grid/character-grid";
+
 export {
   DEFAULT_ASCII_INTERACTION_CONFIG,
   HERO_ASCII_INTERACTION_CONFIG,
@@ -14,6 +16,7 @@ export {
 
 export type {
   AsciiInteractionConfig,
+  AsciiInteractionDebugMetrics,
   AsciiInteractionEngineHandle,
   AsciiDebugSnapshot,
   AsciiEngineStats,
@@ -25,3 +28,7 @@ export type {
 export { SurfaceState } from "@/features/ascii-interaction/types";
 
 export { MouseInfluencer } from "@/features/ascii-interaction/influence/influencers/mouse-influencer";
+
+export * from "@/features/ascii-interaction/image-pipeline";
+
+export * from "@/features/ascii-interaction/animation-pipeline";
