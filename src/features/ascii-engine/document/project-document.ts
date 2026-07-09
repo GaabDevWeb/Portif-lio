@@ -7,7 +7,7 @@ import {
   type ProjectMeta,
   type ProjectWorkspaceState,
   type NodeGraphStub,
-  type TimelineDocumentStub,
+  type TimelineDocument,
 } from "@/features/ascii-engine/document/types";
 
 function nowIso(): string {
@@ -18,6 +18,23 @@ function newId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `proj-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Aceita TimelineDocument P4 ou stub legado `{ keyframes: unknown[] }`. */
+function normalizeTimeline(
+  raw: TimelineDocument | (Partial<TimelineDocument> & { keyframes?: unknown[] }) | undefined,
+): TimelineDocument | undefined {
+  if (!raw) return undefined;
+  const tracks = Array.isArray((raw as TimelineDocument).tracks)
+    ? structuredClone((raw as TimelineDocument).tracks)
+    : [];
+  return {
+    fps: typeof raw.fps === "number" ? raw.fps : 15,
+    loop: typeof raw.loop === "boolean" ? raw.loop : true,
+    frameCount: typeof raw.frameCount === "number" ? raw.frameCount : 0,
+    tracks,
+    onionSkin: raw.onionSkin ? structuredClone(raw.onionSkin) : undefined,
+  };
 }
 
 export interface CreateProjectOptions {
@@ -37,7 +54,7 @@ export class ProjectDocument {
   private themeId: string;
   private workspace: ProjectWorkspaceState;
   private assets: ProjectAssetRef[] = [];
-  private timeline: TimelineDocumentStub | undefined;
+  private timeline: TimelineDocument | undefined;
   private nodeGraph: NodeGraphStub | undefined;
   private animation: AsciiAnimation | null = null;
   readonly editor: EditorDocument;
@@ -49,7 +66,7 @@ export class ProjectDocument {
     workspace: ProjectWorkspaceState;
     editor: EditorDocument;
     assets?: ProjectAssetRef[];
-    timeline?: TimelineDocumentStub;
+    timeline?: TimelineDocument;
     nodeGraph?: NodeGraphStub;
     animation?: AsciiAnimation | null;
   }) {
@@ -114,7 +131,7 @@ export class ProjectDocument {
       workspace: { ...DEFAULT_PROJECT_WORKSPACE, ...data.workspace },
       editor,
       assets: structuredClone(data.assets ?? []),
-      timeline: data.timeline ? structuredClone(data.timeline) : undefined,
+      timeline: normalizeTimeline(data.timeline),
       nodeGraph: data.nodeGraph ? structuredClone(data.nodeGraph) : undefined,
       animation: data.animation ? structuredClone(data.animation) : null,
     });
@@ -186,11 +203,11 @@ export class ProjectDocument {
     return asset;
   }
 
-  getTimeline(): TimelineDocumentStub | undefined {
+  getTimeline(): TimelineDocument | undefined {
     return this.timeline ? structuredClone(this.timeline) : undefined;
   }
 
-  setTimeline(timeline: TimelineDocumentStub | undefined): void {
+  setTimeline(timeline: TimelineDocument | undefined): void {
     this.timeline = timeline ? structuredClone(timeline) : undefined;
     this.touch();
   }

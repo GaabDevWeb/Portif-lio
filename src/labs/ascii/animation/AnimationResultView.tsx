@@ -1,19 +1,27 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
 import { LabViewport } from "@/labs/ascii/LabViewport";
 import { AnimationTimeline } from "@/labs/ascii/animation/AnimationTimeline";
 import { WorkspaceView } from "@/labs/ascii/workspace/WorkspaceView";
 import type { WorkspaceViewportApi } from "@/labs/ascii/workspace/useWorkspaceViewport";
 import type {
+  AsciiAnimation,
   AsciiAnimationFrame,
   TimelineState,
 } from "@/features/ascii-interaction/animation-pipeline";
 import type { AsciiInteractionConfig, AsciiEngineStats } from "@/features/ascii-interaction/types";
+import {
+  composeOnionPreview,
+  getOnionSkinLayers,
+} from "@/features/ascii-engine/animator";
 
 interface AnimationResultViewProps {
   workspace: WorkspaceViewportApi;
   previewUrl: string | null;
   currentFrame: AsciiAnimationFrame | null;
+  animation?: AsciiAnimation | null;
   config: AsciiInteractionConfig;
   debugEnabled?: boolean;
   timeline: TimelineState | null;
@@ -34,6 +42,7 @@ export function AnimationResultView({
   workspace,
   previewUrl,
   currentFrame,
+  animation = null,
   config,
   debugEnabled = false,
   timeline,
@@ -49,6 +58,20 @@ export function AnimationResultView({
   onLoopToggle,
   onFpsChange,
 }: AnimationResultViewProps) {
+  const [onionSkinEnabled, setOnionSkinEnabled] = useState(false);
+  const frameIndex = timeline?.currentFrame ?? 0;
+
+  const displayMatrix = useMemo(() => {
+    if (!currentFrame?.matrix) return null;
+    if (!onionSkinEnabled || !animation) return currentFrame.matrix;
+    const { layers } = getOnionSkinLayers(animation, frameIndex, {
+      enabled: true,
+      prevOpacity: 0.35,
+      nextOpacity: 0.25,
+    });
+    return composeOnionPreview(currentFrame.matrix, layers);
+  }, [animation, currentFrame, frameIndex, onionSkinEnabled]);
+
   return (
     <WorkspaceView
       workspace={workspace}
@@ -68,12 +91,14 @@ export function AnimationResultView({
           onLoopToggle={onLoopToggle}
           onFpsChange={onFpsChange}
           loop={loop}
+          onionSkinEnabled={onionSkinEnabled}
+          onOnionSkinToggle={setOnionSkinEnabled}
         />
       }
     >
-      {currentFrame ? (
+      {displayMatrix ? (
         <LabViewport
-          source={currentFrame.matrix}
+          source={displayMatrix}
           config={config}
           debugEnabled={debugEnabled}
           onStats={onStats}

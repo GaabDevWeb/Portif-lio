@@ -24,6 +24,8 @@ interface AnimationTimelineProps {
   onLoopToggle: (loop: boolean) => void;
   onFpsChange: (fps: number) => void;
   loop: boolean;
+  onionSkinEnabled?: boolean;
+  onOnionSkinToggle?: (enabled: boolean) => void;
 }
 
 export function AnimationTimeline({
@@ -38,6 +40,8 @@ export function AnimationTimeline({
   onLoopToggle,
   onFpsChange,
   loop,
+  onionSkinEnabled = false,
+  onOnionSkinToggle,
 }: AnimationTimelineProps) {
   const current = timeline?.currentFrame ?? 0;
   const total = Math.max(1, frameCount);
@@ -106,6 +110,18 @@ export function AnimationTimeline({
           />
           Loop
         </label>
+
+        {onOnionSkinToggle ? (
+          <label className="flex cursor-pointer items-center gap-1.5 font-mono text-[10px] text-[var(--ui-text-dim)]">
+            <input
+              type="checkbox"
+              checked={onionSkinEnabled}
+              onChange={(e) => onOnionSkinToggle(e.target.checked)}
+              className="accent-[var(--phosphor-primary)]"
+            />
+            Onion
+          </label>
+        ) : null}
 
         <label className="flex items-center gap-1 font-mono text-[10px] text-[var(--ui-text-dim)]">
           FPS

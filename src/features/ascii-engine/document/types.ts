@@ -2,6 +2,7 @@ import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/ty
 import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipeline/types";
 import type { AsciiInteractionConfig } from "@/features/ascii-interaction/types";
 import type { EditorLayer, EditorSelection } from "@/features/ascii-engine/editor";
+import type { TimelineDocument } from "@/features/ascii-engine/animator/types";
 
 /** Workspace viewport serializado no projeto (espelha lab WorkspaceState). */
 export interface ProjectWorkspaceState {
@@ -30,13 +31,12 @@ export interface ProjectAssetRef {
   path: string;
 }
 
-/** Placeholder serializável — preenchido em P4/P6. */
-export interface TimelineDocumentStub {
-  fps: number;
-  loop: boolean;
-  frameCount: number;
-  keyframes: unknown[];
-}
+/**
+ * @deprecated Use `TimelineDocument` from animator (P4). Kept as alias for additive compat.
+ */
+export type TimelineDocumentStub = TimelineDocument;
+
+export type { TimelineDocument };
 
 export interface NodeGraphStub {
   version: 1;
@@ -63,7 +63,7 @@ export interface ProjectDocumentData {
   activeLayerId: string;
   selection: EditorSelection | null;
   interactionConfig: Partial<AsciiInteractionConfig>;
-  timeline?: TimelineDocumentStub;
+  timeline?: TimelineDocument;
   nodeGraph?: NodeGraphStub;
   history: HistoryStackStub;
   assets: ProjectAssetRef[];

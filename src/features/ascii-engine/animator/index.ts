@@ -112,3 +112,33 @@ export function createDefaultKeyframes(frameCount: number): AnimationKeyframe[] 
     { frameIndex: frameCount - 1, label: "end", interpolation: "hold" },
   ];
 }
+
+/* —— P4: property tracks, sampling, blend, onion skin —— */
+export type {
+  TrackInterpolation,
+  KeyframePropertyId,
+  PropertyKeyframe,
+  KeyframeTrack,
+  OnionSkinSettings,
+  TimelineDocument,
+} from "./types";
+export { DEFAULT_ONION_SKIN, createEmptyTimeline } from "./types";
+
+export {
+  addKeyframe,
+  removeKeyframe,
+  updateKeyframe,
+  upsertTrack,
+  removeTrack,
+  createTrack,
+  defaultInterpolation,
+} from "./keyframe-ops";
+
+export { sampleTrack, sampleAllTracks } from "./sample-track";
+export { blendMatrices } from "./blend-matrix";
+export {
+  getOnionSkinLayers,
+  type OnionSkinLayer,
+  type OnionSkinResult,
+} from "./onion-skin";
+export { composeOnionPreview } from "./compose-onion";

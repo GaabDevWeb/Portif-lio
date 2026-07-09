@@ -468,6 +468,7 @@ export function AsciiLab() {
                 workspace={gifWorkspace}
                 previewUrl={animation.previewUrl}
                 currentFrame={animation.currentFrame}
+                animation={animation.animation}
                 config={converterConfig}
                 debugEnabled={debug.enabled}
                 timeline={animation.timeline}

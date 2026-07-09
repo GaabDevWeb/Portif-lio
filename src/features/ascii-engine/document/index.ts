@@ -3,6 +3,7 @@ export type {
   ProjectMeta,
   ProjectWorkspaceState,
   ProjectAssetRef,
+  TimelineDocument,
   TimelineDocumentStub,
   NodeGraphStub,
   HistoryStackStub,
