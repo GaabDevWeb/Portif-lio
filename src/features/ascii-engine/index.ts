@@ -22,5 +22,6 @@ export * from "@/features/ascii-engine/stats";
 export * from "@/features/ascii-engine/benchmark";
 export * from "@/features/ascii-engine/exporters";
 export * from "@/features/ascii-engine/importers";
+export * from "@/features/ascii-engine/plugins";
 export { createAsciiEngine, type AsciiEngine } from "@/features/ascii-engine/sdk/create-ascii-engine";
 export { ASCII_ENGINE_CLI_COMMANDS } from "@/features/ascii-engine/cli/commands";

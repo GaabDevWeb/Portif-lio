@@ -59,7 +59,8 @@ flowchart TB
 | Shell tabs Convert/Animate/Playground/Engine/Stats/Studio | `labs/ascii/AsciiLab.tsx` | Next OK |
 | Fachada registries/stubs | `src/features/ascii-engine/*` | Esqueleto produto |
 | Converters | `ascii-engine/converters` | image, gif, **svg ready**; batch stub; video/webcam/… stubs |
-| SDK factory | `sdk/create-ascii-engine.ts` | Mínimo |
+| SDK factory | `sdk/create-ascii-engine.ts` | Mínimo + `plugins` (P9) |
+| PluginHost + charset pack | `ascii-engine/plugins/` | P9 same-origin |
 | Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Parcial |
 | EditorDocument + tool stubs | `ascii-engine/editor` | Histórico real; tools não pintam |
 | Animator ops | duplicate/insert/remove/merge | Sem interpolação |

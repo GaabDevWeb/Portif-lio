@@ -4,6 +4,7 @@ import { PlaygroundRegistry, defaultPlaygroundRegistry } from "@/features/ascii-
 import { PresetStore, defaultPresetStore } from "@/features/ascii-engine/presets";
 import { EXPORTER_CATALOG } from "@/features/ascii-engine/exporters";
 import { IMPORTER_CATALOG } from "@/features/ascii-engine/importers";
+import { PluginHost, defaultPluginHost } from "@/features/ascii-engine/plugins";
 import { ProjectStore, defaultProjectStore } from "@/features/ascii-engine/storage";
 import { ASCII_ENGINE_THEMES, type AsciiEngineThemeId, getTheme } from "@/features/ascii-engine/themes";
 
@@ -14,6 +15,7 @@ export interface AsciiEngineOptions {
   themeId?: AsciiEngineThemeId;
   document?: ProjectDocument;
   storage?: ProjectStore;
+  plugins?: PluginHost;
 }
 
 /**
@@ -30,6 +32,7 @@ export function createAsciiEngine(options: AsciiEngineOptions = {}) {
     ProjectDocument.create({ themeId, name: "Untitled Project" });
   const editor = document.editor;
   const storage = options.storage ?? defaultProjectStore;
+  const plugins = options.plugins ?? defaultPluginHost;
 
   return {
     version: "3.0.0-platform",
@@ -39,9 +42,9 @@ export function createAsciiEngine(options: AsciiEngineOptions = {}) {
     editor,
     document,
     storage,
-    /** Placeholders — preenchidos em P6/P9/P11. */
+    plugins,
+    /** Placeholders — preenchidos em P6/P11. */
     nodes: null,
-    plugins: null,
     ai: null,
     exporters: EXPORTER_CATALOG,
     importers: IMPORTER_CATALOG,
