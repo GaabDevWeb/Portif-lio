@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageIcon, Upload } from "lucide-react";
 
+import { isSvgFile, loadSvgAsImage } from "@/features/ascii-engine/converters";
 import {
   isSupportedImageMime,
   loadImageFromFile,
@@ -11,6 +12,10 @@ import {
 interface ImageUploadZoneProps {
   onImageLoaded: (image: HTMLImageElement, previewUrl: string) => void;
   disabled?: boolean;
+}
+
+function isAcceptedUpload(file: File): boolean {
+  return isSvgFile(file) || isSupportedImageMime(file.type);
 }
 
 export function ImageUploadZone({ onImageLoaded, disabled }: ImageUploadZoneProps) {
@@ -22,6 +27,12 @@ export function ImageUploadZone({ onImageLoaded, disabled }: ImageUploadZoneProp
     async (file: File) => {
       setError(null);
       try {
+        if (isSvgFile(file)) {
+          const img = await loadSvgAsImage(file);
+          const previewUrl = URL.createObjectURL(file);
+          onImageLoaded(img, previewUrl);
+          return;
+        }
         const img = await loadImageFromFile(file);
         const previewUrl = URL.createObjectURL(file);
         onImageLoaded(img, previewUrl);
@@ -52,7 +63,7 @@ export function ImageUploadZone({ onImageLoaded, disabled }: ImageUploadZoneProp
       for (const item of items) {
         if (item.kind !== "file") continue;
         const file = item.getAsFile();
-        if (file && isSupportedImageMime(file.type)) {
+        if (file && isAcceptedUpload(file)) {
           e.preventDefault();
           await handleFile(file);
           return;
@@ -90,7 +101,7 @@ export function ImageUploadZone({ onImageLoaded, disabled }: ImageUploadZoneProp
       <input
         ref={inputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg"
         className="hidden"
         disabled={disabled}
         onChange={(e) => {
@@ -107,7 +118,7 @@ export function ImageUploadZone({ onImageLoaded, disabled }: ImageUploadZoneProp
         <p className="font-mono text-[10px] text-[var(--ui-text)]">
           Arraste, clique ou Ctrl+V
         </p>
-        <p className="text-[9px] text-[var(--ui-text-dim)]">PNG · JPG · WEBP</p>
+        <p className="text-[9px] text-[var(--ui-text-dim)]">PNG · JPG · WEBP · SVG</p>
       </div>
       {error ? <p className="mt-2 text-[9px] text-[var(--stderr)]">{error}</p> : null}
     </div>

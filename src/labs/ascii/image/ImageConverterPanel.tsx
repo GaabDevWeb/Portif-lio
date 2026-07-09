@@ -19,6 +19,7 @@ import {
   matrixToAsciiSource,
 } from "@/features/ascii-interaction/image-pipeline";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline";
+import { BatchConvertStub } from "@/labs/ascii/image/BatchConvertStub";
 import { ImageUploadZone } from "@/labs/ascii/image/ImageUploadZone";
 
 const MAPPING_MODES: MappingMode[] = ["brightness", "density", "edge", "hybrid"];
@@ -89,6 +90,10 @@ export function ImageConverterPanel({
     <div className="space-y-4">
       <Section title="Upload">
         <ImageUploadZone onImageLoaded={onImageLoaded} />
+      </Section>
+
+      <Section title="Batch (stub)">
+        <BatchConvertStub />
       </Section>
 
       <Section title="Presets Imagem">

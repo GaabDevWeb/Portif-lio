@@ -58,6 +58,7 @@ flowchart TB
 | Workspace zoom/pan/focus/original | `labs/ascii/workspace/` | V2.1 OK |
 | Shell tabs Convert/Animate/Playground/Engine/Stats/Studio | `labs/ascii/AsciiLab.tsx` | Next OK |
 | Fachada registries/stubs | `src/features/ascii-engine/*` | Esqueleto produto |
+| Converters | `ascii-engine/converters` | image, gif, **svg ready**; batch stub; video/webcam/… stubs |
 | SDK factory | `sdk/create-ascii-engine.ts` | Mínimo |
 | Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Parcial |
 | EditorDocument + tool stubs | `ascii-engine/editor` | Histórico real; tools não pintam |
@@ -190,11 +191,11 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 - `adapter.canHandle(input)`, `convert(input, options, onProgress)`
 - `FrameProvider.getFrame(i)`
 
-**Ready hoje:** image, gif.  
-**Stubs → implementar por fase:** video, clipboard (já UI paste), webcam, canvas, svg (rasterize), pdf, screen, **batch** (lista de ficheiros → pasta/ZIP).
+**Ready hoje:** image, gif, svg (rasterize → image-pipeline).  
+**Stubs → implementar por fase:** video, clipboard (já UI paste), webcam, canvas, pdf, screen, **batch** (lista de ficheiros → pasta/ZIP; stub API/UI em P8).
 
 **Extensibilidade:** plugin `converters[]` no manifest.  
-**Roadmap:** ImageBitmap worker → Video decoder (WebCodecs) → Batch CLI.
+**Roadmap:** ImageBitmap worker → Video decoder (WebCodecs) → Batch CLI / ZIP real.
 
 ### 3.2 Rendering
 

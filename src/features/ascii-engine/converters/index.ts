@@ -11,46 +11,38 @@ import {
   DEFAULT_ANIMATION_PIPELINE_OPTIONS,
 } from "@/features/ascii-interaction/animation-pipeline";
 
-export type ConverterKind =
-  | "image"
-  | "gif"
-  | "video"
-  | "webcam"
-  | "canvas"
-  | "clipboard"
-  | "screen"
-  | "svg"
-  | "pdf";
+import { SvgAdapter } from "@/features/ascii-engine/converters/svg-adapter";
+import type {
+  ConversionProgressInfo,
+  ConverterCapability,
+  ConverterKind,
+  SourceAdapter,
+} from "@/features/ascii-engine/converters/types";
 
-export interface ConverterCapability {
-  kind: ConverterKind;
-  label: string;
-  status: "ready" | "stub";
-  mimeTypes: string[];
-  description: string;
-}
+export type {
+  ConversionProgressInfo,
+  ConverterCapability,
+  ConverterKind,
+  FrameProvider,
+  SourceAdapter,
+} from "@/features/ascii-engine/converters/types";
 
-export interface ConversionProgressInfo {
-  completed: number;
-  total: number;
-  percent: number;
-}
-
-export interface FrameProvider {
-  readonly frameCount: number;
-  getFrame(index: number): Promise<AsciiMatrix | null>;
-}
-
-export interface SourceAdapter {
-  readonly kind: ConverterKind;
-  readonly capability: ConverterCapability;
-  canHandle(input: unknown): boolean;
-  convert(
-    input: unknown,
-    options: Partial<ImagePipelineOptions>,
-    onProgress?: (p: ConversionProgressInfo) => void,
-  ): Promise<{ matrix?: AsciiMatrix; animation?: AsciiAnimation }>;
-}
+export {
+  canHandleSvgInput,
+  isSvgBlob,
+  isSvgFile,
+  isSvgMarkup,
+  rasterizeSvgToImage,
+} from "@/features/ascii-engine/converters/rasterize-svg";
+export { SvgAdapter, loadSvgAsImage } from "@/features/ascii-engine/converters/svg-adapter";
+export {
+  convertBatchStub,
+  describeBatchFile,
+  type BatchConvertOptions,
+  type BatchConvertResult,
+  type BatchItemResult,
+  type BatchItemStatus,
+} from "@/features/ascii-engine/converters/batch-stub";
 
 const STUB_CAPABILITIES: ConverterCapability[] = [
   {
@@ -87,13 +79,6 @@ const STUB_CAPABILITIES: ConverterCapability[] = [
     status: "stub",
     mimeTypes: [],
     description: "Estrutura preparada — getDisplayMedia futura.",
-  },
-  {
-    kind: "svg",
-    label: "SVG",
-    status: "stub",
-    mimeTypes: ["image/svg+xml"],
-    description: "Estrutura preparada — rasterização SVG → pipeline.",
   },
   {
     kind: "pdf",
@@ -197,6 +182,7 @@ export class ConverterRegistry {
   constructor() {
     this.register(new ImageAdapter());
     this.register(new GifAdapter());
+    this.register(new SvgAdapter());
     for (const cap of STUB_CAPABILITIES) {
       this.register(new StubAdapter(cap));
     }
