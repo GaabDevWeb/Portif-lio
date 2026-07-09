@@ -79,7 +79,8 @@ export function PlaygroundPanel({ config }: PlaygroundPanelProps) {
             ))}
           </div>
           <p className="text-[9px] text-[var(--ui-text-dim)]">
-            Efeitos desacoplados da conversão. Matrix, Ripple, Smoke e Gravity ativos.
+            Efeitos via emitField. Ready: matrix, ripple, smoke, gravity, fire, wind,
+            particles, explosion, water, noise. Stubs: tornado, cloth.
           </p>
         </PanelSection>
       </aside>

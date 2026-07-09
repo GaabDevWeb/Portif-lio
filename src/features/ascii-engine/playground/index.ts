@@ -27,16 +27,7 @@ export interface PlaygroundEffect {
   mount(surface: InfluencerSurface): { stop: () => void };
 }
 
-const STUB_IDS: PlaygroundEffectId[] = [
-  "fire",
-  "water",
-  "wind",
-  "explosion",
-  "tornado",
-  "cloth",
-  "noise",
-  "particle-field",
-];
+const STUB_IDS: PlaygroundEffectId[] = ["tornado", "cloth"];
 
 function stubDescriptor(id: PlaygroundEffectId, label: string): PlaygroundEffectDescriptor {
   return {
@@ -65,6 +56,14 @@ function emitPulse(surface: InfluencerSurface, input: EmitFieldInput): string {
   return surface.emitField(input);
 }
 
+function canvasSize(surface: InfluencerSurface): { w: number; h: number } {
+  const canvas = surface.getCanvasElement();
+  return {
+    w: canvas?.clientWidth ?? 800,
+    h: canvas?.clientHeight ?? 600,
+  };
+}
+
 class MatrixRainEffect implements PlaygroundEffect {
   readonly id = "matrix" as const;
   readonly descriptor: PlaygroundEffectDescriptor = {
@@ -79,9 +78,7 @@ class MatrixRainEffect implements PlaygroundEffect {
     let timer = 0;
     const tick = () => {
       if (!alive) return;
-      const canvas = surface.getCanvasElement();
-      const w = canvas?.clientWidth ?? 800;
-      const h = canvas?.clientHeight ?? 600;
+      const { w, h } = canvasSize(surface);
       emitPulse(surface, {
         x: Math.random() * w,
         y: Math.random() * h * 0.3,
@@ -118,9 +115,7 @@ class RippleEffect implements PlaygroundEffect {
     let timer = 0;
     const tick = () => {
       if (!alive) return;
-      const canvas = surface.getCanvasElement();
-      const w = canvas?.clientWidth ?? 800;
-      const h = canvas?.clientHeight ?? 600;
+      const { w, h } = canvasSize(surface);
       phase += 1;
       emitPulse(surface, {
         x: w * 0.5,
@@ -156,9 +151,7 @@ class SmokeEffect implements PlaygroundEffect {
     let timer = 0;
     const tick = () => {
       if (!alive) return;
-      const canvas = surface.getCanvasElement();
-      const w = canvas?.clientWidth ?? 800;
-      const h = canvas?.clientHeight ?? 600;
+      const { w, h } = canvasSize(surface);
       emitPulse(surface, {
         x: w * 0.3 + Math.random() * w * 0.4,
         y: h * 0.6 + Math.random() * h * 0.2,
@@ -195,9 +188,7 @@ class GravityWellEffect implements PlaygroundEffect {
     let fieldId = "";
     const tick = () => {
       if (!alive) return;
-      const canvas = surface.getCanvasElement();
-      const w = canvas?.clientWidth ?? 800;
-      const h = canvas?.clientHeight ?? 600;
+      const { w, h } = canvasSize(surface);
       if (fieldId) surface.removeField(fieldId);
       fieldId = emitPulse(surface, {
         x: w * 0.5,
@@ -215,6 +206,275 @@ class GravityWellEffect implements PlaygroundEffect {
         alive = false;
         window.clearTimeout(timer);
         if (fieldId) surface.removeField(fieldId);
+      },
+    };
+  }
+}
+
+/** Chamas ascendentes a partir da base — rajadas quentes e curtas. */
+class FireEffect implements PlaygroundEffect {
+  readonly id = "fire" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "fire",
+    label: "ASCII Fire",
+    status: "ready",
+    description: "Rajadas ascendentes a partir da base da superfície.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      const bursts = 2 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < bursts; i++) {
+        emitPulse(surface, {
+          x: w * 0.15 + Math.random() * w * 0.7,
+          y: h * 0.75 + Math.random() * h * 0.2,
+          radius: 35 + Math.random() * 55,
+          strength: 140 + Math.random() * 100,
+          falloff: "smoothstep",
+          duration: 280 + Math.random() * 180,
+          velocity: {
+            x: (Math.random() - 0.5) * 50,
+            y: -(180 + Math.random() * 120),
+          },
+        });
+      }
+      timer = window.setTimeout(tick, 90);
+    };
+    timer = window.setTimeout(tick, 80);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
+
+/** Vento lateral contínuo com rajadas. */
+class WindEffect implements PlaygroundEffect {
+  readonly id = "wind" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "wind",
+    label: "ASCII Wind",
+    status: "ready",
+    description: "Fluxo horizontal com rajadas laterais.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    let phase = 0;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      phase += 0.35;
+      const gust = 0.6 + 0.4 * Math.sin(phase);
+      emitPulse(surface, {
+        x: w * 0.1 + Math.random() * w * 0.2,
+        y: h * 0.2 + Math.random() * h * 0.6,
+        radius: 70 + Math.random() * 90,
+        strength: (90 + Math.random() * 70) * gust,
+        falloff: "gaussian",
+        duration: 450,
+        velocity: { x: 160 + Math.random() * 80 * gust, y: (Math.random() - 0.5) * 30 },
+      });
+      timer = window.setTimeout(tick, 110);
+    };
+    timer = window.setTimeout(tick, 80);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
+
+/** Campo de partículas — muitos impulsos curtos espalhados. */
+class ParticleFieldEffect implements PlaygroundEffect {
+  readonly id = "particle-field" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "particle-field",
+    label: "ASCII Particles",
+    status: "ready",
+    description: "Nuvem de impulsos curtos com velocidades aleatórias.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      const count = 4 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 140;
+        emitPulse(surface, {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          radius: 18 + Math.random() * 28,
+          strength: 60 + Math.random() * 90,
+          falloff: "smoothstep",
+          duration: 220 + Math.random() * 200,
+          velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
+        });
+      }
+      timer = window.setTimeout(tick, 100);
+    };
+    timer = window.setTimeout(tick, 60);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
+
+/** Explosões periódicas no centro com onda expansiva. */
+class ExplosionEffect implements PlaygroundEffect {
+  readonly id = "explosion" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "explosion",
+    label: "ASCII Explosion",
+    status: "ready",
+    description: "Explosões periódicas com onda expansiva radial.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    let ring = 0;
+    const boom = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      const cx = w * (0.35 + Math.random() * 0.3);
+      const cy = h * (0.35 + Math.random() * 0.3);
+      ring = 0;
+      const expand = () => {
+        if (!alive) return;
+        ring += 1;
+        const t = ring / 8;
+        emitPulse(surface, {
+          x: cx,
+          y: cy,
+          radius: 40 + ring * 28,
+          strength: 280 * (1 - t * 0.85),
+          falloff: "inverse",
+          duration: 180,
+        });
+        if (ring < 8) {
+          timer = window.setTimeout(expand, 70);
+        } else {
+          timer = window.setTimeout(boom, 900);
+        }
+      };
+      expand();
+    };
+    timer = window.setTimeout(boom, 120);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
+
+/** Água — ondulação horizontal com deriva suave. */
+class WaterEffect implements PlaygroundEffect {
+  readonly id = "water" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "water",
+    label: "ASCII Water",
+    status: "ready",
+    description: "Ondulação horizontal com deriva suave tipo superfície líquida.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    let phase = 0;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      phase += 0.4;
+      const bands = 3;
+      for (let i = 0; i < bands; i++) {
+        const t = (i + 1) / (bands + 1);
+        emitPulse(surface, {
+          x: w * (0.2 + 0.15 * Math.sin(phase + i)),
+          y: h * t + Math.sin(phase * 1.3 + i * 1.7) * h * 0.04,
+          radius: 90 + Math.sin(phase + i) * 30,
+          strength: 70 + Math.sin(phase * 0.7 + i) * 30,
+          falloff: "gaussian",
+          duration: 520,
+          velocity: {
+            x: 50 + Math.sin(phase + i) * 40,
+            y: Math.cos(phase * 0.9 + i) * 18,
+          },
+        });
+      }
+      timer = window.setTimeout(tick, 160);
+    };
+    timer = window.setTimeout(tick, 80);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
+
+/** Noise — campo turbulento com posições e forças pseudo-aleatórias. */
+class NoiseEffect implements PlaygroundEffect {
+  readonly id = "noise" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "noise",
+    label: "ASCII Noise",
+    status: "ready",
+    description: "Campo turbulento com impulsos pseudo-aleatórios contínuos.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    let seed = Math.random() * 1000;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      seed += 1.7;
+      const n = 3;
+      for (let i = 0; i < n; i++) {
+        const s = seed + i * 17.3;
+        const nx = (Math.sin(s * 0.31) + Math.sin(s * 0.17 + 1.2)) * 0.5;
+        const ny = (Math.cos(s * 0.23) + Math.sin(s * 0.41 + 0.7)) * 0.5;
+        emitPulse(surface, {
+          x: w * (0.5 + nx * 0.45),
+          y: h * (0.5 + ny * 0.45),
+          radius: 50 + Math.abs(Math.sin(s * 0.5)) * 70,
+          strength: 50 + Math.abs(Math.cos(s * 0.37)) * 100,
+          falloff: "gaussian",
+          duration: 350,
+          velocity: {
+            x: Math.sin(s * 0.9) * 90,
+            y: Math.cos(s * 1.1) * 90,
+          },
+        });
+      }
+      timer = window.setTimeout(tick, 130);
+    };
+    timer = window.setTimeout(tick, 70);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
       },
     };
   }
@@ -243,6 +503,12 @@ export class PlaygroundRegistry {
     this.register(new RippleEffect());
     this.register(new SmokeEffect());
     this.register(new GravityWellEffect());
+    this.register(new FireEffect());
+    this.register(new WindEffect());
+    this.register(new ParticleFieldEffect());
+    this.register(new ExplosionEffect());
+    this.register(new WaterEffect());
+    this.register(new NoiseEffect());
     for (const id of STUB_IDS) {
       this.register(new StubEffect(id, LABEL[id]));
     }

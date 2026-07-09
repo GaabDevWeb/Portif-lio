@@ -62,7 +62,7 @@ flowchart TB
 | Themes/Presets/Stats/Benchmark | ascii-engine + lab panels | Parcial |
 | EditorDocument + tool stubs | `ascii-engine/editor` | Histórico real; tools não pintam |
 | Animator ops | duplicate/insert/remove/merge | Sem interpolação |
-| Playground | Matrix/Ripple/Smoke/Gravity + stubs | Via `emitField` |
+| Playground | 10 ready (matrix/ripple/smoke/gravity/fire/wind/particles/explosion/water/noise) + stubs tornado/cloth | Via `emitField` |
 
 ### 1.2 Duplicações
 
@@ -238,8 +238,8 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 
 **Objetivo:** efeitos interativos desacoplados da conversão.
 
-**Ready:** matrix, ripple, smoke, gravity.  
-**Stubs a implementar:** fire, rain, water, wind, particles, explosion, cloth, noise, “ASCII Physics” pack.  
+**Ready:** matrix, ripple, smoke, gravity, fire, wind, particle-field, explosion, water, noise.  
+**Stubs restantes:** tornado, cloth, rain (alias matrix), “ASCII Physics” pack.  
 **Contrato:** `PlaygroundEffect.mount(InfluencerSurface) → { stop }`.  
 **Bus:** Effects podem ser nodes no graph (`EffectNode`).
 

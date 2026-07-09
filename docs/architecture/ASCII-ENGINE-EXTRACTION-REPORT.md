@@ -21,7 +21,7 @@
 - Converter/Exporter/Importer registries (+ stubs)
 - EditorDocument + history + tool catalog
 - Animator frame ops + keyframe types
-- Playground (4 efeitos ready + stubs)
+- Playground (10 efeitos ready + stubs tornado/cloth)
 - Presets session store + themes (10 packs)
 - Stats panel + benchmark suite
 - CLI command stubs + docs por módulo
