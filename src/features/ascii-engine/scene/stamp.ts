@@ -124,8 +124,8 @@ export interface StampIntoSceneOptions {
 }
 
 /**
- * Guarda stamp na library e adiciona ReferenceObject (e opcionalmente ImageObject).
- * ReferenceObject não rasteriza no compositor ainda — use `asImage: true` para preview imediato.
+ * Guarda stamp na library e adiciona ReferenceObject (matrix embutida para compose).
+ * `asImage: true` cria também um ImageObject duplicado (legado / bake explícito).
  */
 export function stampRegionIntoScene(
   scene: SceneDocument,
@@ -136,7 +136,7 @@ export function stampRegionIntoScene(
   const matrix = extractStampFromScene(scene, region);
   const asset = library.add(matrix, options.name);
   const referenceId = scene.addReferenceObject(
-    { assetId: asset.id, libraryId: library.libraryId },
+    { assetId: asset.id, libraryId: library.libraryId, matrix: structuredClone(matrix) },
     { w: matrix.cols, h: matrix.rows },
     {
       name: options.name ?? asset.name,

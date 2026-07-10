@@ -188,3 +188,39 @@ describe("Scene W7 — clipboard + checkpoints + export", () => {
     expect(matrix.cells[0]?.char).toBe("Z");
   });
 });
+
+describe("Scene W8 — audit fixes", () => {
+  it("noise effect is deterministic across compose calls", () => {
+    const scene = SceneDocument.create(6, 4);
+    const id = addShapeToScene(scene, "rect", 2, 2, { x: 1, y: 1, fill: true, char: "#" });
+    scene.updateObject(id, { effects: [EffectFactories.noise(0.4)] });
+    const a = composeScene(scene);
+    const b = composeScene(scene);
+    expect(a.cells.map((c) => c.luminance)).toEqual(b.cells.map((c) => c.luminance));
+  });
+
+  it("reference object with embedded matrix composes without asImage", () => {
+    const scene = SceneDocument.create(12, 8);
+    addShapeToScene(scene, "rect", 3, 2, { x: 0, y: 0, fill: true, char: "@" });
+    const lib = new StampLibrary();
+    const { referenceId, imageId } = stampRegionIntoScene(
+      scene,
+      lib,
+      { x: 0, y: 0, w: 3, h: 2 },
+      { asImage: false, x: 5, y: 3, name: "RefOnly" },
+    );
+    expect(imageId).toBeUndefined();
+    const ref = scene.getObject(referenceId);
+    expect(ref?.type).toBe("reference");
+    if (ref?.type === "reference") {
+      expect(ref.payload.matrix?.cols).toBe(3);
+    }
+    // Remove original shape so only reference contributes @ at (5,3)
+    for (const oid of Object.keys(scene.toJSON().objects)) {
+      if (oid !== referenceId) scene.removeObject(oid);
+    }
+    const m = composeScene(scene);
+    const cell = m.cells.find((c) => c.col === 5 && c.row === 3);
+    expect(cell?.char).toBe("@");
+  });
+});

@@ -63,7 +63,10 @@ function applyEffects(cell: AsciiMatrixCell, effects: EffectRef[]): AsciiMatrixC
       }
       case "noise": {
         const amt = Number(fx.params.amount ?? 0.1);
-        const n = (Math.random() * 2 - 1) * amt;
+        // Determinístico: hash(col,row,amount) ∈ [-amt, amt] — export/cache estáveis.
+        const seed = ((out.col * 73856093) ^ (out.row * 19349663) ^ Math.floor(amt * 1e6)) >>> 0;
+        const unit = (seed % 10000) / 9999; // [0,1]
+        const n = (unit * 2 - 1) * amt;
         out = {
           ...out,
           luminance: Math.max(0, Math.min(1, out.luminance + n)),
@@ -223,8 +226,10 @@ function rasterizeObject(obj: SceneObject): AsciiMatrix | null {
       return rasterizeShape(obj.payload, obj.bounds);
     case "stroke":
       return obj.payload.baked ? structuredClone(obj.payload.baked) : null;
-    case "group":
     case "reference":
+      return obj.payload.matrix ? structuredClone(obj.payload.matrix) : null;
+    case "group":
+      // Filhos são compostos via layer.objectIds; group é contentor lógico.
       return null;
     default:
       return null;
@@ -303,7 +308,7 @@ function blit(
 }
 
 /**
- * Flatten scene → AsciiMatrix. Deterministic (exceto effect noise).
+ * Flatten scene → AsciiMatrix. Determinístico (incl. effect noise seeded).
  */
 export function composeScene(scene: SceneDocument, options: ComposeOptions = {}): AsciiMatrix {
   const width = options.width ?? scene.getWidth();

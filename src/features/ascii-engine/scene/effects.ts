@@ -70,7 +70,10 @@ export const EFFECT_STATUS: Record<
 > = {
   invert: { status: "ready", note: "Inverte luminance + RGB por célula." },
   colorize: { status: "ready", note: "Substitui RGB; params r/g/b." },
-  noise: { status: "ready", note: "Perturba luminance (não determinístico)." },
+  noise: {
+    status: "ready",
+    note: "Perturba luminance com hash determinístico (col,row,amount).",
+  },
   outline: {
     status: "stub",
     note: "Expande bounds (radius); halo outline ainda não rasterizado.",

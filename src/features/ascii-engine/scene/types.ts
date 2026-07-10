@@ -101,6 +101,11 @@ export interface GroupObjectData {
 export interface ReferenceObjectData {
   assetId: string;
   libraryId: string;
+  /**
+   * Raster embutido para compose sem resolver a library em runtime.
+   * Obrigatório para preview/export de stamps/references na Wave 8+.
+   */
+  matrix?: AsciiMatrix;
 }
 
 export type SceneObjectData =

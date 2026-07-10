@@ -440,6 +440,7 @@ export function AsciiLab() {
         {tab === "edit" ? (
           <EditSidebar
             scene={projectDoc.scene}
+            project={projectDoc}
             imageResultMatrix={imageResult?.matrix ?? null}
             onChange={() => setEditorTick((n) => n + 1)}
           />
@@ -598,6 +599,7 @@ export function AsciiLab() {
           {tab === "edit" ? (
             <EditViewport
               scene={projectDoc.scene}
+              project={projectDoc}
               config={converterConfig}
               onChange={() => setEditorTick((n) => n + 1)}
             />

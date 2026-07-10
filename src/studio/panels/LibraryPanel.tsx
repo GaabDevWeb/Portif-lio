@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * LibraryPanel stub (Scene W6) — lista assets/shapes e callback de insert.
- * Não ligado ao AsciiLab Edit tab (outro agent); feature-layer ready.
+ * LibraryPanel — lista assets/shapes e callback de insert.
+ * Ligado à tab Edit via EditSidebar (Scene W8).
  */
 
 import { useMemo, useState } from "react";
