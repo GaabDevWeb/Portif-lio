@@ -55,12 +55,14 @@ import { PluginsPanel } from "@/studio/panels/PluginsPanel";
 import { ProjectPanel } from "@/studio/panels/ProjectPanel";
 import { DEFAULT_DEBUG_OPTIONS } from "@/studio/types";
 import { useWorkspaceViewport } from "@/studio/workspace/useWorkspaceViewport";
+import { EditSidebar, EditViewport } from "@/studio/scene";
 
-type EngineTab = "convert" | "animate" | "playground" | "engine" | "stats" | "studio";
+type EngineTab = "convert" | "animate" | "playground" | "engine" | "stats" | "studio" | "edit";
 
 const TABS: { id: EngineTab; label: string }[] = [
   { id: "convert", label: "Convert" },
   { id: "animate", label: "Animate" },
+  { id: "edit", label: "Edit" },
   { id: "playground", label: "Playground" },
   { id: "engine", label: "Engine" },
   { id: "stats", label: "Stats" },
@@ -434,6 +436,14 @@ export function AsciiLab() {
             Selecione um efeito no painel principal. Playground é independente da conversão.
           </div>
         ) : null}
+
+        {tab === "edit" ? (
+          <EditSidebar
+            scene={projectDoc.scene}
+            imageResultMatrix={imageResult?.matrix ?? null}
+            onChange={() => setEditorTick((n) => n + 1)}
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -582,6 +592,14 @@ export function AsciiLab() {
             <NodeGraphPanel
               document={projectDoc}
               onDocumentChange={() => setEditorTick((n) => n + 1)}
+            />
+          ) : null}
+
+          {tab === "edit" ? (
+            <EditViewport
+              scene={projectDoc.scene}
+              config={converterConfig}
+              onChange={() => setEditorTick((n) => n + 1)}
             />
           ) : null}
         </main>

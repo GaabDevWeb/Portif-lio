@@ -36,6 +36,52 @@ export {
   type SceneCommand,
 } from "@/features/ascii-engine/scene/history";
 
+/** Wave 2 — camera + workspace stubs */
+export {
+  screenToWorld,
+  worldToScreen,
+  worldToCell,
+  panCamera,
+  panCameraByScreen,
+  zoomCamera,
+  zoomAtScreen,
+  fitCameraToBounds,
+  sceneContentBounds,
+  cameraWorldTransform,
+  clampZoom,
+  MIN_CAMERA_ZOOM,
+  MAX_CAMERA_ZOOM,
+  type CellSize,
+  type ViewportSize,
+  type WorldPoint,
+  type ScreenPoint,
+  type SceneBoundsRect,
+} from "@/features/ascii-engine/scene/camera";
+export {
+  createRulersStub,
+  type RulersController,
+  type RulerTick,
+  type RulersSource,
+} from "@/features/ascii-engine/scene/rulers";
+export {
+  createGuidesStub,
+  type GuidesController,
+  type Guide,
+  type GuideOrientation,
+} from "@/features/ascii-engine/scene/guides";
+export {
+  createSnappingStub,
+  type SnappingController,
+  type SnapResult,
+  type SnapTarget,
+} from "@/features/ascii-engine/scene/snapping";
+export {
+  createMiniMapStub,
+  type MiniMapController,
+  type MiniMapSource,
+  type MiniMapBounds,
+} from "@/features/ascii-engine/scene/minimap";
+
 /** Wave 5 — shapes / text / stamp */
 export {
   createShapeSpec,
