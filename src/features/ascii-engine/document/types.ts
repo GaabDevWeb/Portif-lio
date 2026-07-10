@@ -4,10 +4,11 @@ import type { AsciiInteractionConfig } from "@/features/ascii-interaction/types"
 import type { EditorLayer, EditorSelection } from "@/features/ascii-engine/editor";
 import type { TimelineDocument } from "@/features/ascii-engine/animator/types";
 import type { NodeGraph } from "@/features/ascii-engine/nodes/types";
+import type { SceneDocumentData } from "@/features/ascii-engine/scene/types";
 
 /** Workspace viewport serializado no projeto (espelha lab WorkspaceState). */
 export interface ProjectWorkspaceState {
-  zoom: "fit" | 1 | 2 | 4 | 8;
+  zoom: "fit" | "fit-width" | "fit-height" | 1 | 2 | 4 | 8;
   pan: { x: number; y: number };
   showOriginal: boolean;
   originalMode: "split" | "overlay" | "peek";
@@ -71,6 +72,8 @@ export interface ProjectDocumentData {
   assets: ProjectAssetRef[];
   /** Animação opcional embutida (frames em document; assets separados se grandes). */
   animation?: AsciiAnimation | null;
+  /** Scene graph do editor de cenas (Scene Editor). */
+  scene?: SceneDocumentData;
 }
 
 export const DEFAULT_PROJECT_WORKSPACE: ProjectWorkspaceState = {

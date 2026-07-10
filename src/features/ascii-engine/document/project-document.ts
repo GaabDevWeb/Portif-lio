@@ -1,5 +1,7 @@
 import { EditorDocument } from "@/features/ascii-engine/editor";
 import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipeline/types";
+import { SceneDocument } from "@/features/ascii-engine/scene/scene-document";
+import type { SceneDocumentData } from "@/features/ascii-engine/scene/types";
 import {
   DEFAULT_PROJECT_WORKSPACE,
   type ProjectAssetRef,
@@ -58,6 +60,7 @@ export class ProjectDocument {
   private nodeGraph: NodeGraph | undefined;
   private animation: AsciiAnimation | null = null;
   readonly editor: EditorDocument;
+  readonly scene: SceneDocument;
 
   private constructor(data: {
     id: string;
@@ -65,6 +68,7 @@ export class ProjectDocument {
     themeId: string;
     workspace: ProjectWorkspaceState;
     editor: EditorDocument;
+    scene?: SceneDocument;
     assets?: ProjectAssetRef[];
     timeline?: TimelineDocument;
     nodeGraph?: NodeGraph;
@@ -75,6 +79,7 @@ export class ProjectDocument {
     this.themeId = data.themeId;
     this.workspace = data.workspace;
     this.editor = data.editor;
+    this.scene = data.scene ?? SceneDocument.create(80, 40);
     this.assets = data.assets ?? [];
     this.timeline = data.timeline;
     this.nodeGraph = data.nodeGraph;
@@ -130,6 +135,7 @@ export class ProjectDocument {
       themeId: data.themeId,
       workspace: { ...DEFAULT_PROJECT_WORKSPACE, ...data.workspace },
       editor,
+      scene: data.scene ? SceneDocument.fromJSON(data.scene) : SceneDocument.create(80, 40),
       assets: structuredClone(data.assets ?? []),
       timeline: normalizeTimeline(data.timeline),
       nodeGraph: data.nodeGraph ? structuredClone(data.nodeGraph) : undefined,
@@ -230,6 +236,15 @@ export class ProjectDocument {
     this.touch();
   }
 
+  getScene(): SceneDocument {
+    return this.scene;
+  }
+
+  setSceneData(data: SceneDocumentData): void {
+    this.scene.replaceData(data);
+    this.touch();
+  }
+
   toJSON(): ProjectDocumentData {
     const ed = this.editor.getState();
     return {
@@ -250,6 +265,7 @@ export class ProjectDocument {
       },
       assets: structuredClone(this.assets),
       animation: this.animation ? structuredClone(this.animation) : null,
+      scene: this.scene.toJSON(),
     };
   }
 

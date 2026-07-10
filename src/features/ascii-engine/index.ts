@@ -14,6 +14,7 @@ export {
 export * from "@/features/ascii-engine/converters";
 export * from "@/features/ascii-engine/editor";
 export * from "@/features/ascii-engine/document";
+export * from "@/features/ascii-engine/scene";
 export * from "@/features/ascii-engine/storage";
 export * from "@/features/ascii-engine/animator";
 export * from "@/features/ascii-engine/nodes";
