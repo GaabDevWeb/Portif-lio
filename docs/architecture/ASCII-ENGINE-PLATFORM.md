@@ -1,11 +1,12 @@
 # ASCII Engine Platform — Documento Arquitetural Definitivo (SSOT)
 
 > **Versão do documento:** 3.0.0-platform  
-> **Baseline de código:** branch `ascii-engine-next` (commits V2.1 + fachada produto)  
-> **Escopo desta missão documental:** arquitetura + prompt de implementação. **Zero código de produto.**  
+> **Baseline de código:** branch `ascii-engine-platform` (Platform P0–P12 + Standalone W0–W6)  
+> **Produto actual:** app **standalone** ASCII Engine Studio — `/` = Studio, `/gallery` = Gallery. ROOT OS / portfolio **removidos** (W0).  
 > **Substitui como SSOT de produto:** estende [`ASCII-ENGINE-NEXT.md`](./ASCII-ENGINE-NEXT.md) e [`ASCII-ENGINE-V2.md`](./ASCII-ENGINE-V2.md); não invalida a interaction engine em [`ASCII-INTERACTION-ENGINE.md`](./ASCII-INTERACTION-ENGINE.md).  
-> **Documento companheiro:** [ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md](./ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md) — prompt completo para o agente executor.  
-> **Status:** Fonte de verdade (SSOT) do roadmap de produto Platform.
+> **Documento companheiro:** [ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md](./ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md) — prompt histórico de implementação Platform.  
+> **Module docs:** [`docs/modules/`](../modules/) · **Extração:** [`ASCII-ENGINE-EXTRACTION-REPORT.md`](./ASCII-ENGINE-EXTRACTION-REPORT.md)  
+> **Status:** SSOT de arquitectura. Branch de produto standalone — **não mergear para `main`** sem review.  
 
 ---
 
@@ -19,12 +20,12 @@ Inspiração de UX (não de clone visual): Photoshop (tools/layers), Aseprite (p
 
 **Identidade:** terminal/phosphor ROOT OS como tema default; temas pluggable; Core agnóstico de UI.
 
-**Princípio de ouro:** `ascii-interaction` = runtime de render/física; `ascii-engine` = fachada de produto/SDK; shell em `/labs/ascii` = app de referência. Extração futura = monorepo packages sem reescrever pipelines.
+**Princípio de ouro:** `ascii-interaction` = runtime de render/física; `ascii-engine` = fachada de produto/SDK; shell em `/` (Studio) + `/gallery` = app standalone. Extração futura = monorepo packages sem reescrever pipelines.
 
 ```mermaid
 flowchart TB
-  subgraph shell [App Shell /labs/ascii]
-    UI[Workspace Editor Timeline Playground]
+  subgraph shell [App Shell / + /gallery]
+    UI[Workspace Editor Timeline Playground Gallery]
   end
   subgraph product [ascii-engine facade]
     SDK[createAsciiEngine]
