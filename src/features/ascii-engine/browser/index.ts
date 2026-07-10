@@ -46,3 +46,33 @@ export async function writeTextToClipboard(text: string): Promise<ClipboardWrite
     return "error";
   }
 }
+
+/**
+ * Escreve text/html + text/plain no clipboard (ClipboardItem).
+ * Fallback: só plain text via writeTextToClipboard.
+ */
+export async function writeHtmlToClipboard(
+  html: string,
+  plainFallback?: string,
+): Promise<ClipboardWriteResult> {
+  const plain = plainFallback ?? html.replace(/<[^>]+>/g, "");
+
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.clipboard?.write &&
+    typeof ClipboardItem !== "undefined"
+  ) {
+    try {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+      });
+      await navigator.clipboard.write([item]);
+      return "copied";
+    } catch {
+      /* fallback plain */
+    }
+  }
+
+  return writeTextToClipboard(plain);
+}

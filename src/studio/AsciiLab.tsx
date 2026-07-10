@@ -22,7 +22,10 @@ import {
   type AsciiEngineThemeId,
   ASCII_ENGINE_THEMES,
 } from "@/features/ascii-engine/themes";
-import type { AsciiEnginePreset } from "@/features/ascii-engine/presets";
+import {
+  presetToPipelinePatch,
+  type AsciiEnginePreset,
+} from "@/features/ascii-engine/presets";
 import { ProjectDocument } from "@/features/ascii-engine/document";
 import { AnimationConverterPanel } from "@/studio/animation/AnimationConverterPanel";
 import { AnimationResultView } from "@/studio/animation/AnimationResultView";
@@ -201,7 +204,10 @@ export function AsciiLab() {
 
   const applyProductPreset = useCallback(
     (preset: AsciiEnginePreset) => {
-      if (preset.pipeline) setImageOptions((prev) => mergePipelineOptions(prev, preset.pipeline));
+      const patch = presetToPipelinePatch(preset);
+      if (Object.keys(patch).length > 0) {
+        setImageOptions((prev) => mergePipelineOptions(prev, patch));
+      }
       if (preset.interaction) setConfig((prev) => mergeAsciiConfig({ ...prev, ...preset.interaction }));
       if (preset.themeId) setThemeId(preset.themeId as AsciiEngineThemeId);
       if (preset.workspace) {

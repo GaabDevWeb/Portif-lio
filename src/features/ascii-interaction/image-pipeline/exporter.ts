@@ -24,30 +24,63 @@ export function matrixToJson(matrix: AsciiMatrix): string {
   return JSON.stringify(matrix, null, 2);
 }
 
+function escapeHtmlChar(ch: string): string {
+  return ch
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * HTML com RGB por célula (AsciiMatrix.cells[].r/g/b).
+ * Evita o gap mono-only do export legado (cor única no `<pre>`).
+ */
 export function matrixToHtml(
   matrix: AsciiMatrix,
   targetWidth?: number,
   targetHeight?: number,
 ): string {
-  const source = matrixToAsciiSource(matrix);
-  const escaped = source
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
   const fontSize =
     targetHeight != null
-      ? Math.max(8, Math.floor(targetHeight / matrix.rows * 0.85))
+      ? Math.max(8, Math.floor((targetHeight / matrix.rows) * 0.85))
       : 10;
 
   const width = targetWidth ?? matrix.cols * 7;
   const height = targetHeight ?? matrix.rows * 12;
 
+  const grid: (AsciiMatrix["cells"][number] | null)[][] = Array.from(
+    { length: matrix.rows },
+    () => Array.from({ length: matrix.cols }, () => null),
+  );
+  for (const cell of matrix.cells) {
+    if (cell.row < matrix.rows && cell.col < matrix.cols) {
+      grid[cell.row]![cell.col] = cell;
+    }
+  }
+
+  const body: string[] = [];
+  for (let row = 0; row < matrix.rows; row++) {
+    for (let col = 0; col < matrix.cols; col++) {
+      const cell = grid[row]![col];
+      if (!cell) {
+        body.push(" ");
+        continue;
+      }
+      const r = Math.round(cell.r);
+      const g = Math.round(cell.g);
+      const b = Math.round(cell.b);
+      body.push(
+        `<span style="color:rgb(${r},${g},${b})">${escapeHtmlChar(cell.char)}</span>`,
+      );
+    }
+    if (row < matrix.rows - 1) body.push("\n");
+  }
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
-body{margin:0;background:#0a120a;color:#9dff9d;width:${width}px;height:${height}px;overflow:hidden;}
+body{margin:0;background:#0a120a;width:${width}px;height:${height}px;overflow:hidden;}
 pre{margin:0;font:${fontSize}px "Courier New",monospace;line-height:${fontSize * 1.15}px;white-space:pre;}
-</style></head><body><pre>${escaped}</pre></body></html>`;
+</style></head><body><pre>${body.join("")}</pre></body></html>`;
 }
 
 export function matrixToSvg(
