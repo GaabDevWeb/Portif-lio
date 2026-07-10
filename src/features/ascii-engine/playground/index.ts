@@ -27,31 +27,6 @@ export interface PlaygroundEffect {
   mount(surface: InfluencerSurface): { stop: () => void };
 }
 
-const STUB_IDS: PlaygroundEffectId[] = ["tornado", "cloth"];
-
-function stubDescriptor(id: PlaygroundEffectId, label: string): PlaygroundEffectDescriptor {
-  return {
-    id,
-    label,
-    status: "stub",
-    description: `Efeito ${label} — API pronta, implementação futura.`,
-  };
-}
-
-class StubEffect implements PlaygroundEffect {
-  readonly id: PlaygroundEffectId;
-  readonly descriptor: PlaygroundEffectDescriptor;
-
-  constructor(id: PlaygroundEffectId, label: string) {
-    this.id = id;
-    this.descriptor = stubDescriptor(id, label);
-  }
-
-  mount(): { stop: () => void } {
-    return { stop: () => undefined };
-  }
-}
-
 function emitPulse(surface: InfluencerSurface, input: EmitFieldInput): string {
   return surface.emitField(input);
 }
@@ -480,20 +455,122 @@ class NoiseEffect implements PlaygroundEffect {
   }
 }
 
-const LABEL: Record<PlaygroundEffectId, string> = {
-  smoke: "Smoke",
-  fire: "Fire",
-  matrix: "Matrix",
-  water: "Water",
-  ripple: "Ripple",
-  wind: "Wind",
-  explosion: "Explosion",
-  tornado: "Tornado",
-  cloth: "Cloth",
-  gravity: "Gravity",
-  noise: "Noise",
-  "particle-field": "Particle Field",
-};
+/** Tornado — vórtice espiral com impulsos orbitais em torno do centro. */
+class TornadoEffect implements PlaygroundEffect {
+  readonly id = "tornado" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "tornado",
+    label: "ASCII Tornado",
+    status: "ready",
+    description: "Vórtice espiral com impulsos tangenciais em torno do centro.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    let phase = 0;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      phase += 0.45;
+      const cx = w * 0.5;
+      const cy = h * 0.48;
+      const arms = 5;
+      for (let i = 0; i < arms; i++) {
+        const angle = phase + (i / arms) * Math.PI * 2;
+        const radius = 40 + ((phase * 18 + i * 25) % (Math.min(w, h) * 0.38));
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius * 0.85;
+        // tangente + ligeira atracção ao centro
+        const tx = -Math.sin(angle);
+        const ty = Math.cos(angle);
+        const speed = 120 + radius * 0.35;
+        emitPulse(surface, {
+          x,
+          y,
+          radius: 28 + Math.random() * 22,
+          strength: 110 + Math.random() * 80,
+          falloff: "smoothstep",
+          duration: 280,
+          velocity: {
+            x: tx * speed + (cx - x) * 0.08,
+            y: ty * speed + (cy - y) * 0.08 - 20,
+          },
+        });
+      }
+      // núcleo
+      emitPulse(surface, {
+        x: cx,
+        y: cy,
+        radius: 50,
+        strength: 160,
+        falloff: "inverse",
+        duration: 220,
+      });
+      timer = window.setTimeout(tick, 95);
+    };
+    timer = window.setTimeout(tick, 60);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
+
+/** Cloth — grelha de impulsos com ondulação tipo tecido. */
+class ClothEffect implements PlaygroundEffect {
+  readonly id = "cloth" as const;
+  readonly descriptor: PlaygroundEffectDescriptor = {
+    id: "cloth",
+    label: "ASCII Cloth",
+    status: "ready",
+    description: "Grelha ondulante tipo tecido com deriva suave.",
+  };
+
+  mount(surface: InfluencerSurface): { stop: () => void } {
+    let alive = true;
+    let timer = 0;
+    let phase = 0;
+    const tick = () => {
+      if (!alive) return;
+      const { w, h } = canvasSize(surface);
+      phase += 0.28;
+      const cols = 4;
+      const rows = 3;
+      for (let gy = 0; gy < rows; gy++) {
+        for (let gx = 0; gx < cols; gx++) {
+          const u = (gx + 0.5) / cols;
+          const v = (gy + 0.5) / rows;
+          const wave =
+            Math.sin(phase * 1.4 + gx * 0.9 + gy * 0.55) * 0.5 +
+            Math.cos(phase * 0.9 + gx * 0.4 - gy * 0.7) * 0.5;
+          emitPulse(surface, {
+            x: w * (0.12 + u * 0.76) + wave * 18,
+            y: h * (0.18 + v * 0.64) + Math.sin(phase + gx + gy) * 12,
+            radius: 55 + Math.abs(wave) * 25,
+            strength: 55 + Math.abs(wave) * 50,
+            falloff: "gaussian",
+            duration: 420,
+            velocity: {
+              x: Math.cos(phase * 0.6 + gy) * 35,
+              y: Math.sin(phase * 0.8 + gx) * 28,
+            },
+          });
+        }
+      }
+      timer = window.setTimeout(tick, 140);
+    };
+    timer = window.setTimeout(tick, 70);
+    return {
+      stop: () => {
+        alive = false;
+        window.clearTimeout(timer);
+      },
+    };
+  }
+}
 
 export class PlaygroundRegistry {
   private readonly effects = new Map<PlaygroundEffectId, PlaygroundEffect>();
@@ -509,9 +586,8 @@ export class PlaygroundRegistry {
     this.register(new ExplosionEffect());
     this.register(new WaterEffect());
     this.register(new NoiseEffect());
-    for (const id of STUB_IDS) {
-      this.register(new StubEffect(id, LABEL[id]));
-    }
+    this.register(new TornadoEffect());
+    this.register(new ClothEffect());
   }
 
   register(effect: PlaygroundEffect): void {

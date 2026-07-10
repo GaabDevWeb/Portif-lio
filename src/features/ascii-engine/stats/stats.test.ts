@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import {
+  analyzeCharset,
+  buildCharacterFrequency,
   buildCharacterHistogram,
   buildLuminanceHeatmap,
   buildStatsPanelModel,
+  estimateCompressionRatio,
   formatHeatmapPreview,
+  resolveFrameCount,
 } from "@/features/ascii-engine/stats";
 
 const matrix: AsciiMatrix = {
@@ -56,5 +60,68 @@ describe("luminance heatmap", () => {
     expect(model.heatmap!.coverage).toBeGreaterThan(0);
     expect(model.histogram.length).toBeGreaterThan(0);
     expect(buildCharacterHistogram(matrix, 2)).toHaveLength(2);
+  });
+});
+
+describe("analytics W5", () => {
+  it("buildCharacterFrequency computes ratios and entropy", () => {
+    const freq = buildCharacterFrequency(matrix);
+    expect(freq.totalCells).toBe(6);
+    expect(freq.uniqueChars).toBe(6);
+    expect(freq.entries).toHaveLength(6);
+    expect(freq.entries[0]!.ratio).toBeCloseTo(1 / 6, 5);
+    expect(freq.entropyBits).toBeGreaterThan(2);
+  });
+
+  it("estimateCompressionRatio returns TXT vs estimate", () => {
+    const result = estimateCompressionRatio(matrix);
+    expect(result).not.toBeNull();
+    expect(result!.plainBytes).toBeGreaterThan(0);
+    expect(result!.compressedBytes).toBeGreaterThan(0);
+    expect(result!.ratio).toBeGreaterThan(0);
+    expect(result!.method).toBe("estimate");
+
+    const provided = estimateCompressionRatio(matrix, 4);
+    expect(provided!.method).toBe("provided");
+    expect(provided!.compressedBytes).toBe(4);
+  });
+
+  it("analyzeCharset reports coverage and outsiders", () => {
+    const analysis = analyzeCharset(matrix);
+    expect(analysis).not.toBeNull();
+    expect(analysis!.charsetLength).toBe(matrix.charset.length);
+    expect(analysis!.usedCount).toBeGreaterThan(0);
+    expect(analysis!.coverage).toBeGreaterThan(0);
+    expect(analysis!.coverage).toBeLessThanOrEqual(1);
+
+    const withOutsider: AsciiMatrix = {
+      ...matrix,
+      cells: [
+        ...matrix.cells,
+        { char: "Z", col: 1, row: 1, luminance: 1, r: 0, g: 0, b: 0 },
+      ],
+    };
+    const out = analyzeCharset(withOutsider)!;
+    expect(out.outsideCharset).toContain("Z");
+  });
+
+  it("resolveFrameCount prefers explicit frameCount", () => {
+    expect(resolveFrameCount({ frameCount: 12, animationFrameCount: 3 })).toBe(12);
+    expect(resolveFrameCount({ animationFrameCount: 7 })).toBe(7);
+    expect(resolveFrameCount({})).toBeUndefined();
+  });
+
+  it("buildStatsPanelModel wires analytics fields", () => {
+    const model = buildStatsPanelModel({
+      matrix,
+      frameCount: 24,
+      charset: matrix.charset,
+    });
+    expect(model.frameCount).toBe(24);
+    expect(model.frequency).not.toBeNull();
+    expect(model.frequency!.uniqueChars).toBe(6);
+    expect(model.compression).not.toBeNull();
+    expect(model.charsetAnalysis).not.toBeNull();
+    expect(model.charsetAnalysis!.charsetLength).toBe(matrix.charset.length);
   });
 });

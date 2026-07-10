@@ -80,7 +80,7 @@ export function PlaygroundPanel({ config }: PlaygroundPanelProps) {
           </div>
           <p className="text-[9px] text-[var(--ui-text-dim)]">
             Efeitos via emitField. Ready: matrix, ripple, smoke, gravity, fire, wind,
-            particles, explosion, water, noise. Stubs: tornado, cloth.
+            particles, explosion, water, noise, tornado, cloth.
           </p>
         </PanelSection>
       </aside>

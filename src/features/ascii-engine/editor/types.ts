@@ -6,9 +6,13 @@ export type EditorToolId =
   | "brush"
   | "eraser"
   | "fill"
+  | "move"
   | "stamp"
   | "text"
-  | "transform";
+  | "character-replace"
+  | "region-replace"
+  | "transform"
+  | "mask";
 
 export interface EditorToolDescriptor {
   id: EditorToolId;
@@ -51,6 +55,10 @@ export interface EditorDocumentState {
   canRedo: boolean;
   strokeChar: string;
   eraseChar: string;
+  textBuffer: string;
+  replaceFrom: string;
+  replaceTo: string;
+  moveDelta: { col: number; row: number };
 }
 
 /** Contexto passado às tools mutantes (SSOT §3.3). */
@@ -63,4 +71,13 @@ export interface ToolContext {
   };
   col: number;
   row: number;
+  /** Padrão a carimbar (stamp); tipicamente clipboard. */
+  stamp?: AsciiMatrix | null;
+  /** Texto a inserir (text tool, horizontal simples). */
+  text?: string;
+  /** Character replace: origem → destino. */
+  replaceFrom?: string;
+  replaceTo?: string;
+  /** Move: deslocamento da selection. */
+  moveDelta?: { col: number; row: number };
 }

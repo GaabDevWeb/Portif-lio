@@ -2,11 +2,16 @@ import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/ty
 import type { AsciiInteractionConfig } from "@/features/ascii-interaction/types";
 
 import { CommandHistory, type EditorCommand } from "./commands";
-import { getCharAt } from "./matrix-ops";
+import { extractRegion, getCharAt } from "./matrix-ops";
 import {
   createBrushCommand,
+  createCharacterReplaceCommand,
   createEraserCommand,
   createFillCommand,
+  createMoveCommand,
+  createRegionReplaceCommand,
+  createStampCommand,
+  createTextCommand,
   SetSelectionCommand,
 } from "./tools";
 import type {
@@ -39,12 +44,26 @@ export {
   patchMatrixCells,
 } from "./matrix-ops";
 export {
+  CompositeCommand,
   createBrushCommand,
+  createCharacterReplaceCommand,
   createEraserCommand,
   createFillCommand,
+  createMoveCommand,
+  createRegionReplaceCommand,
+  createStampCommand,
+  createTextCommand,
   PatchCellsCommand,
   SetSelectionCommand,
 } from "./tools";
+export {
+  characterReplacePatches,
+  extractRegion,
+  moveSelectionPatches,
+  regionReplacePatches,
+  stampPatches,
+  textPatches,
+} from "./matrix-ops";
 
 import type { EditorToolDescriptor } from "./types";
 
@@ -53,9 +72,28 @@ export const EDITOR_TOOLS: EditorToolDescriptor[] = [
   { id: "brush", label: "Brush", status: "ready", description: "Pintura de caracteres." },
   { id: "eraser", label: "Borracha", status: "ready", description: "Apaga células." },
   { id: "fill", label: "Preenchimento", status: "ready", description: "Flood fill." },
-  { id: "stamp", label: "Carimbo", status: "stub", description: "Carimba padrão." },
-  { id: "text", label: "Texto", status: "stub", description: "Insere texto ASCII." },
-  { id: "transform", label: "Transformar", status: "stub", description: "Scale/rotate/crop." },
+  { id: "move", label: "Mover", status: "ready", description: "Desloca conteúdo da selection." },
+  { id: "stamp", label: "Carimbo", status: "ready", description: "Carimba padrão (clipboard)." },
+  { id: "text", label: "Texto", status: "ready", description: "Insere texto ASCII horizontal." },
+  {
+    id: "character-replace",
+    label: "Char Replace",
+    status: "ready",
+    description: "Substitui carácter A→B.",
+  },
+  {
+    id: "region-replace",
+    label: "Region Replace",
+    status: "ready",
+    description: "Preenche selection com stroke.",
+  },
+  {
+    id: "transform",
+    label: "Transformar",
+    status: "stub",
+    description: "Scale/rotate/mirror/crop — futuro.",
+  },
+  { id: "mask", label: "Máscara", status: "stub", description: "Masks/blend — futuro." },
 ];
 
 /** Snapshot legado empilhado como comando (compatibilidade undo/redo). */
@@ -109,6 +147,10 @@ export class EditorDocument {
   private config: Partial<AsciiInteractionConfig> = {};
   private strokeChar = "#";
   private eraseChar = " ";
+  private textBuffer = "ASCII";
+  private replaceFrom = ".";
+  private replaceTo = "#";
+  private moveDelta = { col: 1, row: 0 };
   private readonly history: CommandHistory;
 
   constructor(maxHistory = 64) {
@@ -178,6 +220,11 @@ export class EditorDocument {
       stroke: { char: this.strokeChar, eraseChar: this.eraseChar },
       col,
       row,
+      stamp: this.clipboard,
+      text: this.textBuffer,
+      replaceFrom: this.replaceFrom,
+      replaceTo: this.replaceTo,
+      moveDelta: { ...this.moveDelta },
     };
   }
 
@@ -193,6 +240,10 @@ export class EditorDocument {
       canRedo: this.history.canRedo,
       strokeChar: this.strokeChar,
       eraseChar: this.eraseChar,
+      textBuffer: this.textBuffer,
+      replaceFrom: this.replaceFrom,
+      replaceTo: this.replaceTo,
+      moveDelta: { ...this.moveDelta },
     };
   }
 
@@ -211,6 +262,19 @@ export class EditorDocument {
 
   setEraseChar(char: string): void {
     this.eraseChar = char.length > 0 ? char[0]! : " ";
+  }
+
+  setTextBuffer(text: string): void {
+    this.textBuffer = text;
+  }
+
+  setReplaceChars(from: string, to: string): void {
+    this.replaceFrom = from.length > 0 ? from[0]! : ".";
+    this.replaceTo = to.length > 0 ? to[0]! : "#";
+  }
+
+  setMoveDelta(col: number, row: number): void {
+    this.moveDelta = { col, row };
   }
 
   /** Path preferido: aplica um EditorCommand e empilha no histórico. */
@@ -267,7 +331,11 @@ export class EditorDocument {
     const layer = this.getActiveLayer();
     if (!layer?.matrix) return;
     this.applyLegacyMutation("copy", () => {
-      this.clipboard = structuredClone(layer.matrix);
+      if (this.selection) {
+        this.clipboard = extractRegion(layer.matrix!, this.selection);
+      } else {
+        this.clipboard = structuredClone(layer.matrix);
+      }
     });
   }
 
@@ -282,7 +350,8 @@ export class EditorDocument {
 
   /**
    * Aplica a tool activa em (col, row).
-   * brush/eraser/fill mutam células; select actualiza selection 1×1 se sem drag.
+   * Tools ready mutam células; select actualiza selection 1×1 se sem drag.
+   * Stubs (transform/mask) retornam false.
    */
   applyToolAt(col: number, row: number): boolean {
     switch (this.activeTool) {
@@ -292,6 +361,16 @@ export class EditorDocument {
         return this.eraseAt(col, row);
       case "fill":
         return this.fillAt(col, row);
+      case "stamp":
+        return this.stampAt(col, row);
+      case "text":
+        return this.textAt(col, row);
+      case "character-replace":
+        return this.characterReplaceAt();
+      case "region-replace":
+        return this.regionReplaceAt();
+      case "move":
+        return this.moveSelectionBy();
       case "select":
         this.setSelection({ col, row, cols: 1, rows: 1 });
         return true;
@@ -322,6 +401,67 @@ export class EditorDocument {
     const ctx = this.buildToolContext(col, row);
     if (!ctx) return false;
     const cmd = createFillCommand(ctx, this.getLayerMatrix, this.setLayerMatrixSilent);
+    if (!cmd) return false;
+    this.history.push(cmd);
+    return true;
+  }
+
+  stampAt(col: number, row: number): boolean {
+    const ctx = this.buildToolContext(col, row);
+    if (!ctx) return false;
+    // Stamp coloca o padrão no ponto; selection não clipa (serve a copy/region).
+    const cmd = createStampCommand(
+      { ...ctx, selection: null },
+      this.getLayerMatrix,
+      this.setLayerMatrixSilent,
+    );
+    if (!cmd) return false;
+    this.history.push(cmd);
+    return true;
+  }
+
+  textAt(col: number, row: number): boolean {
+    const ctx = this.buildToolContext(col, row);
+    if (!ctx) return false;
+    const cmd = createTextCommand(ctx, this.getLayerMatrix, this.setLayerMatrixSilent);
+    if (!cmd) return false;
+    this.history.push(cmd);
+    return true;
+  }
+
+  characterReplaceAt(): boolean {
+    const ctx = this.buildToolContext(0, 0);
+    if (!ctx) return false;
+    const cmd = createCharacterReplaceCommand(ctx, this.getLayerMatrix, this.setLayerMatrixSilent);
+    if (!cmd) return false;
+    this.history.push(cmd);
+    return true;
+  }
+
+  regionReplaceAt(): boolean {
+    const ctx = this.buildToolContext(0, 0);
+    if (!ctx) return false;
+    const cmd = createRegionReplaceCommand(ctx, this.getLayerMatrix, this.setLayerMatrixSilent);
+    if (!cmd) return false;
+    this.history.push(cmd);
+    return true;
+  }
+
+  moveSelectionBy(dCol?: number, dRow?: number): boolean {
+    if (dCol != null || dRow != null) {
+      this.moveDelta = {
+        col: dCol ?? this.moveDelta.col,
+        row: dRow ?? this.moveDelta.row,
+      };
+    }
+    const ctx = this.buildToolContext(0, 0);
+    if (!ctx) return false;
+    const cmd = createMoveCommand(
+      ctx,
+      this.getLayerMatrix,
+      this.setLayerMatrixSilent,
+      this.setSelectionSilent,
+    );
     if (!cmd) return false;
     this.history.push(cmd);
     return true;

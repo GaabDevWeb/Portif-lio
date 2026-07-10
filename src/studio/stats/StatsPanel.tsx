@@ -52,6 +52,55 @@ export function StatsPanel({
         <PanelMetric label="Frames" value={model.frameCount != null ? String(model.frameCount) : "—"} />
       </PanelSection>
 
+      <PanelSection title="Analytics (W5)">
+        {model.frequency == null ? (
+          <p className="text-[9px] text-[var(--ui-text-dim)]">Sem matriz ativa.</p>
+        ) : (
+          <>
+            <PanelMetric label="Unique chars" value={String(model.frequency.uniqueChars)} />
+            <PanelMetric
+              label="Mode"
+              value={
+                model.frequency.mode == null
+                  ? "—"
+                  : model.frequency.mode === " "
+                    ? "␠"
+                    : model.frequency.mode
+              }
+            />
+            <PanelMetric
+              label="Entropy"
+              value={`${model.frequency.entropyBits.toFixed(2)} bit`}
+            />
+          </>
+        )}
+        {model.compression != null ? (
+          <>
+            <PanelMetric label="TXT bytes" value={String(model.compression.plainBytes)} />
+            <PanelMetric
+              label="Compressed (est.)"
+              value={`${model.compression.compressedBytes} · ×${model.compression.ratio.toFixed(2)}`}
+            />
+          </>
+        ) : null}
+        {model.charsetAnalysis != null ? (
+          <>
+            <PanelMetric
+              label="Charset coverage"
+              value={`${(model.charsetAnalysis.coverage * 100).toFixed(0)}% (${model.charsetAnalysis.usedCount}/${model.charsetAnalysis.charsetLength})`}
+            />
+            {model.charsetAnalysis.outsideCharset.length > 0 ? (
+              <PanelMetric
+                label="Outside charset"
+                value={model.charsetAnalysis.outsideCharset
+                  .map((c) => (c === " " ? "␠" : c))
+                  .join("")}
+              />
+            ) : null}
+          </>
+        ) : null}
+      </PanelSection>
+
       <PanelSection title="Luminance heatmap">
         {model.heatmap == null ? (
           <p className="text-[9px] text-[var(--ui-text-dim)]">Sem matriz ativa.</p>

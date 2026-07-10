@@ -3,8 +3,13 @@ import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/ty
 import type { EditorCommand } from "./commands";
 import {
   captureCellPatches,
+  characterReplacePatches,
   floodFillPatches,
+  moveSelectionPatches,
   patchMatrixCells,
+  regionReplacePatches,
+  stampPatches,
+  textPatches,
   type CellPatch,
 } from "./matrix-ops";
 import type { EditorSelection, ToolContext } from "./types";
@@ -75,6 +80,27 @@ export class SetSelectionCommand implements EditorCommand {
   }
 }
 
+/** Agrupa vários comandos num único passo de histórico. */
+export class CompositeCommand implements EditorCommand {
+  readonly label: string;
+  private readonly commands: EditorCommand[];
+
+  constructor(label: string, commands: EditorCommand[]) {
+    this.label = label;
+    this.commands = commands;
+  }
+
+  execute(): void {
+    for (const cmd of this.commands) cmd.execute();
+  }
+
+  undo(): void {
+    for (let i = this.commands.length - 1; i >= 0; i--) {
+      this.commands[i]!.undo();
+    }
+  }
+}
+
 function inSelection(col: number, row: number, selection: EditorSelection | null): boolean {
   if (!selection) return true;
   return (
@@ -106,6 +132,26 @@ function createCellPaintCommand(
   return new PatchCellsCommand({
     label,
     layerId: layer.id,
+    before,
+    after,
+    getMatrix,
+    setMatrix,
+  });
+}
+
+function createPatchCommandFromAfter(
+  label: string,
+  layerId: string,
+  matrix: AsciiMatrix,
+  after: CellPatch[],
+  getMatrix: () => AsciiMatrix | null,
+  setMatrix: LayerMatrixSetter,
+): EditorCommand | null {
+  if (after.length === 0) return null;
+  const before = captureCellPatches(matrix, after);
+  return new PatchCellsCommand({
+    label,
+    layerId,
     before,
     after,
     getMatrix,
@@ -153,4 +199,112 @@ export function createFillCommand(
     getMatrix,
     setMatrix,
   });
+}
+
+/** Stamp: carimba padrão (clipboard/stamp) em (col, row). */
+export function createStampCommand(
+  ctx: ToolContext,
+  getMatrix: () => AsciiMatrix | null,
+  setMatrix: LayerMatrixSetter,
+): EditorCommand | null {
+  const { layer, col, row, selection, stamp } = ctx;
+  const matrix = layer.matrix;
+  if (!matrix || !stamp) return null;
+  const after = stampPatches(matrix, stamp, col, row, selection);
+  return createPatchCommandFromAfter("stamp", layer.id, matrix, after, getMatrix, setMatrix);
+}
+
+/** Text: insere string horizontal simples a partir de (col, row). */
+export function createTextCommand(
+  ctx: ToolContext,
+  getMatrix: () => AsciiMatrix | null,
+  setMatrix: LayerMatrixSetter,
+): EditorCommand | null {
+  const { layer, col, row, selection, text } = ctx;
+  const matrix = layer.matrix;
+  if (!matrix || !text) return null;
+  const after = textPatches(matrix, text, col, row, selection);
+  return createPatchCommandFromAfter("text", layer.id, matrix, after, getMatrix, setMatrix);
+}
+
+/** Character Replace: substitui from → to (selection opcional). */
+export function createCharacterReplaceCommand(
+  ctx: ToolContext,
+  getMatrix: () => AsciiMatrix | null,
+  setMatrix: LayerMatrixSetter,
+): EditorCommand | null {
+  const { layer, selection, replaceFrom, replaceTo } = ctx;
+  const matrix = layer.matrix;
+  if (!matrix || replaceFrom == null || replaceTo == null) return null;
+  const after = characterReplacePatches(matrix, replaceFrom, replaceTo, selection);
+  return createPatchCommandFromAfter(
+    "character-replace",
+    layer.id,
+    matrix,
+    after,
+    getMatrix,
+    setMatrix,
+  );
+}
+
+/** Region Replace: preenche selection com stroke.char. */
+export function createRegionReplaceCommand(
+  ctx: ToolContext,
+  getMatrix: () => AsciiMatrix | null,
+  setMatrix: LayerMatrixSetter,
+): EditorCommand | null {
+  const { layer, selection, stroke } = ctx;
+  const matrix = layer.matrix;
+  if (!matrix || !selection) return null;
+  const after = regionReplacePatches(matrix, stroke.char, selection);
+  return createPatchCommandFromAfter(
+    "region-replace",
+    layer.id,
+    matrix,
+    after,
+    getMatrix,
+    setMatrix,
+  );
+}
+
+/**
+ * Move: desloca conteúdo da selection por moveDelta e actualiza selection.
+ * Requer selection + moveDelta.
+ */
+export function createMoveCommand(
+  ctx: ToolContext,
+  getMatrix: () => AsciiMatrix | null,
+  setMatrix: LayerMatrixSetter,
+  setSelection: SelectionSetter,
+): EditorCommand | null {
+  const { layer, selection, moveDelta, stroke } = ctx;
+  const matrix = layer.matrix;
+  if (!matrix || !selection || !moveDelta) return null;
+  if (moveDelta.col === 0 && moveDelta.row === 0) return null;
+
+  const after = moveSelectionPatches(
+    matrix,
+    selection,
+    moveDelta.col,
+    moveDelta.row,
+    stroke.eraseChar,
+  );
+  const patchCmd = createPatchCommandFromAfter(
+    "move-cells",
+    layer.id,
+    matrix,
+    after,
+    getMatrix,
+    setMatrix,
+  );
+  if (!patchCmd) return null;
+
+  const nextSelection: EditorSelection = {
+    col: selection.col + moveDelta.col,
+    row: selection.row + moveDelta.row,
+    cols: selection.cols,
+    rows: selection.rows,
+  };
+  const selCmd = new SetSelectionCommand(selection, nextSelection, setSelection);
+  return new CompositeCommand("move", [patchCmd, selCmd]);
 }

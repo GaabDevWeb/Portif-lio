@@ -29,9 +29,23 @@ function grid(cols: number, rows: number, fill = "."): AsciiMatrix {
 }
 
 describe("EDITOR_TOOLS readiness", () => {
-  it("marks brush/eraser/fill/select as ready", () => {
+  it("marks W5 tools as ready and transform/mask as stub", () => {
     const ready = EDITOR_TOOLS.filter((t) => t.status === "ready").map((t) => t.id);
-    expect(ready).toEqual(expect.arrayContaining(["select", "brush", "eraser", "fill"]));
+    expect(ready).toEqual(
+      expect.arrayContaining([
+        "select",
+        "brush",
+        "eraser",
+        "fill",
+        "move",
+        "stamp",
+        "text",
+        "character-replace",
+        "region-replace",
+      ]),
+    );
+    const stubs = EDITOR_TOOLS.filter((t) => t.status === "stub").map((t) => t.id);
+    expect(stubs).toEqual(expect.arrayContaining(["transform", "mask"]));
   });
 });
 
@@ -172,5 +186,81 @@ describe("EditorDocument paint + undo", () => {
     expect(doc.paintAt(1, 1)).toBe(true);
     expect(doc.getCharAt(0, 0)).toBe(".");
     expect(doc.getCharAt(1, 1)).toBe("#");
+  });
+});
+
+describe("EditorDocument W5 tools", () => {
+  it("text inserts horizontal string", () => {
+    const doc = new EditorDocument();
+    doc.setLayerMatrix(doc.getState().activeLayerId, grid(8, 2, "."));
+    doc.setTextBuffer("HI");
+    doc.setActiveTool("text");
+    expect(doc.textAt(1, 0)).toBe(true);
+    expect(doc.getCharAt(1, 0)).toBe("H");
+    expect(doc.getCharAt(2, 0)).toBe("I");
+    expect(doc.getCharAt(3, 0)).toBe(".");
+    expect(doc.undo()).toBe(true);
+    expect(doc.getCharAt(1, 0)).toBe(".");
+  });
+
+  it("stamp pastes clipboard pattern", () => {
+    const doc = new EditorDocument();
+    const layerId = doc.getState().activeLayerId;
+    doc.setLayerMatrix(layerId, grid(6, 4, "."));
+    doc.setSelection({ col: 0, row: 0, cols: 2, rows: 1 });
+    // paint then copy via clipboard hydrate path
+    doc.setStrokeChar("A");
+    doc.paintAt(0, 0);
+    doc.setStrokeChar("B");
+    doc.paintAt(1, 0);
+    doc.copySelection();
+    expect(doc.getState().clipboard).not.toBeNull();
+    doc.setActiveTool("stamp");
+    expect(doc.stampAt(3, 2)).toBe(true);
+    expect(doc.getCharAt(3, 2)).toBe("A");
+    expect(doc.getCharAt(4, 2)).toBe("B");
+  });
+
+  it("character replace swaps chars", () => {
+    const doc = new EditorDocument();
+    doc.setLayerMatrix(doc.getState().activeLayerId, grid(3, 2, "."));
+    doc.setStrokeChar("#");
+    doc.paintAt(0, 0);
+    doc.paintAt(2, 1);
+    doc.setReplaceChars("#", "@");
+    expect(doc.characterReplaceAt()).toBe(true);
+    expect(doc.getCharAt(0, 0)).toBe("@");
+    expect(doc.getCharAt(2, 1)).toBe("@");
+    expect(doc.getCharAt(1, 0)).toBe(".");
+  });
+
+  it("region replace fills selection", () => {
+    const doc = new EditorDocument();
+    doc.setLayerMatrix(doc.getState().activeLayerId, grid(4, 4, "."));
+    doc.setSelection({ col: 1, row: 1, cols: 2, rows: 2 });
+    doc.setStrokeChar("X");
+    expect(doc.regionReplaceAt()).toBe(true);
+    expect(doc.getCharAt(1, 1)).toBe("X");
+    expect(doc.getCharAt(2, 2)).toBe("X");
+    expect(doc.getCharAt(0, 0)).toBe(".");
+  });
+
+  it("move shifts selection content and selection rect", () => {
+    const doc = new EditorDocument();
+    doc.setLayerMatrix(doc.getState().activeLayerId, grid(5, 3, "."));
+    doc.setStrokeChar("#");
+    doc.paintAt(0, 0);
+    doc.paintAt(1, 0);
+    doc.setSelection({ col: 0, row: 0, cols: 2, rows: 1 });
+    doc.setMoveDelta(2, 1);
+    expect(doc.moveSelectionBy()).toBe(true);
+    expect(doc.getCharAt(0, 0)).toBe(" ");
+    expect(doc.getCharAt(1, 0)).toBe(" ");
+    expect(doc.getCharAt(2, 1)).toBe("#");
+    expect(doc.getCharAt(3, 1)).toBe("#");
+    expect(doc.getState().selection).toEqual({ col: 2, row: 1, cols: 2, rows: 1 });
+    expect(doc.undo()).toBe(true);
+    expect(doc.getCharAt(0, 0)).toBe("#");
+    expect(doc.getState().selection).toEqual({ col: 0, row: 0, cols: 2, rows: 1 });
   });
 });

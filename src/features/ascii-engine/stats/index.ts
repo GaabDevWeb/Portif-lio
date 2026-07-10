@@ -3,6 +3,15 @@ import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/ty
 import type { PipelineBenchmark } from "@/features/ascii-interaction/image-pipeline/types";
 
 import {
+  analyzeCharset,
+  buildCharacterFrequency,
+  estimateCompressionRatio,
+  resolveFrameCount,
+  type CharacterFrequency,
+  type CharsetAnalysis,
+  type CompressionRatioResult,
+} from "@/features/ascii-engine/stats/analytics";
+import {
   buildLuminanceHeatmap,
   type LuminanceHeatmap,
 } from "@/features/ascii-engine/stats/heatmap";
@@ -12,6 +21,20 @@ export {
   buildLuminanceHeatmap,
   formatHeatmapPreview,
 } from "@/features/ascii-engine/stats/heatmap";
+
+export type {
+  CharacterFrequency,
+  CharacterFrequencyEntry,
+  CharsetAnalysis,
+  CompressionRatioResult,
+} from "@/features/ascii-engine/stats/analytics";
+export {
+  analyzeCharset,
+  buildCharacterFrequency,
+  estimateCompressionRatio,
+  matrixToPlainText,
+  resolveFrameCount,
+} from "@/features/ascii-engine/stats/analytics";
 
 export interface AsciiEngineStatsPanelModel {
   fps: number;
@@ -29,6 +52,12 @@ export interface AsciiEngineStatsPanelModel {
   histogram: Array<{ char: string; count: number }>;
   /** Heatmap de luminância (null se sem matriz). */
   heatmap: LuminanceHeatmap | null;
+  /** Frequência completa + entropia. */
+  frequency: CharacterFrequency | null;
+  /** TXT vs compressão estimada/fornecida. */
+  compression: CompressionRatioResult | null;
+  /** Cobertura do charset. */
+  charsetAnalysis: CharsetAnalysis | null;
 }
 
 export function estimateMatrixMemoryBytes(matrix: AsciiMatrix | null): number {
@@ -42,14 +71,8 @@ export function buildCharacterHistogram(
   topN = 16,
 ): Array<{ char: string; count: number }> {
   if (!matrix) return [];
-  const map = new Map<string, number>();
-  for (const cell of matrix.cells) {
-    map.set(cell.char, (map.get(cell.char) ?? 0) + 1);
-  }
-  return [...map.entries()]
-    .map(([char, count]) => ({ char, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, topN);
+  const freq = buildCharacterFrequency(matrix, topN);
+  return freq.entries.map(({ char, count }) => ({ char, count }));
 }
 
 export function buildStatsPanelModel(input: {
@@ -58,8 +81,19 @@ export function buildStatsPanelModel(input: {
   benchmark?: PipelineBenchmark | null;
   charset?: string;
   frameCount?: number;
+  animationFrameCount?: number;
+  /** Bytes ZIP reais (opcional) para compression ratio. */
+  compressedBytes?: number;
 }): AsciiEngineStatsPanelModel {
   const matrix = input.matrix ?? null;
+  const frequency = matrix ? buildCharacterFrequency(matrix) : null;
+  const compression = estimateCompressionRatio(matrix, input.compressedBytes);
+  const charsetAnalysis = analyzeCharset(matrix, input.charset);
+  const frameCount = resolveFrameCount({
+    frameCount: input.frameCount,
+    animationFrameCount: input.animationFrameCount,
+  });
+
   return {
     fps: input.engine?.fps ?? 0,
     frameTimeMs: input.engine?.frameTimeMs ?? 0,
@@ -68,12 +102,15 @@ export function buildStatsPanelModel(input: {
     activeCharacterCount: input.engine?.activeCharacterCount ?? 0,
     dirtyCount: input.engine?.dirtyCount ?? 0,
     memoryEstimateBytes: estimateMatrixMemoryBytes(matrix),
-    charset: input.charset,
-    frameCount: input.frameCount,
+    charset: input.charset ?? matrix?.charset,
+    frameCount,
     conversionMs: input.benchmark?.conversionMs,
     cols: input.benchmark?.cols ?? matrix?.cols,
     rows: input.benchmark?.rows ?? matrix?.rows,
     histogram: buildCharacterHistogram(matrix),
     heatmap: buildLuminanceHeatmap(matrix),
+    frequency,
+    compression,
+    charsetAnalysis,
   };
 }
