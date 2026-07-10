@@ -26,7 +26,9 @@ import {
   presetToPipelinePatch,
   type AsciiEnginePreset,
 } from "@/features/ascii-engine/presets";
+import { getRecipe, recipeToPreset } from "@/features/ascii-engine/recipes";
 import { ProjectDocument } from "@/features/ascii-engine/document";
+import { previewToAscii } from "@/features/ascii-engine/gallery";
 import { AnimationConverterPanel } from "@/studio/animation/AnimationConverterPanel";
 import { AnimationResultView } from "@/studio/animation/AnimationResultView";
 import { useAnimationController } from "@/studio/animation/useAnimationController";
@@ -41,6 +43,8 @@ import { LabMobileHeader } from "@/studio/LabMobileHeader";
 import { LabViewport } from "@/studio/LabViewport";
 import { PlaygroundPanel } from "@/studio/playground/PlaygroundPanel";
 import { applyPreset } from "@/studio/Presets";
+import { resolveGalleryItem } from "@/studio/gallery/actions";
+import { StudioChromeNav } from "@/studio/gallery/StudioChromeNav";
 import { StatsPanel } from "@/studio/stats/StatsPanel";
 import { getScenarioSource } from "@/studio/test-sources";
 import { ThemesPresetsPanel } from "@/studio/themes/ThemesPresetsPanel";
@@ -83,6 +87,8 @@ export function AsciiLab() {
   const [snapshot, setSnapshot] = useState<AsciiDebugSnapshot | null>(null);
   const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResult[]>([]);
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
+  const [gallerySource, setGallerySource] = useState<string | null>(null);
+  const [galleryBanner, setGalleryBanner] = useState<string | null>(null);
 
   const imageWorkspace = useWorkspaceViewport();
   const gifWorkspace = useWorkspaceViewport();
@@ -116,8 +122,8 @@ export function AsciiLab() {
   } = animation;
 
   const source = useMemo(
-    () => getScenarioSource(scenarioId, stressMultiplier),
-    [scenarioId, stressMultiplier],
+    () => gallerySource ?? getScenarioSource(scenarioId, stressMultiplier),
+    [gallerySource, scenarioId, stressMultiplier],
   );
 
   const converterConfig = useMemo(
@@ -216,6 +222,48 @@ export function AsciiLab() {
     },
     [imageWorkspace],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const galleryId = params.get("gallery");
+    const action = params.get("action");
+    if (!galleryId || (action !== "edit" && action !== "remix")) return;
+
+    let cancelled = false;
+    void (async () => {
+      const item = await resolveGalleryItem(galleryId);
+      if (cancelled || !item) return;
+
+      const ascii = previewToAscii(item.preview);
+      setGallerySource(ascii);
+      setTab("engine");
+
+      if (action === "remix" && item.recipeId) {
+        const recipe = getRecipe(item.recipeId);
+        if (recipe) {
+          applyProductPreset(recipeToPreset(recipe));
+          setActivePreset(item.recipeId);
+          setGalleryBanner(`Remix · ${item.title} · recipe ${item.recipeId}`);
+        } else {
+          setGalleryBanner(`Edit · ${item.title} · recipe ${item.recipeId} not found`);
+        }
+      } else {
+        setGalleryBanner(`Edit · ${item.title} · loaded from Gallery`);
+      }
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete("gallery");
+      url.searchParams.delete("action");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // Mount-only: query params are consumed once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- gallery deep-link bootstrap
+  }, []);
 
   const runBenchmark = useCallback(async () => {
     if (!imageEl || benchmarkRunning) return;
@@ -395,11 +443,35 @@ export function AsciiLab() {
       className="flex h-dvh w-full flex-col overflow-hidden bg-[var(--bg-void)] text-[var(--phosphor-primary)]"
       style={themeStyle}
     >
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--ui-border)] bg-[var(--bg-panel)] px-3 py-1.5 max-md:hidden">
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--amber-led)]">
+          ASCII Engine · {TABS.find((t) => t.id === tab)?.label ?? ""}
+        </p>
+        <StudioChromeNav active="studio" />
+      </div>
+
       <LabMobileHeader
         title={`ASCII Engine · ${TABS.find((t) => t.id === tab)?.label ?? ""}`}
         sidebarOpen={showDrawerChrome ? sidebarOpen : engineSidebarOpen}
         onToggleSidebar={toggleSidebar}
+        trailing={<StudioChromeNav active="studio" />}
       />
+
+      {galleryBanner ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--ui-border)] bg-[var(--bg-terminal)] px-3 py-1.5 font-mono text-[9px] text-[var(--phosphor-primary)]">
+          <span>{galleryBanner}</span>
+          <button
+            type="button"
+            className="cursor-pointer text-[var(--ui-text-dim)] hover:text-[var(--phosphor-dim)]"
+            onClick={() => {
+              setGalleryBanner(null);
+              setGallerySource(null);
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      ) : null}
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {!focusMode ? (
