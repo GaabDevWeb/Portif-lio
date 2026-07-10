@@ -2,15 +2,20 @@ import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/ty
 import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipeline/types";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline/types";
 import {
-  DEFAULT_IMAGE_PIPELINE_OPTIONS,
-  mergePipelineOptions,
-  runImagePipeline,
-} from "@/features/ascii-interaction/image-pipeline";
-import {
   AnimationPipeline,
   DEFAULT_ANIMATION_PIPELINE_OPTIONS,
 } from "@/features/ascii-interaction/animation-pipeline";
+import {
+  DEFAULT_IMAGE_PIPELINE_OPTIONS,
+  isSupportedImageMime,
+  loadImageElement,
+  loadImageFromFile,
+  mergePipelineOptions,
+  runImagePipeline,
+} from "@/features/ascii-interaction/image-pipeline";
 
+import { CanvasAdapter } from "@/features/ascii-engine/converters/canvas-adapter";
+import { ClipboardAdapter } from "@/features/ascii-engine/converters/clipboard-adapter";
 import { SvgAdapter } from "@/features/ascii-engine/converters/svg-adapter";
 import type {
   ConversionProgressInfo,
@@ -36,13 +41,20 @@ export {
 } from "@/features/ascii-engine/converters/rasterize-svg";
 export { SvgAdapter, loadSvgAsImage } from "@/features/ascii-engine/converters/svg-adapter";
 export {
+  ClipboardAdapter,
+  readClipboardImageItem,
+} from "@/features/ascii-engine/converters/clipboard-adapter";
+export { CanvasAdapter } from "@/features/ascii-engine/converters/canvas-adapter";
+export {
+  convertBatch,
   convertBatchStub,
   describeBatchFile,
   type BatchConvertOptions,
   type BatchConvertResult,
+  type BatchConvertStatus,
   type BatchItemResult,
   type BatchItemStatus,
-} from "@/features/ascii-engine/converters/batch-stub";
+} from "@/features/ascii-engine/converters/batch";
 
 const STUB_CAPABILITIES: ConverterCapability[] = [
   {
@@ -58,20 +70,6 @@ const STUB_CAPABILITIES: ConverterCapability[] = [
     status: "stub",
     mimeTypes: ["video/x-raw"],
     description: "Estrutura preparada — captura getUserMedia futura.",
-  },
-  {
-    kind: "canvas",
-    label: "Canvas",
-    status: "stub",
-    mimeTypes: [],
-    description: "Estrutura preparada — HTMLCanvasElement → ASCII.",
-  },
-  {
-    kind: "clipboard",
-    label: "Clipboard",
-    status: "stub",
-    mimeTypes: ["image/png"],
-    description: "Estrutura preparada — paste image já existe na UI de upload.",
   },
   {
     kind: "screen",
@@ -107,6 +105,13 @@ class StubAdapter implements SourceAdapter {
   }
 }
 
+function isRasterImageFile(input: unknown): input is File {
+  if (typeof File === "undefined" || !(input instanceof File)) return false;
+  if (input.type === "image/gif" || input.type === "image/svg+xml") return false;
+  if (isSupportedImageMime(input.type)) return true;
+  return /\.(png|jpe?g|webp)$/i.test(input.name);
+}
+
 class ImageAdapter implements SourceAdapter {
   readonly kind = "image" as const;
   readonly capability: ConverterCapability = {
@@ -114,17 +119,34 @@ class ImageAdapter implements SourceAdapter {
     label: "Image",
     status: "ready",
     mimeTypes: ["image/png", "image/jpeg", "image/webp"],
-    description: "PNG/JPG/WEBP → AsciiMatrix via image-pipeline.",
+    description: "PNG/JPG/WEBP (HTMLImageElement | File) → AsciiMatrix via image-pipeline.",
   };
 
   canHandle(input: unknown): boolean {
-    return typeof HTMLImageElement !== "undefined" && input instanceof HTMLImageElement;
+    if (typeof HTMLImageElement !== "undefined" && input instanceof HTMLImageElement) {
+      return true;
+    }
+    return isRasterImageFile(input);
   }
 
   async convert(input: unknown, options: Partial<ImagePipelineOptions>) {
-    if (!this.canHandle(input)) throw new Error("ImageAdapter espera HTMLImageElement.");
+    if (!this.canHandle(input)) {
+      throw new Error("ImageAdapter espera HTMLImageElement ou File PNG/JPG/WEBP.");
+    }
+
+    let image: HTMLImageElement;
+    if (typeof HTMLImageElement !== "undefined" && input instanceof HTMLImageElement) {
+      image = input;
+    } else if (isRasterImageFile(input)) {
+      image = isSupportedImageMime(input.type)
+        ? await loadImageFromFile(input)
+        : await loadImageElement(input);
+    } else {
+      throw new Error("ImageAdapter: input inválido.");
+    }
+
     const result = runImagePipeline(
-      input as HTMLImageElement,
+      image,
       mergePipelineOptions(DEFAULT_IMAGE_PIPELINE_OPTIONS, options),
     );
     return { matrix: result.matrix };
@@ -144,7 +166,11 @@ class GifAdapter implements SourceAdapter {
   private pipeline = new AnimationPipeline();
 
   canHandle(input: unknown): boolean {
-    return typeof File !== "undefined" && input instanceof File && input.type === "image/gif";
+    return (
+      typeof File !== "undefined" &&
+      input instanceof File &&
+      (input.type === "image/gif" || /\.gif$/i.test(input.name))
+    );
   }
 
   async convert(
@@ -183,6 +209,8 @@ export class ConverterRegistry {
     this.register(new ImageAdapter());
     this.register(new GifAdapter());
     this.register(new SvgAdapter());
+    this.register(new ClipboardAdapter());
+    this.register(new CanvasAdapter());
     for (const cap of STUB_CAPABILITIES) {
       this.register(new StubAdapter(cap));
     }

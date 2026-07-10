@@ -17,14 +17,19 @@ export interface BatchItemResult {
   error?: string;
 }
 
+export type BatchConvertStatus = "done" | "partial" | "empty" | "stub";
+
 export interface BatchConvertResult {
-  status: "stub";
+  status: BatchConvertStatus;
   message: string;
   items: BatchItemResult[];
 }
 
 export interface BatchConvertOptions {
-  /** Se true, tenta processar SVG/imagem via registry quando disponível. Default: false (stub puro). */
+  /**
+   * Se true (default), processa ficheiros sequencialmente via adapters ready.
+   * Se false, devolve status "stub" sem converter (compat P8).
+   */
   processReady?: boolean;
   findAdapter?: (file: File) =>
     | {
@@ -40,17 +45,24 @@ export interface BatchConvertOptions {
 }
 
 /**
- * Batch stub (P8): aceita File[] e devolve status "stub".
- * Opcionalmente processa ficheiros com adapter ready (SVG/imagem) em sequência.
- * ZIP/pasta de saída fica para fases futuras.
+ * Conversão batch sequencial de File[].
+ * Usa image/gif/svg adapters; ZIP/pasta multi-ficheiro fica para fases futuras.
  */
-export async function convertBatchStub(
+export async function convertBatch(
   files: File[],
   options: BatchConvertOptions = {},
 ): Promise<BatchConvertResult> {
   const items: BatchItemResult[] = [];
   const total = files.length;
-  const processReady = options.processReady === true;
+  const processReady = options.processReady !== false;
+
+  if (total === 0) {
+    return {
+      status: "empty",
+      message: "Nenhum ficheiro na lista.",
+      items: [],
+    };
+  }
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]!;
@@ -61,7 +73,7 @@ export async function convertBatchStub(
         name: file.name,
         mimeType: file.type || guessMime(file.name),
         status: "stub",
-        note: "Batch converter stub — ZIP/pasta de saída ainda não implementado (P8).",
+        note: "Batch stub — processReady=false; ZIP/pasta de saída ainda não implementado.",
       });
       continue;
     }
@@ -104,12 +116,41 @@ export async function convertBatchStub(
 
   options.onProgress?.(total, total);
 
+  if (!processReady) {
+    return {
+      status: "stub",
+      message:
+        "Batch API stub: lista aceite; export ZIP/pasta multi-ficheiro ainda não implementado.",
+      items,
+    };
+  }
+
+  const done = items.filter((i) => i.status === "done").length;
+  const failed = items.filter((i) => i.status === "error" || i.status === "skipped").length;
+  const status: BatchConvertStatus =
+    done === 0 ? "empty" : failed > 0 ? "partial" : "done";
+
   return {
-    status: "stub",
+    status,
     message:
-      "Batch API stub (P8): lista aceite; export ZIP/pasta multi-ficheiro ainda não implementado.",
+      status === "done"
+        ? `Batch concluído: ${done}/${total} ficheiros.`
+        : status === "partial"
+          ? `Batch parcial: ${done} ok, ${failed} falha/skip (ZIP multi-ficheiro futuro).`
+          : "Nenhum ficheiro convertido.",
     items,
   };
+}
+
+/** @deprecated Preferir convertBatch — mantido para compat P8. */
+export async function convertBatchStub(
+  files: File[],
+  options: BatchConvertOptions = {},
+): Promise<BatchConvertResult> {
+  return convertBatch(files, {
+    ...options,
+    processReady: options.processReady === true,
+  });
 }
 
 function guessMime(name: string): string {
@@ -123,6 +164,7 @@ function guessMime(name: string): string {
 
 export function describeBatchFile(file: File): string {
   if (isSvgFile(file)) return "svg";
+  if (file.type === "image/gif" || /\.gif$/i.test(file.name)) return "gif";
   if (file.type.startsWith("image/")) return "image";
   return file.type || "unknown";
 }

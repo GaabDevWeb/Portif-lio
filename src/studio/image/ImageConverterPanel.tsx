@@ -11,15 +11,17 @@ import type {
 } from "@/features/ascii-interaction/image-pipeline";
 import {
   DEFAULT_IMAGE_PIPELINE_OPTIONS,
-  copyAsciiToClipboard,
   downloadMatrix,
   downloadMatrixPng,
   IMAGE_CHARSETS,
   IMAGE_PIPELINE_PRESETS,
-  matrixToAsciiSource,
 } from "@/features/ascii-interaction/image-pipeline";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline";
+import {
+  exportMatrixToClipboard,
+} from "@/features/ascii-engine/exporters";
 import { BatchConvertStub } from "@/studio/image/BatchConvertStub";
+import { ClipboardPasteButton } from "@/studio/image/ClipboardPasteButton";
 import { ImageUploadZone } from "@/studio/image/ImageUploadZone";
 
 const MAPPING_MODES: MappingMode[] = ["brightness", "density", "edge", "hybrid"];
@@ -75,24 +77,34 @@ export function ImageConverterPanel({
     return () => clearTimeout(timer);
   }, [copyState]);
 
+  const handleCopyAscii = useCallback(async () => {
+    if (!matrix) return;
+    const result = await exportMatrixToClipboard(matrix, "txt");
+    setCopyState(result === "copied" ? "copied" : result);
+  }, [matrix]);
+
+  const handleCopyHtml = useCallback(async () => {
+    if (!matrix) return;
+    const result = await exportMatrixToClipboard(matrix, "html", {
+      sourceWidth: sourceWidth > 0 ? sourceWidth : undefined,
+      sourceHeight: sourceHeight > 0 ? sourceHeight : undefined,
+    });
+    setCopyState(result === "copied" ? "copied" : result);
+  }, [matrix, sourceWidth, sourceHeight]);
+
   const exportOptions = {
     sourceWidth: sourceWidth > 0 ? sourceWidth : undefined,
     sourceHeight: sourceHeight > 0 ? sourceHeight : undefined,
   };
 
-  const handleCopyAscii = useCallback(async () => {
-    if (!matrix) return;
-    const result = await copyAsciiToClipboard(matrixToAsciiSource(matrix));
-    setCopyState(result === "copied" ? "copied" : result);
-  }, [matrix]);
-
   return (
     <div className="space-y-4">
       <Section title="Upload">
         <ImageUploadZone onImageLoaded={onImageLoaded} />
+        <ClipboardPasteButton onImageLoaded={onImageLoaded} />
       </Section>
 
-      <Section title="Batch (stub)">
+      <Section title="Batch">
         <BatchConvertStub />
       </Section>
 
@@ -188,19 +200,28 @@ export function ImageConverterPanel({
 
       {matrix ? (
         <Section title="Exportar">
-          <button
-            type="button"
-            onClick={() => void handleCopyAscii()}
-            className="mb-2 w-full cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
-          >
-            {copyState === "copied"
-              ? "✓ Copied!"
-              : copyState === "unsupported"
-                ? "Clipboard indisponível"
-                : copyState === "error"
-                  ? "Falha ao copiar"
-                  : "Copy ASCII"}
-          </button>
+          <div className="mb-2 grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              onClick={() => void handleCopyAscii()}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
+            >
+              {copyState === "copied"
+                ? "✓ Copied!"
+                : copyState === "unsupported"
+                  ? "Clipboard N/A"
+                  : copyState === "error"
+                    ? "Falha"
+                    : "Copy TXT"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCopyHtml()}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
+            >
+              Copy HTML
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-1">
             {(["txt", "json", "html", "svg"] as const).map((fmt) => (
               <button

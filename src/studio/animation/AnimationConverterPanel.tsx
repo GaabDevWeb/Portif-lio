@@ -16,6 +16,10 @@ import {
 } from "@/features/ascii-interaction/animation-pipeline";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline";
 import { IMAGE_CHARSETS } from "@/features/ascii-interaction/image-pipeline";
+import {
+  downloadAnimationSpriteSheet,
+  exportAnimationToClipboard,
+} from "@/features/ascii-engine/exporters";
 import { GifUploadZone } from "@/studio/animation/GifUploadZone";
 
 interface AnimationConverterPanelProps {
@@ -56,7 +60,9 @@ export function AnimationConverterPanel({
   onMergeFrame,
 }: AnimationConverterPanelProps) {
   const [isExportingGif, setIsExportingGif] = useState(false);
+  const [isExportingSheet, setIsExportingSheet] = useState(false);
   const [exportProgress, setExportProgress] = useState<ConversionProgress | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const exportSignalRef = useRef({ cancelled: false });
 
   const handleExportGif = useCallback(async () => {
@@ -80,6 +86,25 @@ export function AnimationConverterPanel({
       setExportProgress(null);
     }
   }, [animation, exportSignalRef, isExportingGif]);
+
+  const handleExportSpriteSheet = useCallback(async () => {
+    if (!animation || isExportingSheet) return;
+    setIsExportingSheet(true);
+    try {
+      await downloadAnimationSpriteSheet(animation);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsExportingSheet(false);
+    }
+  }, [animation, isExportingSheet]);
+
+  const handleCopyFrames = useCallback(async () => {
+    if (!animation) return;
+    const result = await exportAnimationToClipboard(animation, "txt");
+    setCopyState(result === "copied" ? "copied" : "error");
+    setTimeout(() => setCopyState("idle"), 2000);
+  }, [animation]);
 
   return (
     <div className="space-y-4">
@@ -209,7 +234,7 @@ export function AnimationConverterPanel({
           <div className="grid grid-cols-1 gap-1">
             <button
               type="button"
-              disabled={isExportingGif}
+              disabled={isExportingGif || isExportingSheet}
               onClick={() => void downloadAsciiAnimationZip(animation)}
               className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
             >
@@ -217,7 +242,7 @@ export function AnimationConverterPanel({
             </button>
             <button
               type="button"
-              disabled={isExportingGif}
+              disabled={isExportingGif || isExportingSheet}
               onClick={() => void handleExportGif()}
               className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
             >
@@ -225,11 +250,27 @@ export function AnimationConverterPanel({
             </button>
             <button
               type="button"
-              disabled={isExportingGif}
+              disabled={isExportingGif || isExportingSheet}
               onClick={() => void downloadAsciiAnimationTxtSequence(animation)}
               className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
             >
               TXT Sequence
+            </button>
+            <button
+              type="button"
+              disabled={isExportingGif || isExportingSheet}
+              onClick={() => void handleExportSpriteSheet()}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
+            >
+              {isExportingSheet ? "Sprite sheet…" : "Sprite Sheet PNG"}
+            </button>
+            <button
+              type="button"
+              disabled={isExportingGif || isExportingSheet}
+              onClick={() => void handleCopyFrames()}
+              className="cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)] disabled:opacity-50"
+            >
+              {copyState === "copied" ? "✓ Copied!" : "Copy frames TXT"}
             </button>
           </div>
           {isExportingGif && exportProgress ? (

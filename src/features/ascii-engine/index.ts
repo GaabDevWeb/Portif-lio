@@ -8,6 +8,7 @@
 export * from "@/features/ascii-engine/core";
 export {
   writeTextToClipboard,
+  writeHtmlToClipboard,
   type ClipboardWriteResult,
 } from "@/features/ascii-engine/browser";
 export * from "@/features/ascii-engine/converters";

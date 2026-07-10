@@ -194,8 +194,9 @@ Para cada módulo: objetivo, responsabilidade, deps, API pública, fluxo, compon
 - `adapter.canHandle(input)`, `convert(input, options, onProgress)`
 - `FrameProvider.getFrame(i)`
 
-**Ready hoje:** image, gif, svg (rasterize → image-pipeline).  
-**Stubs → implementar por fase:** video, clipboard (já UI paste), webcam, canvas, pdf, screen, **batch** (lista de ficheiros → pasta/ZIP; stub API/UI em P8).
+**Ready hoje:** image, gif, svg, **clipboard**, **canvas**; batch sequencial (`convertBatch`).  
+**Stubs:** video, webcam, pdf, screen.  
+**Batch:** lista de ficheiros → conversão sequencial; ZIP/pasta multi-ficheiro futuro.
 
 **Extensibilidade:** plugin `converters[]` no manifest.  
 **Roadmap:** ImageBitmap worker → Video decoder (WebCodecs) → Batch CLI / ZIP real.

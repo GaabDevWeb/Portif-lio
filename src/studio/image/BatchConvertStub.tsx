@@ -4,33 +4,37 @@ import { useCallback, useRef, useState } from "react";
 import { Layers } from "lucide-react";
 
 import {
-  convertBatchStub,
+  convertBatch,
   defaultConverterRegistry,
   type BatchConvertResult,
 } from "@/features/ascii-engine/converters";
 
 /**
- * Stub UI (P8): aceita File[] e mostra status "stub".
- * Não produz ZIP/pasta — documentado como stub até batch real.
+ * Batch real (W3): File[] → conversão sequencial via adapters ready (image/gif/svg).
+ * ZIP/pasta multi-ficheiro ainda futuro.
  */
 export function BatchConvertStub() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<BatchConvertResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
 
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {
     const files = Array.from(fileList);
     if (files.length === 0) return;
     setBusy(true);
     setResult(null);
+    setProgress({ completed: 0, total: files.length });
     try {
-      const out = await convertBatchStub(files, {
-        processReady: false,
+      const out = await convertBatch(files, {
+        processReady: true,
         findAdapter: (file) => defaultConverterRegistry.findFor(file),
+        onProgress: (completed, total) => setProgress({ completed, total }),
       });
       setResult(out);
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   }, []);
 
@@ -62,10 +66,14 @@ export function BatchConvertStub() {
         <div className="flex flex-col items-center gap-1.5">
           <Layers size={14} className="text-[var(--phosphor-dim)]" aria-hidden />
           <p className="font-mono text-[10px] text-[var(--ui-text)]">
-            {busy ? "A processar stub…" : "Selecionar vários ficheiros"}
+            {busy
+              ? progress
+                ? `A converter ${progress.completed}/${progress.total}…`
+                : "A processar…"
+              : "Selecionar vários ficheiros"}
           </p>
           <p className="text-[9px] text-[var(--ui-text-dim)]">
-            Batch stub — lista → status (ZIP futuro)
+            Batch sequencial — image/gif/svg (ZIP futuro)
           </p>
         </div>
       </div>
@@ -82,8 +90,20 @@ export function BatchConvertStub() {
                 key={`${item.name}-${item.status}`}
                 className="flex justify-between gap-2 font-mono text-[9px]"
               >
-                <span className="truncate text-[var(--ui-text)]">{item.name}</span>
-                <span className="shrink-0 text-[var(--phosphor-dim)]">{item.status}</span>
+                <span className="truncate text-[var(--ui-text)]" title={item.note}>
+                  {item.name}
+                </span>
+                <span
+                  className={`shrink-0 ${
+                    item.status === "done"
+                      ? "text-[var(--phosphor-primary)]"
+                      : item.status === "error"
+                        ? "text-[var(--stderr)]"
+                        : "text-[var(--phosphor-dim)]"
+                  }`}
+                >
+                  {item.status}
+                </span>
               </li>
             ))}
           </ul>
