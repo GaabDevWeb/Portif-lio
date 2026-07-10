@@ -46,6 +46,8 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private reducedMotion = false;
+  /** `fill` = parent size (legacy); `intrinsic` = grid layout px (never-crop). */
+  private layoutMode: "fill" | "intrinsic" = "fill";
   private width = 0;
   private height = 0;
   private destroyed = false;
@@ -213,13 +215,33 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
     this.loop.setMaxFPS(this.config.maxFPS);
   }
 
+  setLayoutMode(mode: "fill" | "intrinsic"): void {
+    if (this.layoutMode === mode) return;
+    this.layoutMode = mode;
+    this.resize();
+  }
+
+  getLayoutMode(): "fill" | "intrinsic" {
+    return this.layoutMode;
+  }
+
+  getIntrinsicLayout(): { width: number; height: number } {
+    return { width: this.grid.layoutWidth, height: this.grid.layoutHeight };
+  }
+
   resize(): void {
     if (!this.canvas || !this.ctx) return;
 
-    const parent = this.canvas.parentElement;
-    const rect = parent?.getBoundingClientRect() ?? this.canvas.getBoundingClientRect();
-    this.width = Math.max(1, rect.width);
-    this.height = Math.max(1, rect.height);
+    if (this.layoutMode === "intrinsic") {
+      this.width = Math.max(1, this.grid.layoutWidth);
+      this.height = Math.max(1, this.grid.layoutHeight);
+    } else {
+      const parent = this.canvas.parentElement;
+      const rect = parent?.getBoundingClientRect() ?? this.canvas.getBoundingClientRect();
+      this.width = Math.max(1, rect.width);
+      this.height = Math.max(1, rect.height);
+    }
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     this.canvas.width = Math.floor(this.width * dpr);
@@ -229,6 +251,7 @@ export class AsciiInteractionEngineCore implements InfluencerSurface {
 
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.renderer.resize(this.width, this.height, dpr);
+    // Intrinsic: canvas === layout → centerIn yields ox=oy=0 (no crop).
     this.grid.centerIn(this.width, this.height);
     this.renderer.requestFullRedraw();
   }

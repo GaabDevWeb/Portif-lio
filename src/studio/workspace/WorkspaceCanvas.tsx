@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { zoomToScale, type WorkspacePan, type ZoomPreset } from "@/studio/workspace/types";
+import {
+  computeFitScale,
+  zoomToScale,
+  type WorkspacePan,
+  type ZoomPreset,
+} from "@/studio/workspace/types";
 
 interface WorkspaceCanvasProps {
   zoom: ZoomPreset;
@@ -13,6 +18,10 @@ interface WorkspaceCanvasProps {
   enablePan?: boolean;
 }
 
+/**
+ * Viewport never-crop: mede o tamanho intrínseco do content (não h-full),
+ * aplica fit/zoom via CSS transform, pan quando scaled > viewport.
+ */
 export function WorkspaceCanvas({
   zoom,
   pan,
@@ -24,11 +33,13 @@ export function WorkspaceCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [fitScale, setFitScale] = useState(1);
+  const [fitWidthScale, setFitWidthScale] = useState(1);
+  const [fitHeightScale, setFitHeightScale] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
 
-  const scale = zoomToScale(zoom, fitScale);
-  const canPan = enablePan && (zoom !== "fit" || scale > fitScale + 0.01);
+  const scale = zoomToScale(zoom, fitScale, fitWidthScale, fitHeightScale);
+  const canPan = enablePan && scale > 0;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -38,29 +49,35 @@ export function WorkspaceCanvas({
     const measure = () => {
       const cw = container.clientWidth;
       const ch = container.clientHeight;
-      const sw = content.scrollWidth || content.clientWidth;
-      const sh = content.scrollHeight || content.clientHeight;
+      // Intrinsic size: offsetWidth/Height of content (not stretched to parent)
+      const sw = content.offsetWidth || content.scrollWidth;
+      const sh = content.offsetHeight || content.scrollHeight;
       if (sw <= 0 || sh <= 0) return;
-      const fit = Math.min(cw / sw, ch / sh, 1);
-      setFitScale(fit > 0 ? fit : 1);
+      setFitScale(computeFitScale(cw, ch, sw, sh, "fit"));
+      setFitWidthScale(computeFitScale(cw, ch, sw, sh, "fit-width"));
+      setFitHeightScale(computeFitScale(cw, ch, sw, sh, "fit-height"));
     };
 
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(container);
     ro.observe(content);
-    return () => ro.disconnect();
+    // Re-measure when children layout changes (matrix size)
+    const mo = new MutationObserver(measure);
+    mo.observe(content, { childList: true, subtree: true, attributes: true });
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
   }, [children]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
     };
-
     container.addEventListener("wheel", onWheel, { passive: false });
     return () => container.removeEventListener("wheel", onWheel);
   }, []);
@@ -68,6 +85,7 @@ export function WorkspaceCanvas({
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!canPan || e.button !== 0) return;
+      // Only pan when content overflows (or always allow for exploration)
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       dragRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
       setIsDragging(true);
@@ -102,6 +120,7 @@ export function WorkspaceCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       style={{ cursor: canPan ? (isDragging ? "grabbing" : "grab") : "default" }}
+      data-fit-scale={fitScale.toFixed(4)}
     >
       <div
         className="flex h-full w-full items-center justify-center"
@@ -111,7 +130,8 @@ export function WorkspaceCanvas({
           transition: isDragging ? "none" : "transform 120ms ease-out",
         }}
       >
-        <div ref={contentRef} className="h-full w-full min-h-0 min-w-0">
+        {/* shrink-0 + w/h from child — NEVER h-full/w-full (that broke fit) */}
+        <div ref={contentRef} className="shrink-0">
           {children}
         </div>
       </div>

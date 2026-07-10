@@ -34,21 +34,34 @@ export interface AsciiInteractionEngineProps {
   interactive?: boolean;
   /**
    * Preferência de reduced motion.
-   * Se omitido, usa `useReducedMotion` do app shell (ROOT OS).
+   * Se omitido, usa `useReducedMotion` do app shell.
    * Passar explicitamente desacopla o wrapper para SDK/extração.
    */
   reducedMotion?: boolean;
+  /**
+   * `fill` — canvas preenche o parent (legado).
+   * `intrinsic` — canvas = cols×cellW × rows×cellH (never-crop; zoom no workspace).
+   */
+  layoutMode?: "fill" | "intrinsic";
 }
 
 /**
- * Superfície ASCII viva — componente público do ROOT OS.
- * A Hero e demais seções consomem apenas este wrapper.
+ * Superfície ASCII viva — wrapper React do runtime.
+ * Studio usa `layoutMode="intrinsic"` + WorkspaceCanvas para never-crop.
  */
 export const AsciiInteractionEngine = forwardRef<
   AsciiInteractionEngineHandle,
   AsciiInteractionEngineProps
 >(function AsciiInteractionEngine(
-  { source, image, config, className, interactive = true, reducedMotion: reducedMotionProp },
+  {
+    source,
+    image,
+    config,
+    className,
+    interactive = true,
+    reducedMotion: reducedMotionProp,
+    layoutMode = "fill",
+  },
   ref,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -144,25 +157,38 @@ export const AsciiInteractionEngine = forwardRef<
       const merged = mergeAsciiConfig(configRef.current);
       engine = new AsciiInteractionEngineCore(asciiSource, merged);
       engineRef.current = engine;
+      engine.setLayoutMode(layoutMode);
       engine.mount(canvas, reducedMotion);
 
       roRef.current?.disconnect();
-      const ro = new ResizeObserver(() => {
-        engineRef.current?.resize();
-      });
-      roRef.current = ro;
-      const parent = canvas.parentElement;
-      if (parent) ro.observe(parent);
+      if (layoutMode === "fill") {
+        const ro = new ResizeObserver(() => {
+          engineRef.current?.resize();
+        });
+        roRef.current = ro;
+        const parent = canvas.parentElement;
+        if (parent) ro.observe(parent);
+      }
     } else {
+      engine.setLayoutMode(layoutMode);
       engine.patchSource(asciiSource);
+      engine.resize();
     }
-    // reducedMotion aplicado via setReducedMotion; mount inicial usa valor atual
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asciiSource]);
+  }, [asciiSource, layoutMode]);
 
   useEffect(() => {
     engineRef.current?.setReducedMotion(reducedMotion);
   }, [reducedMotion]);
+
+  const intrinsicStyle =
+    layoutMode === "intrinsic"
+      ? { display: "block" as const, width: "auto", height: "auto" }
+      : {
+          display: "block" as const,
+          width: "100%",
+          height: "100%",
+        };
 
   return (
     <canvas
@@ -170,9 +196,7 @@ export const AsciiInteractionEngine = forwardRef<
       className={className}
       aria-hidden
       style={{
-        display: "block",
-        width: "100%",
-        height: "100%",
+        ...intrinsicStyle,
         pointerEvents: interactive ? "auto" : "none",
       }}
     />

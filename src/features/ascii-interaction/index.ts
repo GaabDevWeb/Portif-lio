@@ -31,6 +31,13 @@ export { SurfaceState } from "@/features/ascii-interaction/types";
 
 export { MouseInfluencer } from "@/features/ascii-interaction/influence/influencers/mouse-influencer";
 
+export {
+  measureAsciiLayout,
+  clampIntrinsicSize,
+  MAX_INTRINSIC_EDGE,
+  type AsciiLayoutSize,
+} from "@/features/ascii-interaction/utils/layout-size";
+
 export * from "@/features/ascii-interaction/image-pipeline";
 
 export * from "@/features/ascii-interaction/animation-pipeline";

@@ -4,11 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   DEFAULT_WORKSPACE_STATE,
+  ZOOM_PRESETS,
   type OriginalViewMode,
   type WorkspacePan,
   type WorkspaceState,
   type ZoomPreset,
 } from "@/studio/workspace/types";
+
+const FIT_MODES: ZoomPreset[] = ["fit", "fit-width", "fit-height"];
 
 export function useWorkspaceViewport() {
   const [state, setState] = useState<WorkspaceState>(DEFAULT_WORKSPACE_STATE);
@@ -16,27 +19,31 @@ export function useWorkspaceViewport() {
   stateRef.current = state;
 
   const setZoom = useCallback((zoom: ZoomPreset) => {
-    setState((prev) => ({ ...prev, zoom, pan: zoom === "fit" ? { x: 0, y: 0 } : prev.pan }));
+    setState((prev) => ({
+      ...prev,
+      zoom,
+      pan: FIT_MODES.includes(zoom) ? { x: 0, y: 0 } : prev.pan,
+    }));
   }, []);
 
   const zoomIn = useCallback(() => {
     setState((prev) => {
-      const order: ZoomPreset[] = ["fit", 1, 2, 4, 8];
+      const order = [...ZOOM_PRESETS];
       const idx = order.indexOf(prev.zoom);
-      const next = order[Math.min(order.length - 1, idx + 1)] ?? 8;
+      const next = order[Math.min(order.length - 1, Math.max(0, idx) + 1)] ?? 8;
       return { ...prev, zoom: next };
     });
   }, []);
 
   const zoomOut = useCallback(() => {
     setState((prev) => {
-      const order: ZoomPreset[] = ["fit", 1, 2, 4, 8];
+      const order = [...ZOOM_PRESETS];
       const idx = order.indexOf(prev.zoom);
-      const next = order[Math.max(0, idx - 1)] ?? "fit";
+      const next = order[Math.max(0, (idx < 0 ? 0 : idx) - 1)] ?? "fit";
       return {
         ...prev,
         zoom: next,
-        pan: next === "fit" ? { x: 0, y: 0 } : prev.pan,
+        pan: FIT_MODES.includes(next) ? { x: 0, y: 0 } : prev.pan,
       };
     });
   }, []);
@@ -68,6 +75,10 @@ export function useWorkspaceViewport() {
       focusMode: !prev.focusMode,
       sidebarOpen: false,
     }));
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    setState((prev) => ({ ...prev, fullscreen: !prev.fullscreen }));
   }, []);
 
   const setPeeking = useCallback((peeking: boolean) => {
@@ -106,6 +117,17 @@ export function useWorkspaceViewport() {
     };
   }, [setPeeking]);
 
+  useEffect(() => {
+    if (!state.fullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setState((prev) => ({ ...prev, fullscreen: false }));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.fullscreen]);
+
   return {
     state,
     setZoom,
@@ -116,6 +138,7 @@ export function useWorkspaceViewport() {
     setShowOriginal,
     setOriginalMode,
     toggleFocusMode,
+    toggleFullscreen,
     setPeeking,
     toggleSidebar,
     closeSidebar,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { AsciiInteractionEngine } from "@/features/ascii-interaction";
 import type { AsciiGridSource } from "@/features/ascii-interaction";
@@ -10,6 +10,7 @@ import type {
   AsciiInteractionConfig,
   AsciiInteractionEngineHandle,
 } from "@/features/ascii-interaction/types";
+import { measureAsciiLayout } from "@/features/ascii-interaction/utils/layout-size";
 
 export interface LabViewportProps {
   source: AsciiGridSource;
@@ -22,7 +23,10 @@ export interface LabViewportProps {
   onDebugSnapshot?: (snapshot: AsciiDebugSnapshot) => void;
 }
 
-/** Viewport do lab — consome a mesma engine da Hero, sem lógica de física própria. */
+/**
+ * Viewport do Studio — canvas intrínseco (never-crop).
+ * O WorkspaceCanvas aplica fit/zoom/pan; este componente NÃO preenche o viewport.
+ */
 export function LabViewport({
   source,
   config,
@@ -37,6 +41,8 @@ export function LabViewport({
   const engineRef = externalEngineRef ?? internalRef;
   const configRef = useRef(config);
   configRef.current = config;
+
+  const layout = useMemo(() => measureAsciiLayout(source, config), [source, config]);
 
   useEffect(() => {
     engineRef.current?.updateConfig(configRef.current);
@@ -64,7 +70,9 @@ export function LabViewport({
 
   return (
     <div
-      className={`relative h-full min-h-0 w-full overflow-hidden bg-[#050805] ${className ?? ""}`}
+      className={`relative shrink-0 bg-[#050805] ${className ?? ""}`}
+      style={{ width: layout.width, height: layout.height }}
+      data-ascii-intrinsic={`${layout.cols}x${layout.rows}`}
     >
       {label ? (
         <div className="pointer-events-none absolute left-3 top-3 z-10 rounded border border-[#2a4a2a] bg-[#0a120a]/80 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-[#7dff7d]">
@@ -75,7 +83,8 @@ export function LabViewport({
         ref={engineRef}
         source={source}
         config={config}
-        className="h-full w-full"
+        layoutMode="intrinsic"
+        className="block"
         interactive={interactive}
       />
     </div>

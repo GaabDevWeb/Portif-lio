@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { WorkspaceCanvas } from "@/studio/workspace/WorkspaceCanvas";
 import { WorkspaceToolbar } from "@/studio/workspace/WorkspaceToolbar";
 import type { WorkspaceViewportApi } from "@/studio/workspace/useWorkspaceViewport";
-import type { ZoomPreset } from "@/studio/workspace/types";
+import { ZOOM_PRESETS } from "@/studio/workspace/types";
 
 interface WorkspaceViewProps {
   workspace: WorkspaceViewportApi;
@@ -24,8 +24,18 @@ export function WorkspaceView({
   footer,
   children,
 }: WorkspaceViewProps) {
-  const { state, setZoom, zoomIn, zoomOut, setPan, setShowOriginal, setOriginalMode, toggleFocusMode, setPeeking } =
-    workspace;
+  const {
+    state,
+    setZoom,
+    zoomIn,
+    zoomOut,
+    setPan,
+    setShowOriginal,
+    setOriginalMode,
+    toggleFocusMode,
+    toggleFullscreen,
+    setPeeking,
+  } = workspace;
   const rootRef = useRef<HTMLDivElement>(null);
 
   const showOriginalLayer =
@@ -42,12 +52,12 @@ export function WorkspaceView({
     (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      const order: ZoomPreset[] = ["fit", 1, 2, 4, 8];
+      const order = [...ZOOM_PRESETS];
       const idx = order.indexOf(state.zoom);
       if (e.deltaY < 0) {
-        setZoom(order[Math.min(order.length - 1, idx + 1)] ?? 8);
+        setZoom(order[Math.min(order.length - 1, Math.max(0, idx) + 1)] ?? 8);
       } else {
-        setZoom(order[Math.max(0, idx - 1)] ?? "fit");
+        setZoom(order[Math.max(0, (idx < 0 ? 0 : idx) - 1)] ?? "fit");
       }
     },
     [setZoom, state.zoom],
@@ -61,7 +71,12 @@ export function WorkspaceView({
   }, [handleWheel]);
 
   return (
-    <div ref={rootRef} className="relative flex h-full min-h-0 flex-col">
+    <div
+      ref={rootRef}
+      className={`relative flex min-h-0 flex-col ${
+        state.fullscreen ? "fixed inset-0 z-50 bg-[var(--bg-void)]" : "h-full"
+      }`}
+    >
       {state.focusMode ? (
         <div className="pointer-events-none absolute right-2 top-2 z-30">
           <div className="pointer-events-auto rounded border border-[var(--ui-border)] bg-[var(--bg-panel)]/95 shadow-lg backdrop-blur-sm">
@@ -75,6 +90,7 @@ export function WorkspaceView({
               onToggleOriginal={() => setShowOriginal(!state.showOriginal)}
               onOriginalModeChange={setOriginalMode}
               onToggleFocus={toggleFocusMode}
+              onToggleFullscreen={toggleFullscreen}
               onPeekingChange={setPeeking}
             />
           </div>
@@ -89,6 +105,7 @@ export function WorkspaceView({
           onToggleOriginal={() => setShowOriginal(!state.showOriginal)}
           onOriginalModeChange={setOriginalMode}
           onToggleFocus={toggleFocusMode}
+          onToggleFullscreen={toggleFullscreen}
           onPeekingChange={setPeeking}
         />
       )}

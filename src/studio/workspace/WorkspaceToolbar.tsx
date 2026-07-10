@@ -23,6 +23,7 @@ interface WorkspaceToolbarProps {
   onToggleOriginal: () => void;
   onOriginalModeChange: (mode: OriginalViewMode) => void;
   onToggleFocus: () => void;
+  onToggleFullscreen?: () => void;
   onPeekingChange: (peeking: boolean) => void;
 }
 
@@ -36,9 +37,15 @@ export function WorkspaceToolbar({
   onToggleOriginal,
   onOriginalModeChange,
   onToggleFocus,
+  onToggleFullscreen,
   onPeekingChange,
 }: WorkspaceToolbarProps) {
-  const zoomLabel = (z: ZoomPreset) => (z === "fit" ? "Fit" : `${z * 100}%`);
+  const zoomLabel = (z: ZoomPreset) => {
+    if (z === "fit") return "Fit";
+    if (z === "fit-width") return "Fit W";
+    if (z === "fit-height") return "Fit H";
+    return `${z * 100}%`;
+  };
 
   return (
     <div
@@ -127,6 +134,19 @@ export function WorkspaceToolbar({
         {state.focusMode ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
         {!compact ? <span className="hidden font-mono text-[9px] md:inline">Focus</span> : null}
       </ToolbarButton>
+
+      {onToggleFullscreen ? (
+        <ToolbarButton
+          label={state.fullscreen ? "Sair do Fullscreen" : "Fullscreen"}
+          onClick={onToggleFullscreen}
+          active={state.fullscreen}
+        >
+          <Scan size={12} />
+          {!compact ? (
+            <span className="hidden font-mono text-[9px] md:inline">Full</span>
+          ) : null}
+        </ToolbarButton>
+      ) : null}
 
       {state.showOriginal && state.originalMode === "peek" && !compact ? (
         <span className="ml-auto hidden font-mono text-[8px] text-[var(--ui-text-dim)] lg:inline">
