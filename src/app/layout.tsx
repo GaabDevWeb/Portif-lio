@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
-import { getSiteUrl, loadSiteConfig } from "@/lib/content/site";
-import { RootOSProvider } from "@/providers/root-os-provider";
-
 import "./globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -18,43 +15,15 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-const site = loadSiteConfig();
-const siteUrl = getSiteUrl();
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
   title: {
-    default: site.name,
-    template: `%s · ${site.name}`,
+    default: "ASCII Engine",
+    template: "%s · ASCII Engine",
   },
-  description: site.description,
-  authors: [{ name: site.author.name }],
-  keywords: [
-    "portfolio",
-    "terminal",
-    "creative developer",
-    "frontend",
-    "interactive",
-    "ROOT OS",
-  ],
-  openGraph: {
-    type: "website",
-    locale: site.locale,
-    url: siteUrl,
-    siteName: site.name,
-    title: site.name,
-    description: site.description,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: site.name,
-    description: site.description,
-    creator: site.author.twitter,
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  description:
+    "ASCII Engine — conversão, edição, animação e playground profissional de arte ASCII",
+  keywords: ["ascii", "ascii art", "converter", "gif", "editor", "terminal"],
+  robots: { index: true, follow: true },
 };
 
 export const viewport = {
@@ -70,14 +39,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
-      <body>
-        <a href="#main-content" className="skip-link">
-          Skip to content
-        </a>
-        <a href="#projects" className="skip-link" style={{ top: "3rem" }}>
-          Skip to projects
-        </a>
-        <RootOSProvider>{children}</RootOSProvider>
+      <body className="min-h-dvh bg-[var(--bg-void)] text-[var(--phosphor-primary)] antialiased">
+        {children}
       </body>
     </html>
   );

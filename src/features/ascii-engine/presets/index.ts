@@ -1,8 +1,8 @@
 import { downloadBlob } from "@/features/ascii-engine/browser";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline/types";
 import type { AsciiInteractionConfig } from "@/features/ascii-interaction/types";
-import type { WorkspaceState } from "@/labs/ascii/workspace/types";
-import { DEFAULT_WORKSPACE_STATE } from "@/labs/ascii/workspace/types";
+import type { WorkspaceState } from "@/studio/workspace/types";
+import { DEFAULT_WORKSPACE_STATE } from "@/studio/workspace/types";
 
 function downloadText(content: string, filename: string, mime = "text/plain"): void {
   downloadBlob(new Blob([content], { type: `${mime};charset=utf-8` }), filename);

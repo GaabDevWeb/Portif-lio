@@ -1,6 +1,0 @@
-export const osReleaseContent = `NAME="ROOT OS"
-VERSION="0.1.0"
-ID=rootos
-PRETTY_NAME="ROOT OS 0.1.0"
-HOME_URL="https://github.com/[GITHUB]"
-`;
