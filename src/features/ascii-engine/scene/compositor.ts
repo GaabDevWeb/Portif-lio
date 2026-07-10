@@ -7,6 +7,7 @@ import type {
   ShapeObjectData,
   TextObjectData,
 } from "@/features/ascii-engine/scene/types";
+import { effectBoundsPadding } from "@/features/ascii-engine/scene/effects";
 
 export interface ComposeOptions {
   /** Override canvas size; default scene width/height. */
@@ -72,10 +73,12 @@ function applyEffects(cell: AsciiMatrixCell, effects: EffectRef[]): AsciiMatrixC
       case "outline":
       case "glow":
       case "shadow":
+        // Bounds expansion + neighbor ring applied in blit post-pass (stubs).
+        break;
       case "crt":
       case "scanline":
       case "posterize":
-        // Applied at buffer level in post-pass when needed; per-cell noop for now.
+        // Reserved post-pass — documented in EFFECT_STATUS.
         break;
       default:
         break;
@@ -228,6 +231,47 @@ function rasterizeObject(obj: SceneObject): AsciiMatrix | null {
   }
 }
 
+/**
+ * Stub outline/glow: escreve anel de células vizinhas (char '.') à volta do conteúdo.
+ * Expande a área ocupada no composite (effectBoundsPadding).
+ */
+function applyOutlineGlowStub(
+  target: Map<string, AsciiMatrixCell>,
+  filled: Array<{ col: number; row: number }>,
+  effects: EffectRef[],
+  canvasW: number,
+  canvasH: number,
+): void {
+  const pad = effectBoundsPadding(effects);
+  if (pad <= 0) return;
+  const hasOutline = effects.some((e) => e.enabled && (e.kind === "outline" || e.kind === "glow"));
+  if (!hasOutline) return;
+  const occupied = new Set(filled.map((p) => cellKey(p.col, p.row)));
+  for (const { col, row } of filled) {
+    for (let dy = -pad; dy <= pad; dy++) {
+      for (let dx = -pad; dx <= pad; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const c = col + dx;
+        const r = row + dy;
+        if (c < 0 || r < 0 || c >= canvasW || r >= canvasH) continue;
+        const key = cellKey(c, r);
+        if (occupied.has(key) || target.has(key)) continue;
+        // Apenas o anel exterior aproximado
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== pad) continue;
+        target.set(key, {
+          char: ".",
+          col: c,
+          row: r,
+          luminance: 0.35,
+          r: 80,
+          g: 180,
+          b: 80,
+        });
+      }
+    }
+  }
+}
+
 function blit(
   target: Map<string, AsciiMatrixCell>,
   src: AsciiMatrix,
@@ -239,6 +283,7 @@ function blit(
   canvasW: number,
   canvasH: number,
 ): void {
+  const filled: Array<{ col: number; row: number }> = [];
   for (const cell of src.cells) {
     if (cell.char === " " && cell.luminance < 0.05) continue;
     const col = Math.round(ox + cell.col);
@@ -252,7 +297,9 @@ function blit(
     if (!prev || next.luminance >= prev.luminance) {
       target.set(key, next);
     }
+    filled.push({ col, row });
   }
+  applyOutlineGlowStub(target, filled, effects, canvasW, canvasH);
 }
 
 /**

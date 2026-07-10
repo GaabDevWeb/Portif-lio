@@ -449,6 +449,20 @@ export class SceneDocument {
     return id;
   }
 
+  /** Lista checkpoints (sem snapshots embutidos pesados — só meta). */
+  listCheckpoints(): Array<Omit<SceneHistoryCheckpoint, "snapshot"> & { hasSnapshot: boolean }> {
+    return this.data.checkpoints.map(({ id, label, createdAt }) => ({
+      id,
+      label,
+      createdAt,
+      hasSnapshot: true,
+    }));
+  }
+
+  getCheckpointCount(): number {
+    return this.data.checkpoints.length;
+  }
+
   restoreCheckpoint(id: string): boolean {
     const cp = this.data.checkpoints.find((c) => c.id === id);
     if (!cp) return false;

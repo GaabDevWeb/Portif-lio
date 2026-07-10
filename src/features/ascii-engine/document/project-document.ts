@@ -1,6 +1,7 @@
 import { EditorDocument } from "@/features/ascii-engine/editor";
 import type { AsciiAnimation } from "@/features/ascii-interaction/animation-pipeline/types";
 import { SceneDocument } from "@/features/ascii-engine/scene/scene-document";
+import type { SceneHistory } from "@/features/ascii-engine/scene/history";
 import type { SceneDocumentData } from "@/features/ascii-engine/scene/types";
 import {
   DEFAULT_PROJECT_WORKSPACE,
@@ -61,6 +62,8 @@ export class ProjectDocument {
   private animation: AsciiAnimation | null = null;
   readonly editor: EditorDocument;
   readonly scene: SceneDocument;
+  /** Histórico de comandos da cena (opcional; pastCount entra no JSON do projeto). */
+  private sceneHistory: SceneHistory | null = null;
 
   private constructor(data: {
     id: string;
@@ -245,8 +248,33 @@ export class ProjectDocument {
     this.touch();
   }
 
+  /** Liga SceneHistory para serializar pastCount/futureCount no projeto. */
+  bindSceneHistory(history: SceneHistory | null): void {
+    this.sceneHistory = history;
+  }
+
+  getSceneHistory(): SceneHistory | null {
+    return this.sceneHistory;
+  }
+
+  /** Atalhos checkpoint na API do projeto. */
+  addSceneCheckpoint(label: string): string {
+    const id = this.scene.addCheckpoint(label);
+    this.touch();
+    return id;
+  }
+
+  restoreSceneCheckpoint(id: string): boolean {
+    const ok = this.scene.restoreCheckpoint(id);
+    if (ok) this.touch();
+    return ok;
+  }
+
   toJSON(): ProjectDocumentData {
     const ed = this.editor.getState();
+    const scenePast = this.sceneHistory?.pastCount ?? 0;
+    const sceneFuture = this.sceneHistory?.futureCount ?? 0;
+    const checkpointBoost = this.scene.getCheckpointCount() > 0 ? 1 : 0;
     return {
       version: "3.0",
       id: this.id,
@@ -260,8 +288,8 @@ export class ProjectDocument {
       timeline: this.timeline ? structuredClone(this.timeline) : undefined,
       nodeGraph: this.nodeGraph ? structuredClone(this.nodeGraph) : undefined,
       history: {
-        pastCount: ed.canUndo ? 1 : 0,
-        futureCount: ed.canRedo ? 1 : 0,
+        pastCount: Math.max(ed.canUndo ? 1 : 0, scenePast, checkpointBoost),
+        futureCount: Math.max(ed.canRedo ? 1 : 0, sceneFuture),
       },
       assets: structuredClone(this.assets),
       animation: this.animation ? structuredClone(this.animation) : null,
