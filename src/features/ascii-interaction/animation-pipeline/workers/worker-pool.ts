@@ -4,7 +4,6 @@ import type {
   WorkerOutboundMessage,
 } from "@/features/ascii-interaction/animation-pipeline/workers/worker-protocol";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline/types";
-import { matrixToAsciiSource } from "@/features/ascii-interaction/image-pipeline/exporter";
 import { convertRgbaFramesBatch } from "@/features/ascii-interaction/animation-pipeline/converter/frame-converter";
 
 type BatchProgressCallback = (completed: number, total: number) => void;
@@ -150,7 +149,6 @@ export class ConversionWorkerPool {
               index,
               matrix,
               delayMs: rgba?.delayMs ?? 66,
-              source: matrixToAsciiSource(matrix),
             });
           }
           pendingWorkers -= 1;
@@ -176,14 +174,13 @@ export class ConversionWorkerPool {
               index: f.index,
               width: f.width,
               height: f.height,
-              pixels: f.pixels,
+              // Clone so we never detach the caller's ArrayBuffer (safe fallback / re-convert).
+              pixels: new Uint8ClampedArray(f.pixels),
             })),
             options,
           };
-          const transferables = chunk
-            .map((f) => f.pixels.buffer)
-            .filter((buf): buf is ArrayBuffer => buf instanceof ArrayBuffer);
-          worker.postMessage(payload, transferables);
+          // Do not transfer — transferring detaches RGBA and breaks main-thread reuse.
+          worker.postMessage(payload);
         }
       } catch {
         cleanup();

@@ -1,6 +1,6 @@
 import { getImageDimensions } from "@/features/ascii-interaction/image-pipeline/image-loader";
 import { matrixToAsciiSource } from "@/features/ascii-interaction/image-pipeline/exporter";
-import { runImagePipeline } from "@/features/ascii-interaction/image-pipeline/pipeline";
+import { runImagePipeline, withResolvedGlyphMetrics } from "@/features/ascii-interaction/image-pipeline/pipeline";
 import type {
   ImagePipelineOptions,
   PipelineResult,
@@ -78,9 +78,10 @@ export function runImagePipelineAsync(
   options: ImagePipelineOptions,
   signal?: { cancelled: boolean },
 ): Promise<PipelineResult> {
+  const resolvedOptions = withResolvedGlyphMetrics(options);
   const worker = ensureImageWorker();
   if (!worker) {
-    return Promise.resolve(runImagePipeline(image, options));
+    return Promise.resolve(runImagePipeline(image, resolvedOptions));
   }
 
   const start = performance.now();
@@ -88,7 +89,7 @@ export function runImagePipelineAsync(
   try {
     sampled = sampleImagePixels(image);
   } catch {
-    return Promise.resolve(runImagePipeline(image, options));
+    return Promise.resolve(runImagePipeline(image, resolvedOptions));
   }
 
   if (signal?.cancelled) {
@@ -112,7 +113,7 @@ export function runImagePipelineAsync(
 
       if (msg.type === "error") {
         try {
-          resolve(runImagePipeline(image, options));
+          resolve(runImagePipeline(image, resolvedOptions));
         } catch (err) {
           reject(err);
         }
@@ -130,7 +131,7 @@ export function runImagePipelineAsync(
       width: sampled.width,
       height: sampled.height,
       pixels: pixelsCopy,
-      options,
+      options: resolvedOptions,
     };
 
     try {
@@ -141,7 +142,7 @@ export function runImagePipelineAsync(
       );
     } catch {
       worker.removeEventListener("message", handler);
-      resolve(runImagePipeline(image, options));
+      resolve(runImagePipeline(image, resolvedOptions));
     }
   });
 }

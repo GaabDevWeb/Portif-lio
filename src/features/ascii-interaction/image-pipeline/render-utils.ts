@@ -1,5 +1,9 @@
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 
+/** Default cell metrics shared by Convert/Animate preview and PNG/GIF/SVG export. */
+export const DEFAULT_MATRIX_CELL_W = 7;
+export const DEFAULT_MATRIX_CELL_H = 12;
+
 export interface MatrixRenderDimensions {
   width: number;
   height: number;
@@ -26,11 +30,11 @@ export function resolveMatrixRenderDimensions(
   const cellW =
     options.targetWidth != null
       ? options.targetWidth / matrix.cols
-      : (options.cellW ?? 7);
+      : (options.cellW ?? DEFAULT_MATRIX_CELL_W);
   const cellH =
     options.targetHeight != null
       ? options.targetHeight / matrix.rows
-      : (options.cellH ?? 12);
+      : (options.cellH ?? DEFAULT_MATRIX_CELL_H);
 
   const width =
     options.targetWidth != null

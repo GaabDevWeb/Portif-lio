@@ -144,10 +144,17 @@ export function AnimationConverterPanel({
       ) : null}
 
       <Section title="Playback">
+        <Toggle
+          label="Usar timing do GIF"
+          checked={options.targetFps <= 0}
+          onChange={(v) =>
+            onAnimationOptionsChange({ targetFps: v ? 0 : 15 })
+          }
+        />
         <Slider
-          label="FPS"
+          label="FPS (0 = nativo)"
           value={options.targetFps}
-          min={1}
+          min={0}
           max={60}
           step={1}
           onChange={(v) => onAnimationOptionsChange({ targetFps: v })}
@@ -156,6 +163,14 @@ export function AnimationConverterPanel({
           label="Loop"
           checked={options.loop}
           onChange={(v) => onAnimationOptionsChange({ loop: v })}
+        />
+        <Slider
+          label="Workers"
+          value={options.workerCount}
+          min={1}
+          max={8}
+          step={1}
+          onChange={(v) => onAnimationOptionsChange({ workerCount: v })}
         />
       </Section>
 

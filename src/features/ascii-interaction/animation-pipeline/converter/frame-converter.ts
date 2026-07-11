@@ -1,5 +1,4 @@
 import { generateAsciiMatrix } from "@/features/ascii-interaction/image-pipeline/matrix-generator";
-import { matrixToAsciiSource } from "@/features/ascii-interaction/image-pipeline/exporter";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline/types";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import {
@@ -26,7 +25,6 @@ export function convertRgbaFrameToAnimationFrame(
     index: frame.index,
     matrix,
     delayMs: frame.delayMs,
-    source: matrixToAsciiSource(matrix),
   };
 }
 

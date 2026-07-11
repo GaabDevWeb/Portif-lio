@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { LabViewport } from "@/studio/LabViewport";
+import { MatrixPreview } from "@/studio/MatrixPreview";
 import { AnimationTimeline } from "@/studio/animation/AnimationTimeline";
 import { WorkspaceView } from "@/studio/workspace/WorkspaceView";
 import type { WorkspaceViewportApi } from "@/studio/workspace/useWorkspaceViewport";
@@ -11,7 +11,10 @@ import type {
   AsciiAnimationFrame,
   TimelineState,
 } from "@/features/ascii-interaction/animation-pipeline";
-import type { AsciiInteractionConfig, AsciiEngineStats } from "@/features/ascii-interaction/types";
+import {
+  DEFAULT_MATRIX_CELL_H,
+  DEFAULT_MATRIX_CELL_W,
+} from "@/features/ascii-interaction/image-pipeline/render-utils";
 import {
   composeOnionPreview,
   getOnionSkinLayers,
@@ -22,12 +25,11 @@ interface AnimationResultViewProps {
   previewUrl: string | null;
   currentFrame: AsciiAnimationFrame | null;
   animation?: AsciiAnimation | null;
-  config: AsciiInteractionConfig;
-  debugEnabled?: boolean;
+  cellW?: number;
+  cellH?: number;
   timeline: TimelineState | null;
   frameCount: number;
   loop: boolean;
-  onStats?: (stats: AsciiEngineStats) => void;
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
@@ -43,12 +45,11 @@ export function AnimationResultView({
   previewUrl,
   currentFrame,
   animation = null,
-  config,
-  debugEnabled = false,
+  cellW = DEFAULT_MATRIX_CELL_W,
+  cellH = DEFAULT_MATRIX_CELL_H,
   timeline,
   frameCount,
   loop,
-  onStats,
   onPlay,
   onPause,
   onStop,
@@ -97,13 +98,7 @@ export function AnimationResultView({
       }
     >
       {displayMatrix ? (
-        <LabViewport
-          source={displayMatrix}
-          config={config}
-          debugEnabled={debugEnabled}
-          onStats={onStats}
-          className="h-full"
-        />
+        <MatrixPreview matrix={displayMatrix} cellW={cellW} cellH={cellH} className="h-full" />
       ) : (
         <div className="flex h-full items-center justify-center font-mono text-[10px] text-[var(--ui-text-dim)]">
           Aguardando conversão…

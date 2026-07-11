@@ -7,18 +7,38 @@ import {
 import { generateAsciiMatrix } from "@/features/ascii-interaction/image-pipeline/matrix-generator";
 import { matrixToAsciiSource } from "@/features/ascii-interaction/image-pipeline/exporter";
 import type { ImagePipelineOptions, PipelineResult } from "@/features/ascii-interaction/image-pipeline/types";
+import { AspectRatioEngine } from "@/features/ascii-interaction/geometry";
+
+/** Ensure glyph metrics are present so workers/Node share the same geometry as preview. */
+export function withResolvedGlyphMetrics(options: ImagePipelineOptions): ImagePipelineOptions {
+  if (
+    options.glyphCellWidth != null &&
+    options.glyphCellHeight != null &&
+    options.glyphCellWidth > 0 &&
+    options.glyphCellHeight > 0
+  ) {
+    return options;
+  }
+  const metrics = AspectRatioEngine.getDefaultGlyphMetrics();
+  return {
+    ...options,
+    glyphCellWidth: metrics.cellWidth,
+    glyphCellHeight: metrics.cellHeight,
+  };
+}
 
 export function runImagePipeline(
   image: HTMLImageElement,
   options: ImagePipelineOptions,
 ): PipelineResult {
   const start = performance.now();
+  const resolved = withResolvedGlyphMetrics(options);
   const { width: imgW, height: imgH } = getImageDimensions(image);
-  const { width, height } = resolveOutputSize(imgW, imgH, options);
+  const { width, height } = resolveOutputSize(imgW, imgH, resolved);
 
   const sampled = sampleImage(image, width, height);
-  const filtered = applyImageFilters(sampled, options);
-  const matrix = generateAsciiMatrix(filtered, options);
+  const filtered = applyImageFilters(sampled, resolved);
+  const matrix = generateAsciiMatrix(filtered, resolved);
   const source = matrixToAsciiSource(matrix);
 
   const conversionMs = performance.now() - start;
@@ -44,5 +64,5 @@ export function mergePipelineOptions(
   base: ImagePipelineOptions,
   partial?: Partial<ImagePipelineOptions>,
 ): ImagePipelineOptions {
-  return { ...base, ...partial };
+  return withResolvedGlyphMetrics({ ...base, ...partial });
 }

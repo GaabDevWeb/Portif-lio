@@ -1,0 +1,18 @@
+export {
+  AspectRatioEngine,
+  clearGlyphMetricsCache,
+  fallbackGlyphMetrics,
+  getDefaultGlyphMetrics,
+  measureGlyphMetrics,
+  metricsFromCellSize,
+  renderedAspect,
+  resolveGridSize,
+  resolveMetricsFromOptions,
+  resolveRenderSize,
+  sourceAspect,
+  type GlyphMetrics,
+  type GridSize,
+  type MeasureGlyphOptions,
+  type RenderSize,
+  type ResolveGridInput,
+} from "@/features/ascii-interaction/geometry/aspect-ratio-engine";

@@ -540,10 +540,7 @@ export function AsciiLab() {
               <ImageResultView
                 workspace={imageWorkspace}
                 previewUrl={imagePreviewUrl}
-                source={imageResult.matrix}
-                config={converterConfig}
-                debugEnabled={debug.enabled}
-                onStats={setStats}
+                matrix={imageResult.matrix}
               />
             ) : (
               <EmptyCanvas
@@ -563,12 +560,9 @@ export function AsciiLab() {
                 previewUrl={animation.previewUrl}
                 currentFrame={animation.currentFrame}
                 animation={animation.animation}
-                config={converterConfig}
-                debugEnabled={debug.enabled}
                 timeline={animation.timeline}
                 frameCount={animation.animation?.frameCount ?? animation.decoded?.frameCount ?? 0}
                 loop={animation.options.loop}
-                onStats={setStats}
                 onPlay={play}
                 onPause={pause}
                 onStop={stop}

@@ -1,27 +1,28 @@
 "use client";
 
-import { LabViewport } from "@/studio/LabViewport";
+import { MatrixPreview } from "@/studio/MatrixPreview";
 import { WorkspaceView } from "@/studio/workspace/WorkspaceView";
 import type { WorkspaceViewportApi } from "@/studio/workspace/useWorkspaceViewport";
-import type { AsciiGridSource } from "@/features/ascii-interaction";
-import type { AsciiInteractionConfig, AsciiEngineStats } from "@/features/ascii-interaction/types";
+import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
+import {
+  DEFAULT_MATRIX_CELL_H,
+  DEFAULT_MATRIX_CELL_W,
+} from "@/features/ascii-interaction/image-pipeline/render-utils";
 
 interface ImageResultViewProps {
   workspace: WorkspaceViewportApi;
   previewUrl: string | null;
-  source: AsciiGridSource;
-  config: AsciiInteractionConfig;
-  debugEnabled?: boolean;
-  onStats?: (stats: AsciiEngineStats) => void;
+  matrix: AsciiMatrix;
+  cellW?: number;
+  cellH?: number;
 }
 
 export function ImageResultView({
   workspace,
   previewUrl,
-  source,
-  config,
-  debugEnabled = false,
-  onStats,
+  matrix,
+  cellW = DEFAULT_MATRIX_CELL_W,
+  cellH = DEFAULT_MATRIX_CELL_H,
 }: ImageResultViewProps) {
   return (
     <WorkspaceView
@@ -30,13 +31,7 @@ export function ImageResultView({
       originalUrl={previewUrl}
       originalAlt="Imagem original"
     >
-      <LabViewport
-        source={source}
-        config={config}
-        debugEnabled={debugEnabled}
-        onStats={onStats}
-        className="h-full"
-      />
+      <MatrixPreview matrix={matrix} cellW={cellW} cellH={cellH} className="h-full" />
     </WorkspaceView>
   );
 }

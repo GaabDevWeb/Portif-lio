@@ -1,5 +1,5 @@
 import {
-  mapLuminanceToCharIndex,
+  mapLuminanceToCharByDensity,
   resolveCellColor,
 } from "@/features/ascii-interaction/image-pipeline/charset-mapper";
 import { applyDithering } from "@/features/ascii-interaction/image-pipeline/dithering";
@@ -48,7 +48,8 @@ export function generateAsciiMatrix(
   const levels = charset.length;
 
   const mapping = buildMappingField(buffer, options.mappingMode, options.edgeEnhance);
-  const dithered = applyDithering(mapping, buffer.width, buffer.height, options.dithering, levels - 1);
+  // levels = charset.length (applyDithering decrements once internally)
+  const dithered = applyDithering(mapping, buffer.width, buffer.height, options.dithering, levels);
 
   const cells: AsciiMatrixCell[] = [];
 
@@ -56,8 +57,7 @@ export function generateAsciiMatrix(
     for (let col = 0; col < buffer.width; col += 1) {
       const i = row * buffer.width + col;
       const lum = dithered[i]!;
-      const idx = mapLuminanceToCharIndex(lum, levels);
-      const ch = charset[idx] ?? " ";
+      const { char: ch } = mapLuminanceToCharByDensity(lum, charset);
       if (ch === " " && lum < 0.05) continue;
 
       const color = resolveCellColor(

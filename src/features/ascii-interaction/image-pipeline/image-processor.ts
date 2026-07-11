@@ -1,58 +1,63 @@
 import type { ImagePipelineOptions, ImageSampleBuffer } from "@/features/ascii-interaction/image-pipeline/types";
+import { resampleRgba } from "@/features/ascii-interaction/image-pipeline/rgba-processor";
+import {
+  resolveGridSize,
+  resolveMetricsFromOptions,
+} from "@/features/ascii-interaction/geometry/aspect-ratio-engine";
 
 function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
+/**
+ * Resolve ASCII grid size from source image dims.
+ * Uses glyph cell metrics (not legacy fontCompensation) so
+ * (cols*cellW)/(rows*cellH) ≈ imgW/imgH.
+ */
 export function resolveOutputSize(
   imgWidth: number,
   imgHeight: number,
-  options: Pick<ImagePipelineOptions, "width" | "height" | "lockAspectRatio" | "pixelAspect" | "fontCompensation">,
+  options: Pick<
+    ImagePipelineOptions,
+    | "width"
+    | "height"
+    | "lockAspectRatio"
+    | "pixelAspect"
+    | "fontCompensation"
+    | "glyphCellWidth"
+    | "glyphCellHeight"
+  >,
 ): { width: number; height: number } {
-  const aspect = (imgWidth / imgHeight) * options.pixelAspect * options.fontCompensation;
-  const outW = Math.max(8, Math.round(options.width));
-  let outH = options.height > 0 ? Math.max(8, Math.round(options.height)) : 0;
-
-  if (outH === 0 || options.lockAspectRatio) {
-    outH = Math.max(8, Math.round(outW / aspect));
-  }
-
-  return { width: outW, height: outH };
+  const metrics = resolveMetricsFromOptions(options);
+  const grid = resolveGridSize({
+    imgWidth,
+    imgHeight,
+    cols: options.width,
+    rows: options.height,
+    lockAspectRatio: options.lockAspectRatio,
+    pixelAspect: options.pixelAspect,
+    metrics,
+  });
+  return { width: grid.cols, height: grid.rows };
 }
 
-/** Amostra imagem para buffer luminance + RGB via canvas offscreen. */
+/** Amostra imagem via area-average (mesma qualidade que o worker path). */
 export function sampleImage(
   img: HTMLImageElement,
   outWidth: number,
   outHeight: number,
 ): ImageSampleBuffer {
+  const srcW = Math.max(1, img.naturalWidth || img.width);
+  const srcH = Math.max(1, img.naturalHeight || img.height);
   const canvas = document.createElement("canvas");
-  canvas.width = outWidth;
-  canvas.height = outHeight;
+  canvas.width = srcW;
+  canvas.height = srcH;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Canvas 2D indisponível.");
 
-  ctx.drawImage(img, 0, 0, outWidth, outHeight);
-  const { data } = ctx.getImageData(0, 0, outWidth, outHeight);
-  const count = outWidth * outHeight;
-
-  const luminance = new Float32Array(count);
-  const r = new Uint8ClampedArray(count);
-  const g = new Uint8ClampedArray(count);
-  const b = new Uint8ClampedArray(count);
-
-  for (let i = 0; i < count; i += 1) {
-    const o = i * 4;
-    const pr = data[o]!;
-    const pg = data[o + 1]!;
-    const pb = data[o + 2]!;
-    r[i] = pr;
-    g[i] = pg;
-    b[i] = pb;
-    luminance[i] = (0.2126 * pr + 0.7152 * pg + 0.0722 * pb) / 255;
-  }
-
-  return { width: outWidth, height: outHeight, luminance, r, g, b };
+  ctx.drawImage(img, 0, 0, srcW, srcH);
+  const { data } = ctx.getImageData(0, 0, srcW, srcH);
+  return resampleRgba(data, srcW, srcH, outWidth, outHeight);
 }
 
 export function applyImageFilters(

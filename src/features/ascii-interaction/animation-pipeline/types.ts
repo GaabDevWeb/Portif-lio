@@ -25,7 +25,8 @@ export interface AsciiAnimationFrame {
   index: number;
   matrix: AsciiMatrix;
   delayMs: number;
-  source: string;
+  /** Optional — generated on demand to save RAM (P1.4). */
+  source?: string;
 }
 
 export interface AsciiAnimation {
@@ -86,7 +87,7 @@ export const DEFAULT_ANIMATION_PIPELINE_OPTIONS: AnimationPipelineOptions = {
     height: 0,
     lockAspectRatio: true,
     pixelAspect: 1,
-    fontCompensation: 0.55,
+    fontCompensation: 1,
     brightness: 0,
     contrast: 1,
     gamma: 1,

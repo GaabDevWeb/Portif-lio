@@ -1,10 +1,9 @@
 # ASCII Engine Platform — Documento Arquitetural Definitivo (SSOT)
 
 > **Versão do documento:** 3.0.0-platform  
-> **Baseline de código:** branch `ascii-engine-platform` (Platform P0–P12 + Standalone W0–W6 + Scene W0–W8)  
-> **Produto actual:** app **standalone** ASCII Engine Studio — `/` = Studio (incl. tab **Edit**), `/gallery` = Gallery. ROOT OS / portfolio **removidos** (W0).  
+> **Baseline de código:** branch `ascii-engine-platform` (Platform P0–P12 + Standalone W0–W6)  
+> **Produto actual:** app **standalone** ASCII Engine Studio — `/` = Studio, `/gallery` = Gallery. ROOT OS / portfolio **removidos** (W0).  
 > **Substitui como SSOT de produto:** estende [`ASCII-ENGINE-NEXT.md`](./ASCII-ENGINE-NEXT.md) e [`ASCII-ENGINE-V2.md`](./ASCII-ENGINE-V2.md); não invalida a interaction engine em [`ASCII-INTERACTION-ENGINE.md`](./ASCII-INTERACTION-ENGINE.md).  
-> **Scene SSOT:** [`ASCII-SCENE-EDITOR.md`](./ASCII-SCENE-EDITOR.md)  
 > **Documento companheiro:** [ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md](./ASCII-ENGINE-PLATFORM-IMPLEMENTATION-PROMPT.md) — prompt histórico de implementação Platform.  
 > **Module docs:** [`docs/modules/`](../modules/) · **Extração:** [`ASCII-ENGINE-EXTRACTION-REPORT.md`](./ASCII-ENGINE-EXTRACTION-REPORT.md)  
 > **Status:** SSOT de arquitectura. Branch de produto standalone — **não mergear para `main`** sem review.  

@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench:conversion": "tsx scripts/conversion-bench.mjs",
     "ascii-engine": "tsx src/features/ascii-engine/cli/run.ts",
     "validate": "npm run typecheck && npm run lint && npm test && npm run build"
   },

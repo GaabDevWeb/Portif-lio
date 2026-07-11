@@ -1,7 +1,26 @@
 import type { ImagePipelineOptions, ImageSampleBuffer } from "@/features/ascii-interaction/image-pipeline/types";
+import {
+  resolveGridSize,
+  resolveMetricsFromOptions,
+} from "@/features/ascii-interaction/geometry/aspect-ratio-engine";
 
-/** Amostra RGBA raw para buffer luminance — sem DOM (worker-safe). */
-export function sampleRgba(
+function srgbToLinear(c: number): number {
+  const s = c / 255;
+  return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+}
+
+function linearLuminance(r: number, g: number, b: number): number {
+  const R = srgbToLinear(r);
+  const G = srgbToLinear(g);
+  const B = srgbToLinear(b);
+  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+}
+
+/**
+ * Area-average (box) downsample — preferred for ASCII fidelity.
+ * Upsample falls back to bilinear-ish nearest blend.
+ */
+export function resampleRgba(
   pixels: Uint8ClampedArray,
   srcWidth: number,
   srcHeight: number,
@@ -13,26 +32,66 @@ export function sampleRgba(
   const g = new Uint8ClampedArray(outWidth * outHeight);
   const b = new Uint8ClampedArray(outWidth * outHeight);
 
-  const xRatio = srcWidth / outWidth;
-  const yRatio = srcHeight / outHeight;
+  const scaleX = srcWidth / outWidth;
+  const scaleY = srcHeight / outHeight;
+  const downscaling = scaleX >= 1 && scaleY >= 1;
 
   for (let y = 0; y < outHeight; y += 1) {
-    const sy = Math.min(srcHeight - 1, Math.floor(y * yRatio));
     for (let x = 0; x < outWidth; x += 1) {
-      const sx = Math.min(srcWidth - 1, Math.floor(x * xRatio));
-      const si = (sy * srcWidth + sx) * 4;
       const oi = y * outWidth + x;
-      const pr = pixels[si]!;
-      const pg = pixels[si + 1]!;
-      const pb = pixels[si + 2]!;
-      r[oi] = pr;
-      g[oi] = pg;
-      b[oi] = pb;
-      luminance[oi] = (0.2126 * pr + 0.7152 * pg + 0.0722 * pb) / 255;
+      if (downscaling) {
+        const x0 = Math.floor(x * scaleX);
+        const y0 = Math.floor(y * scaleY);
+        const x1 = Math.min(srcWidth, Math.ceil((x + 1) * scaleX));
+        const y1 = Math.min(srcHeight, Math.ceil((y + 1) * scaleY));
+        let sumR = 0;
+        let sumG = 0;
+        let sumB = 0;
+        let count = 0;
+        for (let sy = y0; sy < y1; sy += 1) {
+          for (let sx = x0; sx < x1; sx += 1) {
+            const si = (sy * srcWidth + sx) * 4;
+            sumR += pixels[si]!;
+            sumG += pixels[si + 1]!;
+            sumB += pixels[si + 2]!;
+            count += 1;
+          }
+        }
+        if (count === 0) count = 1;
+        const pr = Math.round(sumR / count);
+        const pg = Math.round(sumG / count);
+        const pb = Math.round(sumB / count);
+        r[oi] = pr;
+        g[oi] = pg;
+        b[oi] = pb;
+        luminance[oi] = linearLuminance(pr, pg, pb);
+      } else {
+        const sx = Math.min(srcWidth - 1, Math.floor(x * scaleX));
+        const sy = Math.min(srcHeight - 1, Math.floor(y * scaleY));
+        const si = (sy * srcWidth + sx) * 4;
+        const pr = pixels[si]!;
+        const pg = pixels[si + 1]!;
+        const pb = pixels[si + 2]!;
+        r[oi] = pr;
+        g[oi] = pg;
+        b[oi] = pb;
+        luminance[oi] = linearLuminance(pr, pg, pb);
+      }
     }
   }
 
   return { width: outWidth, height: outHeight, luminance, r, g, b };
+}
+
+/** @deprecated use resampleRgba — kept as alias for callers. */
+export function sampleRgba(
+  pixels: Uint8ClampedArray,
+  srcWidth: number,
+  srcHeight: number,
+  outWidth: number,
+  outHeight: number,
+): ImageSampleBuffer {
+  return resampleRgba(pixels, srcWidth, srcHeight, outWidth, outHeight);
 }
 
 export { applyImageFilters } from "@/features/ascii-interaction/image-pipeline/image-processor";
@@ -40,15 +99,28 @@ export { applyImageFilters } from "@/features/ascii-interaction/image-pipeline/i
 export function resolveOutputSizeFromDimensions(
   imgWidth: number,
   imgHeight: number,
-  options: Pick<ImagePipelineOptions, "width" | "height" | "lockAspectRatio" | "pixelAspect" | "fontCompensation">,
+  options: Pick<
+    ImagePipelineOptions,
+    | "width"
+    | "height"
+    | "lockAspectRatio"
+    | "pixelAspect"
+    | "fontCompensation"
+    | "glyphCellWidth"
+    | "glyphCellHeight"
+  >,
 ): { width: number; height: number } {
-  const aspect = (imgWidth / imgHeight) * options.pixelAspect * options.fontCompensation;
-  const outW = Math.max(8, Math.round(options.width));
-  let outH = options.height > 0 ? Math.max(8, Math.round(options.height)) : 0;
-  if (outH === 0 || options.lockAspectRatio) {
-    outH = Math.max(8, Math.round(outW / aspect));
-  }
-  return { width: outW, height: outH };
+  const metrics = resolveMetricsFromOptions(options);
+  const grid = resolveGridSize({
+    imgWidth,
+    imgHeight,
+    cols: options.width,
+    rows: options.height,
+    lockAspectRatio: options.lockAspectRatio,
+    pixelAspect: options.pixelAspect,
+    metrics,
+  });
+  return { width: grid.cols, height: grid.rows };
 }
 
 export function runRgbaPipeline(
@@ -58,5 +130,5 @@ export function runRgbaPipeline(
   options: ImagePipelineOptions,
 ): ImageSampleBuffer {
   const { width, height } = resolveOutputSizeFromDimensions(srcWidth, srcHeight, options);
-  return sampleRgba(pixels, srcWidth, srcHeight, width, height);
+  return resampleRgba(pixels, srcWidth, srcHeight, width, height);
 }

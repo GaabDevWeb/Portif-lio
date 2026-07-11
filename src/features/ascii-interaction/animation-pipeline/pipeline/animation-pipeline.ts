@@ -21,16 +21,62 @@ import { delaysFromFps } from "@/features/ascii-interaction/animation-pipeline/u
 
 const CHUNK_SIZE = 8;
 
+/** Throttle progress callbacks to ~8 Hz to avoid React setState storms. */
+function createThrottledProgress(
+  onProgress?: (p: ConversionProgress) => void,
+  intervalMs = 125,
+): (p: ConversionProgress) => void {
+  if (!onProgress) return () => undefined;
+  let last = 0;
+  let pending: ConversionProgress | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return (p: ConversionProgress) => {
+    const now = Date.now();
+    if (p.percent >= 100 || p.cancelled || now - last >= intervalMs) {
+      last = now;
+      pending = null;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      onProgress(p);
+      return;
+    }
+    pending = p;
+    if (!timer) {
+      timer = setTimeout(() => {
+        timer = null;
+        if (pending) {
+          last = Date.now();
+          onProgress(pending);
+          pending = null;
+        }
+      }, intervalMs - (now - last));
+    }
+  };
+}
+
 export class AnimationPipeline {
   private decoded: DecodedGif | null = null;
   private rgbaSource: RgbaFrame[] = [];
   private animation: AsciiAnimation | null = null;
   private readonly cache = new FrameCache(128);
-  private readonly workerPool = new ConversionWorkerPool();
+  private workerPool: ConversionWorkerPool;
   private cancelled = false;
   private conversionComplete = false;
   private conversionGeneration = 0;
   private optionsHash = "";
+
+  constructor(workerCount = 2) {
+    this.workerPool = new ConversionWorkerPool({ poolSize: workerCount });
+  }
+
+  private ensurePoolSize(workerCount: number): void {
+    const n = Math.max(1, workerCount);
+    if (this.workerPool.size === n) return;
+    this.workerPool.destroy();
+    this.workerPool = new ConversionWorkerPool({ poolSize: n });
+  }
 
   async loadGif(file: File): Promise<DecodedGif> {
     this.decoded = await decodeGifFile(file);
@@ -72,12 +118,19 @@ export class AnimationPipeline {
     const cached = this.cache.get(frameIndex, hash);
     if (cached) return cached;
 
-    const rgba = this.rgbaSource[frameIndex];
+    const rgba = this.ensureRgba()[frameIndex];
     if (!rgba) return null;
 
     const frame = convertRgbaFrameToAnimationFrame(rgba, options.pipeline);
     this.cache.set(frameIndex, hash, frame);
     return frame;
+  }
+
+  private ensureRgba(): RgbaFrame[] {
+    if (this.rgbaSource.length > 0) return this.rgbaSource;
+    if (!this.decoded) return [];
+    this.rgbaSource = extractFrames(this.decoded);
+    return this.rgbaSource;
   }
 
   async convert(
@@ -88,10 +141,12 @@ export class AnimationPipeline {
     this.cancelled = false;
     this.conversionComplete = false;
     const generation = ++this.conversionGeneration;
+    const report = createThrottledProgress(onProgress);
+
+    this.ensurePoolSize(options.workerCount);
 
     const decoded = this.decoded ?? (await this.loadGif(file));
-    const rgbaFrames = this.rgbaSource.length > 0 ? this.rgbaSource : extractFrames(decoded);
-    this.rgbaSource = rgbaFrames;
+    const rgbaFrames = this.ensureRgba();
 
     const frameDelays =
       options.targetFps > 0
@@ -110,7 +165,7 @@ export class AnimationPipeline {
       height: decoded.height,
       frameCount: total,
       frames: sparse,
-      fps: options.targetFps,
+      fps: options.targetFps > 0 ? options.targetFps : 0,
       loop: options.loop,
       frameDelays,
       totalDurationMs: frameDelays.reduce((a, b) => a + b, 0),
@@ -132,7 +187,7 @@ export class AnimationPipeline {
           chunk,
           options.pipeline,
           (localCompleted) => {
-            onProgress?.({
+            report({
               completed: offset + localCompleted,
               total,
               percent: ((offset + localCompleted) / total) * 100,
@@ -146,7 +201,7 @@ export class AnimationPipeline {
           chunk,
           options.pipeline,
           (localCompleted) => {
-            onProgress?.({
+            report({
               completed: offset + localCompleted,
               total,
               percent: ((offset + localCompleted) / total) * 100,
@@ -162,10 +217,10 @@ export class AnimationPipeline {
         throw new Error("Conversão cancelada.");
       }
 
-      for (const frame of converted) {
-        this.cache.set(frame.index, hash, frame);
-        sparse[frame.index] = frame;
-      }
+        for (const frame of converted) {
+          this.cache.set(frame.index, hash, frame);
+          sparse[frame.index] = frame;
+        }
 
       shell.frames = sparse.filter((f): f is AsciiAnimationFrame => f != null);
     }
@@ -176,8 +231,10 @@ export class AnimationPipeline {
 
     this.animation = shell;
     this.conversionComplete = true;
+    // Free RGBA after full convert — re-extract from decoded if needed.
+    this.rgbaSource = [];
 
-    onProgress?.({
+    report({
       completed: total,
       total,
       percent: 100,

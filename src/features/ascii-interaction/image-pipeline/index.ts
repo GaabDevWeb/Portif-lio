@@ -34,7 +34,18 @@ export {
 export { applyDithering } from "@/features/ascii-interaction/image-pipeline/dithering";
 
 export {
+  DEFAULT_MATRIX_CELL_H,
+  DEFAULT_MATRIX_CELL_W,
+  canvasToPngBlob,
+  renderMatrixToCanvas,
+  renderMatrixToImageData,
+  resolveMatrixRenderDimensions,
+} from "@/features/ascii-interaction/image-pipeline/render-utils";
+
+export {
   IMAGE_CHARSETS,
+  getCharsetInkCoverage,
+  mapLuminanceToCharByDensity,
   mapLuminanceToCharIndex,
   resolveCellColor,
 } from "@/features/ascii-interaction/image-pipeline/charset-mapper";
@@ -53,11 +64,6 @@ export {
   renderMatrixToPng,
 } from "@/features/ascii-interaction/image-pipeline/exporter";
 export type { CopyAsciiResult, MatrixExportOptions } from "@/features/ascii-interaction/image-pipeline/exporter";
-export {
-  renderMatrixToCanvas,
-  renderMatrixToImageData,
-  resolveMatrixRenderDimensions,
-} from "@/features/ascii-interaction/image-pipeline/render-utils";
 export type { MatrixRenderOptions } from "@/features/ascii-interaction/image-pipeline/render-utils";
 
 export {
@@ -65,7 +71,7 @@ export {
   IMAGE_PIPELINE_PRESETS,
 } from "@/features/ascii-interaction/image-pipeline/presets";
 
-export { runRgbaPipeline, sampleRgba, resolveOutputSizeFromDimensions } from "@/features/ascii-interaction/image-pipeline/rgba-processor";
+export { resampleRgba, runRgbaPipeline, sampleRgba, resolveOutputSizeFromDimensions } from "@/features/ascii-interaction/image-pipeline/rgba-processor";
 
 export { mergePipelineOptions, runImagePipeline } from "@/features/ascii-interaction/image-pipeline/pipeline";
 

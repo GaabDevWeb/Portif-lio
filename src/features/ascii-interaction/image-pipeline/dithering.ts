@@ -11,6 +11,9 @@ const BAYER_4X4 = [
   15, 7, 13, 5,
 ];
 
+/**
+ * @param levels — número de níveis do charset (= charset.length). Internamente usa levels-1 uma vez.
+ */
 export function applyDithering(
   luminance: Float32Array,
   width: number,
@@ -19,6 +22,7 @@ export function applyDithering(
   levels: number,
 ): Float32Array {
   if (mode === "none") return luminance;
+  if (levels < 2) return luminance;
 
   const out = new Float32Array(luminance);
   const n = levels - 1;
@@ -53,45 +57,61 @@ export function applyDithering(
   return out;
 }
 
-function quantize(value: number, levels: number): number {
-  return Math.round(clamp01(value) * levels) / levels;
+function quantize(value: number, maxIndex: number): number {
+  if (maxIndex <= 0) return 0;
+  return Math.round(clamp01(value) * maxIndex) / maxIndex;
 }
 
 function distribute(
   data: Float32Array,
   width: number,
+  height: number,
   x: number,
   y: number,
   error: number,
   pattern: [number, number, number][],
+  divisor: number,
 ): void {
   for (const [dx, dy, weight] of pattern) {
     const nx = x + dx;
     const ny = y + dy;
-    if (nx < 0 || nx >= width || ny < 0 || ny >= data.length / width) continue;
-    data[ny * width + nx] = clamp01(data[ny * width + nx]! + (error * weight) / 42);
+    if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+    data[ny * width + nx] = clamp01(data[ny * width + nx]! + (error * weight) / divisor);
   }
 }
 
-function floydSteinberg(data: Float32Array, width: number, height: number, levels: number): void {
+/** Floyd–Steinberg with serpentine scan. */
+function floydSteinberg(data: Float32Array, width: number, height: number, maxIndex: number): void {
   for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
+    const leftToRight = y % 2 === 0;
+    const xStart = leftToRight ? 0 : width - 1;
+    const xEnd = leftToRight ? width : -1;
+    const xStep = leftToRight ? 1 : -1;
+    for (let x = xStart; x !== xEnd; x += xStep) {
       const i = y * width + x;
       const old = data[i]!;
-      const neu = quantize(old, levels);
+      const neu = quantize(old, maxIndex);
       const err = old - neu;
       data[i] = neu;
-      if (x + 1 < width) data[i + 1] = clamp01(data[i + 1]! + err * (7 / 16));
+      const ahead = leftToRight ? 1 : -1;
+      if (x + ahead >= 0 && x + ahead < width) {
+        data[i + ahead] = clamp01(data[i + ahead]! + err * (7 / 16));
+      }
       if (y + 1 < height) {
-        if (x > 0) data[i + width - 1] = clamp01(data[i + width - 1]! + err * (3 / 16));
+        if (x - ahead >= 0 && x - ahead < width) {
+          data[i + width - ahead] = clamp01(data[i + width - ahead]! + err * (3 / 16));
+        }
         data[i + width] = clamp01(data[i + width]! + err * (5 / 16));
-        if (x + 1 < width) data[i + width + 1] = clamp01(data[i + width + 1]! + err * (1 / 16));
+        if (x + ahead >= 0 && x + ahead < width) {
+          data[i + width + ahead] = clamp01(data[i + width + ahead]! + err * (1 / 16));
+        }
       }
     }
   }
 }
 
-function atkinson(data: Float32Array, width: number, height: number, levels: number): void {
+function atkinson(data: Float32Array, width: number, height: number, maxIndex: number): void {
+  // Atkinson distributes 6/8 of error (weights of 1, divisor 8)
   const pattern: [number, number, number][] = [
     [1, 0, 1], [2, 0, 1], [-1, 1, 1], [0, 1, 1], [1, 1, 1], [0, 2, 1],
   ];
@@ -99,20 +119,20 @@ function atkinson(data: Float32Array, width: number, height: number, levels: num
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
       const old = data[i]!;
-      const neu = quantize(old, levels);
+      const neu = quantize(old, maxIndex);
       const err = old - neu;
       data[i] = neu;
-      distribute(data, width, x, y, err, pattern);
+      distribute(data, width, height, x, y, err, pattern, 8);
     }
   }
 }
 
-function burkes(data: Float32Array, width: number, height: number, levels: number): void {
+function burkes(data: Float32Array, width: number, height: number, maxIndex: number): void {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
       const old = data[i]!;
-      const neu = quantize(old, levels);
+      const neu = quantize(old, maxIndex);
       const err = old - neu;
       data[i] = neu;
       const spread = [
@@ -129,7 +149,7 @@ function burkes(data: Float32Array, width: number, height: number, levels: numbe
   }
 }
 
-function sierra(data: Float32Array, width: number, height: number, levels: number): void {
+function sierra(data: Float32Array, width: number, height: number, maxIndex: number): void {
   const pattern: [number, number, number][] = [
     [1, 0, 5], [2, 0, 3],
     [-2, 1, 2], [-1, 1, 4], [0, 1, 5], [1, 1, 4], [2, 1, 2],
@@ -139,15 +159,15 @@ function sierra(data: Float32Array, width: number, height: number, levels: numbe
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
       const old = data[i]!;
-      const neu = quantize(old, levels);
+      const neu = quantize(old, maxIndex);
       const err = old - neu;
       data[i] = neu;
-      distribute(data, width, x, y, err, pattern);
+      distribute(data, width, height, x, y, err, pattern, 32);
     }
   }
 }
 
-function stucki(data: Float32Array, width: number, height: number, levels: number): void {
+function stucki(data: Float32Array, width: number, height: number, maxIndex: number): void {
   const pattern: [number, number, number][] = [
     [1, 0, 8], [2, 0, 4],
     [-2, 1, 2], [-1, 1, 4], [0, 1, 8], [1, 1, 4], [2, 1, 2],
@@ -157,15 +177,15 @@ function stucki(data: Float32Array, width: number, height: number, levels: numbe
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
       const old = data[i]!;
-      const neu = quantize(old, levels);
+      const neu = quantize(old, maxIndex);
       const err = old - neu;
       data[i] = neu;
-      distribute(data, width, x, y, err, pattern);
+      distribute(data, width, height, x, y, err, pattern, 42);
     }
   }
 }
 
-function jarvis(data: Float32Array, width: number, height: number, levels: number): void {
+function jarvis(data: Float32Array, width: number, height: number, maxIndex: number): void {
   const pattern: [number, number, number][] = [
     [1, 0, 7], [2, 0, 5],
     [-2, 1, 3], [-1, 1, 5], [0, 1, 7], [1, 1, 5], [2, 1, 3],
@@ -175,21 +195,21 @@ function jarvis(data: Float32Array, width: number, height: number, levels: numbe
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
       const old = data[i]!;
-      const neu = quantize(old, levels);
+      const neu = quantize(old, maxIndex);
       const err = old - neu;
       data[i] = neu;
-      distribute(data, width, x, y, err, pattern);
+      distribute(data, width, height, x, y, err, pattern, 48);
     }
   }
 }
 
-function orderedBayer(data: Float32Array, width: number, height: number, levels: number): void {
+function orderedBayer(data: Float32Array, width: number, height: number, maxIndex: number): void {
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
       const threshold = (BAYER_4X4[(y % 4) * 4 + (x % 4)]! + 0.5) / 16;
-      const adjusted = data[i]! + (threshold - 0.5) / levels;
-      data[i] = quantize(adjusted, levels);
+      const adjusted = data[i]! + (threshold - 0.5) / Math.max(1, maxIndex);
+      data[i] = quantize(adjusted, maxIndex);
     }
   }
 }

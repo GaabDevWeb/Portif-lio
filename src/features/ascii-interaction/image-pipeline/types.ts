@@ -35,7 +35,15 @@ export interface ImagePipelineOptions {
   height: number;
   lockAspectRatio: boolean;
   pixelAspect: number;
+/**
+ * @deprecated Ignored by AspectRatioEngine / resolveOutputSize. Kept for recipe/JSON compat only.
+ * Geometry uses glyphCellWidth/Height (default 7×12).
+ */
   fontCompensation: number;
+  /** Explicit glyph cell width (CSS px). When set with glyphCellHeight, skips measure. */
+  glyphCellWidth?: number;
+  /** Explicit glyph cell height (CSS px). */
+  glyphCellHeight?: number;
   brightness: number;
   contrast: number;
   gamma: number;
@@ -105,7 +113,7 @@ export const DEFAULT_IMAGE_PIPELINE_OPTIONS: ImagePipelineOptions = {
   height: 0,
   lockAspectRatio: true,
   pixelAspect: 1,
-  fontCompensation: 0.55,
+  fontCompensation: 1,
   brightness: 0,
   contrast: 1,
   gamma: 1,

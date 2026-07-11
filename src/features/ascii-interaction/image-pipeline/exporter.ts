@@ -1,6 +1,8 @@
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
 import {
   canvasToPngBlob,
+  DEFAULT_MATRIX_CELL_H,
+  DEFAULT_MATRIX_CELL_W,
   renderMatrixToCanvas,
   type MatrixRenderOptions,
 } from "@/features/ascii-interaction/image-pipeline/render-utils";
@@ -129,8 +131,12 @@ export function downloadText(content: string, filename: string, mime: string): v
 
 export interface MatrixExportOptions {
   basename?: string;
+  /** When true, PNG/HTML/SVG match source pixel size. Default: cell metrics (preview parity). */
+  matchSourceResolution?: boolean;
   sourceWidth?: number;
   sourceHeight?: number;
+  cellW?: number;
+  cellH?: number;
 }
 
 export function downloadMatrix(
@@ -139,7 +145,16 @@ export function downloadMatrix(
   options: MatrixExportOptions = {},
 ): void {
   const basename = options.basename ?? "ascii-art";
-  const { sourceWidth, sourceHeight } = options;
+  const useSource =
+    options.matchSourceResolution === true &&
+    options.sourceWidth != null &&
+    options.sourceHeight != null;
+  const width = useSource
+    ? options.sourceWidth
+    : matrix.cols * (options.cellW ?? DEFAULT_MATRIX_CELL_W);
+  const height = useSource
+    ? options.sourceHeight
+    : matrix.rows * (options.cellH ?? DEFAULT_MATRIX_CELL_H);
 
   switch (format) {
     case "txt":
@@ -149,18 +164,10 @@ export function downloadMatrix(
       downloadText(matrixToJson(matrix), `${basename}.json`, "application/json");
       break;
     case "html":
-      downloadText(
-        matrixToHtml(matrix, sourceWidth, sourceHeight),
-        `${basename}.html`,
-        "text/html",
-      );
+      downloadText(matrixToHtml(matrix, width, height), `${basename}.html`, "text/html");
       break;
     case "svg":
-      downloadText(
-        matrixToSvg(matrix, sourceWidth, sourceHeight),
-        `${basename}.svg`,
-        "image/svg+xml",
-      );
+      downloadText(matrixToSvg(matrix, width, height), `${basename}.svg`, "image/svg+xml");
       break;
     default:
       break;
@@ -180,10 +187,19 @@ export async function downloadMatrixPng(
   options: MatrixExportOptions = {},
 ): Promise<void> {
   const basename = options.basename ?? "ascii-art";
-  const blob = await renderMatrixToPng(matrix, {
-    targetWidth: options.sourceWidth,
-    targetHeight: options.sourceHeight,
-  });
+  const useSource =
+    options.matchSourceResolution === true &&
+    options.sourceWidth != null &&
+    options.sourceHeight != null;
+  const blob = await renderMatrixToPng(
+    matrix,
+    useSource
+      ? { targetWidth: options.sourceWidth, targetHeight: options.sourceHeight }
+      : {
+          cellW: options.cellW ?? DEFAULT_MATRIX_CELL_W,
+          cellH: options.cellH ?? DEFAULT_MATRIX_CELL_H,
+        },
+  );
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

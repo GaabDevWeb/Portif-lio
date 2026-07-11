@@ -68,16 +68,9 @@ export async function exportAsciiAnimationZip(animation: AsciiAnimation): Promis
   }
 
   if (first) {
-    const preview = await renderMatrixToPng(first, {
-      targetWidth: animation.width,
-      targetHeight: animation.height,
-    });
+    const preview = await renderMatrixToPng(first, {});
     zip.file("preview.png", preview);
-    const thumb = await renderMatrixToPng(first, {
-      targetWidth: animation.width,
-      targetHeight: animation.height,
-      maxWidth: 160,
-    });
+    const thumb = await renderMatrixToPng(first, { maxWidth: 160 });
     zip.file("thumbnail.png", thumb);
   }
 

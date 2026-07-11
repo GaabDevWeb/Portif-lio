@@ -85,17 +85,11 @@ export function ImageConverterPanel({
 
   const handleCopyHtml = useCallback(async () => {
     if (!matrix) return;
-    const result = await exportMatrixToClipboard(matrix, "html", {
-      sourceWidth: sourceWidth > 0 ? sourceWidth : undefined,
-      sourceHeight: sourceHeight > 0 ? sourceHeight : undefined,
-    });
+    const result = await exportMatrixToClipboard(matrix, "html");
     setCopyState(result === "copied" ? "copied" : result);
-  }, [matrix, sourceWidth, sourceHeight]);
+  }, [matrix]);
 
-  const exportOptions = {
-    sourceWidth: sourceWidth > 0 ? sourceWidth : undefined,
-    sourceHeight: sourceHeight > 0 ? sourceHeight : undefined,
-  };
+  const exportOptions = {};
 
   return (
     <div className="space-y-4">
@@ -129,12 +123,11 @@ export function ImageConverterPanel({
         <p className="text-[9px] text-[var(--ui-text-dim)]">Altura 0 = automática (aspect ratio)</p>
         {sourceWidth > 0 ? (
           <p className="text-[9px] text-[var(--phosphor-dim)]">
-            Fonte: {sourceWidth}×{sourceHeight}px — exportação preserva resolução original
+            Fonte: {sourceWidth}×{sourceHeight}px — grelha deriva rows de célula 7×12 para preservar aspect
           </p>
         ) : null}
         <Toggle label="Lock aspect ratio" checked={options.lockAspectRatio} onChange={(v) => onOptionsChange({ lockAspectRatio: v })} />
-        <Slider label="Pixel aspect" value={options.pixelAspect} min={0.5} max={2} step={0.05} onChange={(v) => onOptionsChange({ pixelAspect: v })} />
-        <Slider label="Font compensation" value={options.fontCompensation} min={0.3} max={1.2} step={0.05} onChange={(v) => onOptionsChange({ fontCompensation: v })} />
+        <Slider label="Pixel aspect (fonte anamórfica)" value={options.pixelAspect} min={0.5} max={2} step={0.05} onChange={(v) => onOptionsChange({ pixelAspect: v })} />
       </Section>
 
       <Section title="Pré-processamento">
@@ -238,7 +231,7 @@ export function ImageConverterPanel({
               onClick={() => void downloadMatrixPng(matrix, exportOptions)}
               className="col-span-2 cursor-pointer rounded border border-[var(--ui-border)] px-2 py-1 font-mono text-[10px] uppercase text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
             >
-              PNG ({sourceWidth > 0 ? `${sourceWidth}×${sourceHeight}` : "original"})
+              PNG (grelha {matrix.cols * 7}×{matrix.rows * 12})
             </button>
           </div>
         </Section>

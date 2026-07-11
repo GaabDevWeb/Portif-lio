@@ -42,7 +42,7 @@ function mapCharset(
     buffer.width,
     buffer.height,
     dithering,
-    levels - 1,
+    levels,
   );
   const cells: AsciiMatrixCell[] = [];
   for (let row = 0; row < buffer.height; row += 1) {
@@ -186,7 +186,7 @@ const DitherNode: NodeDefinition = {
       image.width,
       image.height,
       mode,
-      levels - 1,
+      levels,
     );
     return outImage({
       width: image.width,
