@@ -26,6 +26,14 @@ export { AnimationPipeline } from "@/features/ascii-interaction/animation-pipeli
 export { AnimationFrameRenderer } from "@/features/ascii-interaction/animation-pipeline/renderer/animation-frame-renderer";
 export { createAnimationUiState } from "@/features/ascii-interaction/animation-pipeline/state/animation-state";
 export {
+  TemporalConverter,
+  convertRgbaFramesTemporal,
+  DEFAULT_TEMPORAL_OPTIONS,
+  TEMPORAL_FEATURE_META,
+  createEmptyTemporalMetrics,
+} from "@/features/ascii-interaction/animation-pipeline/TemporalPipeline";
+
+export {
   frameIndexAtTime,
   formatTimeMs,
   padFrameIndex,

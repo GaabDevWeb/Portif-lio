@@ -70,9 +70,14 @@ export function applyImageFilters(
     | "exposure"
     | "sharpness"
     | "invert"
+    | "invertLuminance"
+    | "invertColors"
     | "threshold"
     | "blur"
     | "edgeEnhance"
+    | "blackPoint"
+    | "midPoint"
+    | "whitePoint"
   >,
 ): ImageSampleBuffer {
   const { width, height, luminance, r, g, b } = buffer;
@@ -85,27 +90,35 @@ export function applyImageFilters(
   const contrast = options.contrast;
   const brightness = options.brightness;
   const exposure = Math.pow(2, options.exposure);
+  const invertLum = options.invertLuminance || options.invert;
+  const invertRgb = options.invertColors || options.invert;
+  const black = Math.min(options.blackPoint ?? 0, (options.whitePoint ?? 1) - 1e-4);
+  const white = Math.max(options.whitePoint ?? 1, black + 1e-4);
+  const mid = Math.min(0.99, Math.max(0.01, options.midPoint ?? 0.5));
+  const midGamma = Math.log(0.5) / Math.log(mid);
+
+  const tone = (v: number): number => {
+    let x = v * exposure;
+    x = (x - 0.5) * contrast + 0.5 + brightness * 0.5;
+    x = Math.pow(clamp01(x), 1 / gamma);
+    // Levels: remap [black, white] → [0, 1], then midtone curve
+    x = clamp01((x - black) / (white - black));
+    x = Math.pow(x, midGamma);
+    return clamp01(x);
+  };
 
   for (let i = 0; i < outLum.length; i += 1) {
-    let lum = outLum[i]! * exposure;
-    lum = (lum - 0.5) * contrast + 0.5 + brightness * 0.5;
-    lum = Math.pow(clamp01(lum), 1 / gamma);
-    if (options.invert) lum = 1 - lum;
+    let lum = tone(outLum[i]!);
+    if (invertLum) lum = 1 - lum;
     if (options.threshold > 0) {
       lum = lum >= options.threshold ? 1 : 0;
     }
     outLum[i] = lum;
 
-    let cr = (outR[i]! / 255) * exposure;
-    let cg = (outG[i]! / 255) * exposure;
-    let cb = (outB[i]! / 255) * exposure;
-    cr = (cr - 0.5) * contrast + 0.5 + brightness * 0.5;
-    cg = (cg - 0.5) * contrast + 0.5 + brightness * 0.5;
-    cb = (cb - 0.5) * contrast + 0.5 + brightness * 0.5;
-    cr = Math.pow(clamp01(cr), 1 / gamma);
-    cg = Math.pow(clamp01(cg), 1 / gamma);
-    cb = Math.pow(clamp01(cb), 1 / gamma);
-    if (options.invert) {
+    let cr = tone(outR[i]! / 255);
+    let cg = tone(outG[i]! / 255);
+    let cb = tone(outB[i]! / 255);
+    if (invertRgb) {
       cr = 1 - cr;
       cg = 1 - cg;
       cb = 1 - cb;

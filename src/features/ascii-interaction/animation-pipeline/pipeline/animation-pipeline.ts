@@ -9,6 +9,7 @@ import {
   convertRgbaFrameToAnimationFrame,
   convertRgbaFramesBatch,
 } from "@/features/ascii-interaction/animation-pipeline/converter/frame-converter";
+import { convertRgbaFramesTemporal } from "@/features/ascii-interaction/animation-pipeline/TemporalPipeline/TemporalConverter";
 import type {
   AnimationPipelineOptions,
   AsciiAnimation,
@@ -16,7 +17,10 @@ import type {
   ConversionProgress,
   DecodedGif,
   RgbaFrame,
+  TemporalDebugBuffers,
+  TemporalMetrics,
 } from "@/features/ascii-interaction/animation-pipeline/types";
+import { createEmptyTemporalMetrics } from "@/features/ascii-interaction/animation-pipeline/TemporalPipeline/types";
 import { delaysFromFps } from "@/features/ascii-interaction/animation-pipeline/utilities/timing";
 
 const CHUNK_SIZE = 8;
@@ -56,6 +60,13 @@ function createThrottledProgress(
   };
 }
 
+function optionsCacheHash(options: AnimationPipelineOptions): string {
+  return hashPipelineOptions({
+    pipeline: options.pipeline,
+    temporal: options.temporal,
+  });
+}
+
 export class AnimationPipeline {
   private decoded: DecodedGif | null = null;
   private rgbaSource: RgbaFrame[] = [];
@@ -66,6 +77,19 @@ export class AnimationPipeline {
   private conversionComplete = false;
   private conversionGeneration = 0;
   private optionsHash = "";
+  private lastTemporalMetrics: TemporalMetrics = createEmptyTemporalMetrics();
+  private lastTemporalDebug: TemporalDebugBuffers = {
+    motionMap: null,
+    temporalBuffer: null,
+    cols: 0,
+    rows: 0,
+  };
+  private motionPreviews: {
+    cols: number;
+    rows: number;
+    frames: Uint8Array[];
+    buffers: Uint8Array[];
+  } = { cols: 0, rows: 0, frames: [], buffers: [] };
 
   constructor(workerCount = 2) {
     this.workerPool = new ConversionWorkerPool({ poolSize: workerCount });
@@ -95,12 +119,29 @@ export class AnimationPipeline {
     return this.animation;
   }
 
+  getTemporalMetrics(): TemporalMetrics {
+    return { ...this.lastTemporalMetrics };
+  }
+
+  getTemporalDebug(): TemporalDebugBuffers {
+    return this.lastTemporalDebug;
+  }
+
+  getMotionPreviews(): {
+    cols: number;
+    rows: number;
+    frames: Uint8Array[];
+    buffers: Uint8Array[];
+  } {
+    return this.motionPreviews;
+  }
+
   isConversionComplete(): boolean {
     return this.conversionComplete;
   }
 
   isFrameReady(frameIndex: number, options: AnimationPipelineOptions): boolean {
-    const hash = hashPipelineOptions(options.pipeline);
+    const hash = optionsCacheHash(options);
     return this.cache.has(frameIndex, hash);
   }
 
@@ -110,13 +151,20 @@ export class AnimationPipeline {
     this.workerPool.cancel();
   }
 
-  /** Lazy conversion — um frame sob demanda (playback durante conversão). */
+  /**
+   * Lazy conversion — um frame sob demanda.
+   * Com temporal.enabled NÃO re-converte frame isolado (quebraria coerência).
+   */
   getFrame(frameIndex: number, options: AnimationPipelineOptions): AsciiAnimationFrame | null {
-    const hash = hashPipelineOptions(options.pipeline);
+    const hash = optionsCacheHash(options);
     this.cache.pruneAround(frameIndex, options.maxFramesInMemory, hash);
 
     const cached = this.cache.get(frameIndex, hash);
     if (cached) return cached;
+
+    if (options.temporal?.enabled) {
+      return this.animation?.frames[frameIndex] ?? null;
+    }
 
     const rgba = this.ensureRgba()[frameIndex];
     if (!rgba) return null;
@@ -153,7 +201,7 @@ export class AnimationPipeline {
         ? delaysFromFps(rgbaFrames.length, options.targetFps)
         : rgbaFrames.map((f) => f.delayMs);
 
-    const hash = hashPipelineOptions(options.pipeline);
+    const hash = optionsCacheHash(options);
     this.optionsHash = hash;
     this.cache.clear();
 
@@ -173,6 +221,56 @@ export class AnimationPipeline {
       sourceName: file.name,
     };
     this.animation = shell;
+
+    if (options.temporal?.enabled) {
+      // Temporal path — sequential only (workers would break state).
+      const { frames: converted, metrics, converter } = await convertRgbaFramesTemporal(
+        rgbaFrames,
+        options.pipeline,
+        options.temporal,
+        (completed, tot) => {
+          report({
+            completed,
+            total: tot,
+            percent: (completed / tot) * 100,
+            currentFrame: completed,
+            cancelled: false,
+          });
+        },
+        () => this.cancelled || generation !== this.conversionGeneration,
+      );
+
+      if (this.cancelled || generation !== this.conversionGeneration) {
+        throw new Error("Conversão cancelada.");
+      }
+
+      for (const frame of converted) {
+        this.cache.set(frame.index, hash, frame);
+        sparse[frame.index] = frame;
+      }
+      this.lastTemporalMetrics = metrics;
+      this.lastTemporalDebug = converter.getDebug();
+      this.motionPreviews = converter.getAllMotionPreviews();
+      shell.frames = sparse
+        .filter((f): f is AsciiAnimationFrame => f != null)
+        .sort((a, b) => a.index - b.index);
+      this.animation = shell;
+      this.conversionComplete = true;
+      this.rgbaSource = [];
+
+      report({
+        completed: total,
+        total,
+        percent: 100,
+        currentFrame: total - 1,
+        cancelled: false,
+      });
+      return shell;
+    }
+
+    this.lastTemporalMetrics = createEmptyTemporalMetrics();
+    this.lastTemporalDebug = { motionMap: null, temporalBuffer: null, cols: 0, rows: 0 };
+    this.motionPreviews = { cols: 0, rows: 0, frames: [], buffers: [] };
 
     for (let offset = 0; offset < total; offset += CHUNK_SIZE) {
       if (this.cancelled || generation !== this.conversionGeneration) {
@@ -217,10 +315,10 @@ export class AnimationPipeline {
         throw new Error("Conversão cancelada.");
       }
 
-        for (const frame of converted) {
-          this.cache.set(frame.index, hash, frame);
-          sparse[frame.index] = frame;
-        }
+      for (const frame of converted) {
+        this.cache.set(frame.index, hash, frame);
+        sparse[frame.index] = frame;
+      }
 
       shell.frames = sparse.filter((f): f is AsciiAnimationFrame => f != null);
     }
@@ -231,7 +329,6 @@ export class AnimationPipeline {
 
     this.animation = shell;
     this.conversionComplete = true;
-    // Free RGBA after full convert — re-extract from decoded if needed.
     this.rgbaSource = [];
 
     report({

@@ -6,7 +6,11 @@ import {
 } from "@/features/ascii-interaction/image-pipeline/image-processor";
 import { generateAsciiMatrix } from "@/features/ascii-interaction/image-pipeline/matrix-generator";
 import { matrixToAsciiSource } from "@/features/ascii-interaction/image-pipeline/exporter";
-import type { ImagePipelineOptions, PipelineResult } from "@/features/ascii-interaction/image-pipeline/types";
+import {
+  DEFAULT_IMAGE_PIPELINE_OPTIONS,
+  type ImagePipelineOptions,
+  type PipelineResult,
+} from "@/features/ascii-interaction/image-pipeline/types";
 import { AspectRatioEngine } from "@/features/ascii-interaction/geometry";
 
 /** Ensure glyph metrics are present so workers/Node share the same geometry as preview. */
@@ -64,5 +68,9 @@ export function mergePipelineOptions(
   base: ImagePipelineOptions,
   partial?: Partial<ImagePipelineOptions>,
 ): ImagePipelineOptions {
-  return withResolvedGlyphMetrics({ ...base, ...partial });
+  return withResolvedGlyphMetrics({
+    ...DEFAULT_IMAGE_PIPELINE_OPTIONS,
+    ...base,
+    ...partial,
+  });
 }

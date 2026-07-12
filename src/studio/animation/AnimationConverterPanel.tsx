@@ -10,9 +10,11 @@ import type {
 } from "@/features/ascii-interaction/animation-pipeline";
 import {
   DEFAULT_ANIMATION_PIPELINE_OPTIONS,
+  TEMPORAL_FEATURE_META,
   downloadAsciiAnimationGif,
   downloadAsciiAnimationTxtSequence,
   downloadAsciiAnimationZip,
+  type TemporalMetrics,
 } from "@/features/ascii-interaction/animation-pipeline";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline";
 import { IMAGE_CHARSETS } from "@/features/ascii-interaction/image-pipeline";
@@ -29,6 +31,7 @@ interface AnimationConverterPanelProps {
   progress: ConversionProgress | null;
   isConverting: boolean;
   charsetId: string;
+  temporalMetrics?: TemporalMetrics | null;
   onLoadGif: (file: File) => void;
   onCancel: () => void;
   onPipelineChange: (patch: Partial<ImagePipelineOptions>) => void;
@@ -48,6 +51,7 @@ export function AnimationConverterPanel({
   progress,
   isConverting,
   charsetId,
+  temporalMetrics = null,
   onLoadGif,
   onCancel,
   onPipelineChange,
@@ -172,6 +176,78 @@ export function AnimationConverterPanel({
           step={1}
           onChange={(v) => onAnimationOptionsChange({ workerCount: v })}
         />
+        {options.temporal?.enabled ? (
+          <p className="font-mono text-[9px] text-[var(--ui-text-dim)]">
+            Temporal ON → conversão sequencial (workers ignorados).
+          </p>
+        ) : null}
+      </Section>
+
+      <Section title="Temporal">
+        <Toggle
+          label="Temporal Pipeline"
+          checked={options.temporal?.enabled ?? true}
+          onChange={(v) =>
+            onAnimationOptionsChange({
+              temporal: { ...options.temporal, enabled: v },
+            })
+          }
+        />
+        <p className="mb-2 font-mono text-[9px] leading-relaxed text-[var(--ui-text-dim)]">
+          Trata o GIF como sequência coerente — reduz flickering, chuvisco de dither e troca
+          aleatória de caracteres em áreas estáticas.
+        </p>
+        {TEMPORAL_FEATURE_META.map((feat) => (
+          <label
+            key={feat.id}
+            className="flex cursor-pointer flex-col gap-0.5 border-b border-[var(--ui-border)]/30 py-1.5 last:border-0"
+            title={feat.description}
+          >
+            <span className="flex items-center justify-between text-[10px] text-[var(--ui-text-dim)]">
+              <span>{feat.label}</span>
+              <input
+                type="checkbox"
+                disabled={!options.temporal?.enabled}
+                checked={Boolean(options.temporal?.[feat.id])}
+                onChange={(e) =>
+                  onAnimationOptionsChange({
+                    temporal: {
+                      ...options.temporal,
+                      [feat.id]: e.target.checked,
+                    },
+                  })
+                }
+                className="accent-[var(--phosphor-primary)]"
+              />
+            </span>
+            <span className="font-mono text-[8px] leading-snug text-[var(--ui-text-dim)]/80">
+              {feat.description}
+            </span>
+          </label>
+        ))}
+        {temporalMetrics && options.temporal?.enabled ? (
+          <div className="mt-2 space-y-1 rounded border border-[var(--ui-border)]/60 p-2">
+            <p className="font-mono text-[9px] uppercase tracking-wider text-[var(--amber-led)]">
+              Métricas
+            </p>
+            <Metric label="Frames" value={String(temporalMetrics.frames)} />
+            <Metric label="Motion %" value={`${temporalMetrics.motionPercent.toFixed(1)}%`} />
+            <Metric label="Blocks reused" value={String(temporalMetrics.blocksReused)} />
+            <Metric label="Chars updated" value={String(temporalMetrics.charactersUpdated)} />
+            <Metric label="Frames skipped" value={String(temporalMetrics.framesSkipped)} />
+            <Metric
+              label="Stability"
+              value={`${(temporalMetrics.temporalStability * 100).toFixed(1)}%`}
+            />
+            <Metric
+              label="Time"
+              value={`${(temporalMetrics.processingTimeMs / 1000).toFixed(2)}s`}
+            />
+            {temporalMetrics.peakHeapMb != null ? (
+              <Metric label="Heap" value={`${temporalMetrics.peakHeapMb} MB`} />
+            ) : null}
+          </div>
+        ) : null}
       </Section>
 
       <Section title="Dimensões ASCII">

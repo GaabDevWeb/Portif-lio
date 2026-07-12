@@ -11,6 +11,11 @@ const BAYER_4X4 = [
   15, 7, 13, 5,
 ];
 
+const BAYER_2X2 = [
+  0, 2,
+  3, 1,
+];
+
 /**
  * @param levels — número de níveis do charset (= charset.length). Internamente usa levels-1 uma vez.
  */
@@ -46,9 +51,13 @@ export function applyDithering(
     case "stucki":
       stucki(out, width, height, n);
       break;
+    case "bayer-2x2":
+      orderedBayerNxN(out, width, height, n, BAYER_2X2, 2);
+      break;
     case "ordered":
     case "bayer":
-      orderedBayer(out, width, height, n);
+    case "bayer-4x4":
+      orderedBayerNxN(out, width, height, n, BAYER_4X4, 4);
       break;
     default:
       break;
@@ -203,11 +212,19 @@ function jarvis(data: Float32Array, width: number, height: number, maxIndex: num
   }
 }
 
-function orderedBayer(data: Float32Array, width: number, height: number, maxIndex: number): void {
+function orderedBayerNxN(
+  data: Float32Array,
+  width: number,
+  height: number,
+  maxIndex: number,
+  matrix: number[],
+  n: number,
+): void {
+  const denom = n * n;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const i = y * width + x;
-      const threshold = (BAYER_4X4[(y % 4) * 4 + (x % 4)]! + 0.5) / 16;
+      const threshold = (matrix[(y % n) * n + (x % n)]! + 0.5) / denom;
       const adjusted = data[i]! + (threshold - 0.5) / Math.max(1, maxIndex);
       data[i] = quantize(adjusted, maxIndex);
     }

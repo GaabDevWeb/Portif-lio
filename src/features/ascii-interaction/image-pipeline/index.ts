@@ -71,9 +71,27 @@ export {
   IMAGE_PIPELINE_PRESETS,
 } from "@/features/ascii-interaction/image-pipeline/presets";
 
+export {
+  REFINEMENT_PRESETS,
+  getRefinementPreset,
+  exportPipelineSettingsJson,
+  parsePipelineSettingsJson,
+} from "@/features/ascii-interaction/image-pipeline/refinement-presets";
+
+export {
+  computeLuminanceHistogram,
+  autoOptimizeFromBuffer,
+} from "@/features/ascii-interaction/image-pipeline/histogram";
+export type { LuminanceHistogram } from "@/features/ascii-interaction/image-pipeline/histogram";
+
+export {
+  applyCharacterDensity,
+  applyAdaptiveLuminance,
+} from "@/features/ascii-interaction/image-pipeline/matrix-generator";
+
 export { resampleRgba, runRgbaPipeline, sampleRgba, resolveOutputSizeFromDimensions } from "@/features/ascii-interaction/image-pipeline/rgba-processor";
 
-export { mergePipelineOptions, runImagePipeline } from "@/features/ascii-interaction/image-pipeline/pipeline";
+export { mergePipelineOptions, runImagePipeline, withResolvedGlyphMetrics } from "@/features/ascii-interaction/image-pipeline/pipeline";
 
 export {
   runImagePipelineAsync,

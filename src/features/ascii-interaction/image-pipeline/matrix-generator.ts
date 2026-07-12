@@ -12,6 +12,10 @@ import type {
   MappingMode,
 } from "@/features/ascii-interaction/image-pipeline/types";
 
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
+
 function buildMappingField(
   buffer: ImageSampleBuffer,
   mode: MappingMode,
@@ -40,15 +44,56 @@ function buildMappingField(
   return field;
 }
 
+/** Sparse↔dense: subsample charset evenly (keep endpoints). */
+export function applyCharacterDensity(charset: string, density: number): string {
+  if (charset.length <= 2) return charset;
+  const d = clamp01(density);
+  if (d >= 0.999) return charset;
+  const target = Math.max(2, Math.round(2 + (charset.length - 2) * d));
+  if (target >= charset.length) return charset;
+  let out = "";
+  for (let i = 0; i < target; i += 1) {
+    const src = Math.round((i / (target - 1)) * (charset.length - 1));
+    out += charset[src]!;
+  }
+  return out;
+}
+
+/** Percentile stretch so the charset uses the image’s dynamic range. */
+export function applyAdaptiveLuminance(field: Float32Array): Float32Array {
+  if (field.length === 0) return field;
+  const sorted = Float32Array.from(field).sort();
+  const lo = sorted[Math.floor(sorted.length * 0.02)] ?? 0;
+  const hi = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.98))] ?? 1;
+  const span = Math.max(1e-4, hi - lo);
+  const out = new Float32Array(field.length);
+  for (let i = 0; i < field.length; i += 1) {
+    out[i] = clamp01((field[i]! - lo) / span);
+  }
+  return out;
+}
+
 export function generateAsciiMatrix(
   buffer: ImageSampleBuffer,
   options: ImagePipelineOptions,
 ): AsciiMatrix {
-  const charset = options.charset.length > 1 ? options.charset : " .";
+  const baseCharset = options.charset.length > 1 ? options.charset : " .";
+  const charset = applyCharacterDensity(baseCharset, options.characterDensity ?? 1);
   const levels = charset.length;
 
-  const mapping = buildMappingField(buffer, options.mappingMode, options.edgeEnhance);
-  // levels = charset.length (applyDithering decrements once internally)
+  let mapping = buildMappingField(buffer, options.mappingMode, options.edgeEnhance);
+
+  if (options.adaptiveMapping) {
+    mapping = applyAdaptiveLuminance(mapping);
+  }
+
+  const bias = options.characterBias ?? 0;
+  if (bias !== 0) {
+    for (let i = 0; i < mapping.length; i += 1) {
+      mapping[i] = clamp01(mapping[i]! + bias * 0.5);
+    }
+  }
+
   const dithered = applyDithering(mapping, buffer.width, buffer.height, options.dithering, levels);
 
   const cells: AsciiMatrixCell[] = [];

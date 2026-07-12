@@ -93,7 +93,7 @@ export function WorkspaceToolbar({
 
           {state.showOriginal && !compact ? (
             <div className="flex items-center gap-0.5">
-              {(["split", "overlay", "peek"] as const).map((mode) => (
+              {(["wipe", "split", "overlay", "peek"] as const).map((mode) => (
                 <button
                   key={mode}
                   type="button"

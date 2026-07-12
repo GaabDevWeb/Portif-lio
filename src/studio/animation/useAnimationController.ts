@@ -13,6 +13,8 @@ import {
   type AnimationPipelineOptions,
   type TimelineState,
   type DecodedGif,
+  type TemporalMetrics,
+  type TemporalDebugBuffers,
 } from "@/features/ascii-interaction/animation-pipeline";
 import {
   duplicateFrame,
@@ -39,6 +41,14 @@ export function useAnimationController() {
   const [gifFile, setGifFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [frameRevision, setFrameRevision] = useState(0);
+  const [temporalMetrics, setTemporalMetrics] = useState<TemporalMetrics | null>(null);
+  const [temporalDebug, setTemporalDebug] = useState<TemporalDebugBuffers | null>(null);
+  const [motionPreviews, setMotionPreviews] = useState<{
+    cols: number;
+    rows: number;
+    frames: Uint8Array[];
+    buffers: Uint8Array[];
+  } | null>(null);
 
   optionsRef.current = options;
 
@@ -77,6 +87,9 @@ export function useAnimationController() {
         }
       });
       setAnimation(result);
+      setTemporalMetrics(pipeline.getTemporalMetrics());
+      setTemporalDebug(pipeline.getTemporalDebug());
+      setMotionPreviews(pipeline.getMotionPreviews());
       playbackRef.current?.setFrameDelays(result.frameDelays);
       playbackRef.current?.setFps(result.fps);
       playbackRef.current?.setLoop(result.loop);
@@ -158,7 +171,14 @@ export function useAnimationController() {
   }, []);
 
   const updateAnimationOptions = useCallback((patch: Partial<AnimationPipelineOptions>) => {
-    setOptions((prev) => ({ ...prev, ...patch }));
+    setOptions((prev) => ({
+      ...prev,
+      ...patch,
+      temporal: patch.temporal
+        ? { ...prev.temporal, ...patch.temporal }
+        : prev.temporal,
+      pipeline: patch.pipeline ?? prev.pipeline,
+    }));
     if (patch.targetFps != null) playbackRef.current?.setFps(patch.targetFps);
     if (patch.loop != null) playbackRef.current?.setLoop(patch.loop);
   }, []);
@@ -222,6 +242,9 @@ export function useAnimationController() {
     previewUrl,
     currentFrame,
     frameRevision,
+    temporalMetrics,
+    temporalDebug,
+    motionPreviews,
     loadGif,
     cancelConversion,
     updatePipelineOptions,

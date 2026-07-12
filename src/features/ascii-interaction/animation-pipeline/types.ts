@@ -1,5 +1,11 @@
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline/types";
 import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline/types";
+import type {
+  TemporalDebugBuffers,
+  TemporalMetrics,
+  TemporalPipelineOptions,
+} from "@/features/ascii-interaction/animation-pipeline/TemporalPipeline/types";
+import { DEFAULT_TEMPORAL_OPTIONS } from "@/features/ascii-interaction/animation-pipeline/TemporalPipeline/types";
 
 export type PlaybackStatus = "stopped" | "playing" | "paused";
 
@@ -79,6 +85,8 @@ export interface AnimationPipelineOptions {
   loop: boolean;
   maxFramesInMemory: number;
   workerCount: number;
+  /** Temporal ASCII — GIF sequence coherence (forces sequential convert when enabled). */
+  temporal: TemporalPipelineOptions;
 }
 
 export const DEFAULT_ANIMATION_PIPELINE_OPTIONS: AnimationPipelineOptions = {
@@ -94,9 +102,17 @@ export const DEFAULT_ANIMATION_PIPELINE_OPTIONS: AnimationPipelineOptions = {
     exposure: 0,
     sharpness: 0,
     invert: false,
+    invertLuminance: false,
+    invertColors: false,
     threshold: 0,
     blur: 0,
     edgeEnhance: 0,
+    blackPoint: 0,
+    midPoint: 0.5,
+    whitePoint: 1,
+    characterDensity: 1,
+    characterBias: 0,
+    adaptiveMapping: false,
     charset: " .:-=+*#%@",
     mappingMode: "brightness",
     dithering: "floyd-steinberg",
@@ -106,7 +122,10 @@ export const DEFAULT_ANIMATION_PIPELINE_OPTIONS: AnimationPipelineOptions = {
   loop: true,
   maxFramesInMemory: 48,
   workerCount: 2,
+  temporal: { ...DEFAULT_TEMPORAL_OPTIONS },
 };
+
+export type { TemporalDebugBuffers, TemporalMetrics, TemporalPipelineOptions };
 
 export interface TimelineState {
   currentFrame: number;

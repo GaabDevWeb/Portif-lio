@@ -6,7 +6,12 @@ import { mergeAsciiConfig } from "@/features/ascii-interaction/config";
 import {
   DEFAULT_IMAGE_PIPELINE_OPTIONS,
   IMAGE_CHARSETS,
+  autoOptimizeFromBuffer,
+  getRefinementPreset,
   mergePipelineOptions,
+  resolveOutputSize,
+  sampleImage,
+  withResolvedGlyphMetrics,
   type ImagePipelineOptions,
 } from "@/features/ascii-interaction/image-pipeline";
 import type {
@@ -35,9 +40,11 @@ import { useAnimationController } from "@/studio/animation/useAnimationControlle
 import { ComparisonView } from "@/studio/ComparisonView";
 import { ControlPanel } from "@/studio/ControlPanel";
 import { DebugOverlay } from "@/studio/DebugOverlay";
-import { ImageConverterPanel } from "@/studio/image/ImageConverterPanel";
 import { ImageResultView } from "@/studio/image/ImageResultView";
+import { RefinementPanel } from "@/studio/image/RefinementPanel";
+import { useConversionHistograms } from "@/studio/image/useConversionHistograms";
 import { useImagePipeline } from "@/studio/image/useImagePipeline";
+import { usePipelineHistory } from "@/studio/image/usePipelineHistory";
 import { LabInteractiveCursorToggle } from "@/studio/LabInteractiveCursorToggle";
 import { LabMobileHeader } from "@/studio/LabMobileHeader";
 import { LabViewport } from "@/studio/LabViewport";
@@ -98,12 +105,34 @@ export function AsciiLab() {
   const [imageEl, setImageEl] = useState<HTMLImageElement | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const imagePreviewUrlRef = useRef<string | null>(null);
-  const [imageOptions, setImageOptions] = useState<ImagePipelineOptions>(DEFAULT_IMAGE_PIPELINE_OPTIONS);
+  const {
+    options: imageOptions,
+    patch: patchImageOptions,
+    replace: replaceImageOptions,
+    undo: undoImageOptions,
+    redo: redoImageOptions,
+    canUndo: canUndoImage,
+    canRedo: canRedoImage,
+  } = usePipelineHistory(DEFAULT_IMAGE_PIPELINE_OPTIONS);
   const [imageCharsetId, setImageCharsetId] = useState("classic");
   const [gifCharsetId, setGifCharsetId] = useState("classic");
   const [engineSidebarOpen, setEngineSidebarOpen] = useState(true);
+  const [comparePresetId, setComparePresetId] = useState<string | null>(null);
 
-  const { result: imageResult } = useImagePipeline(imageEl, imageOptions);
+  const { result: imageResult, isProcessing: imageProcessing } = useImagePipeline(imageEl, imageOptions);
+  const histograms = useConversionHistograms(imageEl, imageOptions);
+
+  const compareOptions = useMemo(() => {
+    if (!comparePresetId) return null;
+    const preset = getRefinementPreset(comparePresetId);
+    if (!preset) return null;
+    return mergePipelineOptions(imageOptions, preset.options);
+  }, [comparePresetId, imageOptions]);
+
+  const { result: compareResult } = useImagePipeline(
+    compareOptions ? imageEl : null,
+    compareOptions ?? imageOptions,
+  );
   const animation = useAnimationController();
   const {
     updatePipelineOptions,
@@ -192,14 +221,31 @@ export function AsciiLab() {
   }, []);
 
   const handleImageOptionsChange = useCallback((patch: Partial<ImagePipelineOptions>) => {
-    setImageOptions((prev) => mergePipelineOptions(prev, patch));
-  }, []);
+    patchImageOptions(patch);
+  }, [patchImageOptions]);
 
   const handleImageCharsetChange = useCallback((id: string) => {
     setImageCharsetId(id);
     const charset = IMAGE_CHARSETS[id];
-    if (charset) setImageOptions((prev) => mergePipelineOptions(prev, { charset }));
-  }, []);
+    if (charset) patchImageOptions({ charset });
+  }, [patchImageOptions]);
+
+  const handleAutoOptimize = useCallback(() => {
+    if (!imageEl) return;
+    try {
+      const resolved = withResolvedGlyphMetrics(imageOptions);
+      const { width, height } = resolveOutputSize(
+        imageEl.naturalWidth || imageEl.width,
+        imageEl.naturalHeight || imageEl.height,
+        resolved,
+      );
+      const sampled = sampleImage(imageEl, width, height);
+      const optimized = autoOptimizeFromBuffer(sampled, resolved);
+      replaceImageOptions(optimized);
+    } catch (err) {
+      console.error("autoOptimize:", err);
+    }
+  }, [imageEl, imageOptions, replaceImageOptions]);
 
   const handleGifCharsetChange = useCallback(
     (id: string) => {
@@ -214,7 +260,7 @@ export function AsciiLab() {
     (preset: AsciiEnginePreset) => {
       const patch = presetToPipelinePatch(preset);
       if (Object.keys(patch).length > 0) {
-        setImageOptions((prev) => mergePipelineOptions(prev, patch));
+        patchImageOptions(patch);
       }
       if (preset.interaction) setConfig((prev) => mergeAsciiConfig({ ...prev, ...preset.interaction }));
       if (preset.themeId) setThemeId(preset.themeId as AsciiEngineThemeId);
@@ -222,7 +268,7 @@ export function AsciiLab() {
         if (preset.workspace.focusMode) imageWorkspace.toggleFocusMode();
       }
     },
-    [imageWorkspace],
+    [imageWorkspace, patchImageOptions],
   );
 
   useEffect(() => {
@@ -349,16 +395,27 @@ export function AsciiLab() {
               checked={config.enableInteraction !== false}
               onChange={(value) => handleConfigChange({ enableInteraction: value })}
             />
-            <ImageConverterPanel
+            <RefinementPanel
               options={imageOptions}
               charsetId={imageCharsetId}
               benchmark={imageResult?.benchmark ?? null}
               matrix={imageResult?.matrix ?? null}
               sourceWidth={imageResult?.sourceWidth ?? 0}
               sourceHeight={imageResult?.sourceHeight ?? 0}
+              histogramBefore={histograms.before}
+              histogramAfter={histograms.after}
+              isProcessing={imageProcessing}
+              comparePresetId={comparePresetId}
               onOptionsChange={handleImageOptionsChange}
+              onReplaceOptions={replaceImageOptions}
               onCharsetIdChange={handleImageCharsetChange}
               onImageLoaded={handleImageLoaded}
+              onAutoOptimize={handleAutoOptimize}
+              onUndo={undoImageOptions}
+              onRedo={redoImageOptions}
+              canUndo={canUndoImage}
+              canRedo={canRedoImage}
+              onComparePreset={setComparePresetId}
             />
           </div>
         ) : null}
@@ -376,6 +433,7 @@ export function AsciiLab() {
               progress={animation.progress}
               isConverting={animation.isConverting}
               charsetId={gifCharsetId}
+              temporalMetrics={animation.temporalMetrics}
               onLoadGif={(file) => void loadGif(file)}
               onCancel={cancelConversion}
               onPipelineChange={updatePipelineOptions}
@@ -537,11 +595,39 @@ export function AsciiLab() {
 
           {tab === "convert" ? (
             imageResult ? (
-              <ImageResultView
-                workspace={imageWorkspace}
-                previewUrl={imagePreviewUrl}
-                matrix={imageResult.matrix}
-              />
+              compareResult && comparePresetId ? (
+                <div className="grid h-full grid-cols-2 gap-px bg-[var(--ui-border)]">
+                  <div className="relative min-h-0">
+                    <span className="pointer-events-none absolute left-2 top-2 z-10 rounded border border-[var(--ui-border)] bg-[var(--bg-panel)]/90 px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--phosphor-dim)]">
+                      Current
+                    </span>
+                    <ImageResultView
+                      workspace={imageWorkspace}
+                      previewUrl={imagePreviewUrl}
+                      matrix={imageResult.matrix}
+                    />
+                  </div>
+                  <div className="relative min-h-0 bg-[var(--bg-void)]">
+                    <span className="pointer-events-none absolute left-2 top-2 z-10 rounded border border-[var(--ui-border)] bg-[var(--bg-panel)]/90 px-2 py-0.5 font-mono text-[9px] uppercase text-[var(--phosphor-dim)]">
+                      {comparePresetId}
+                    </span>
+                    <div className="flex h-full items-center justify-center overflow-auto p-2">
+                      {/* reuse MatrixPreview via ImageResultView without second workspace */}
+                      <ImageResultView
+                        workspace={imageWorkspace}
+                        previewUrl={null}
+                        matrix={compareResult.matrix}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <ImageResultView
+                  workspace={imageWorkspace}
+                  previewUrl={imagePreviewUrl}
+                  matrix={imageResult.matrix}
+                />
+              )
             ) : (
               <EmptyCanvas
                 message={
@@ -563,6 +649,7 @@ export function AsciiLab() {
                 timeline={animation.timeline}
                 frameCount={animation.animation?.frameCount ?? animation.decoded?.frameCount ?? 0}
                 loop={animation.options.loop}
+                motionPreviews={animation.motionPreviews}
                 onPlay={play}
                 onPause={pause}
                 onStop={stop}

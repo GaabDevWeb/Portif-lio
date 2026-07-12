@@ -1,6 +1,6 @@
 export type ZoomPreset = "fit" | "fit-width" | "fit-height" | 1 | 2 | 4 | 8;
 
-export type OriginalViewMode = "split" | "overlay" | "peek";
+export type OriginalViewMode = "split" | "overlay" | "peek" | "wipe";
 
 export interface WorkspacePan {
   x: number;
@@ -12,6 +12,8 @@ export interface WorkspaceState {
   pan: WorkspacePan;
   showOriginal: boolean;
   originalMode: OriginalViewMode;
+  /** 0 = full ASCII, 1 = full original (wipe mode). */
+  wipePosition: number;
   focusMode: boolean;
   peeking: boolean;
   sidebarOpen: boolean;
@@ -32,7 +34,8 @@ export const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
   zoom: "fit",
   pan: { x: 0, y: 0 },
   showOriginal: false,
-  originalMode: "peek",
+  originalMode: "wipe",
+  wipePosition: 0.5,
   focusMode: false,
   peeking: false,
   sidebarOpen: false,

@@ -66,7 +66,19 @@ export function useWorkspaceViewport() {
   }, []);
 
   const setOriginalMode = useCallback((originalMode: OriginalViewMode) => {
-    setState((prev) => ({ ...prev, originalMode, peeking: false }));
+    setState((prev) => ({
+      ...prev,
+      originalMode,
+      peeking: false,
+      showOriginal: true,
+    }));
+  }, []);
+
+  const setWipePosition = useCallback((wipePosition: number) => {
+    setState((prev) => ({
+      ...prev,
+      wipePosition: Math.max(0, Math.min(1, wipePosition)),
+    }));
   }, []);
 
   const toggleFocusMode = useCallback(() => {
@@ -137,6 +149,7 @@ export function useWorkspaceViewport() {
     resetPan,
     setShowOriginal,
     setOriginalMode,
+    setWipePosition,
     toggleFocusMode,
     toggleFullscreen,
     setPeeking,
