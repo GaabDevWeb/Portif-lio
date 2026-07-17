@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+:root {
+  --bg-void: oklch(0.07 0.01 260);
+  --bg-panel: oklch(0.11 0.015 260);
+  --bg-terminal: oklch(0.12 0.02 145);
+  --phosphor-primary: oklch(0.78 0.18 145);
+  --phosphor-dim: oklch(0.55 0.1 145);
+  --amber-led: oklch(0.75 0.16 75);
+  --amber-warm: oklch(0.7 0.12 65);
+  --stderr: oklch(0.65 0.2 25);
+  --ui-chrome: oklch(0.16 0.01 260);
+  --ui-border: oklch(0.32 0.02 260);
+  --ui-text: oklch(0.88 0.01 260);
+  --ui-text-dim: oklch(0.62 0.01 260);
+  --accent-data: oklch(0.72 0.08 230);
+  --accent-link: oklch(0.72 0.12 230);
+  --grid-line: oklch(0.22 0.01 260 / 0.55);
+  --space-unit: 4px;
+  --grid-gap: 8px;
+  --border-width: 1px;
+  --radius-sm: 2px;
+  --scanline-opacity: 0.06;
+}
+
+@layer base {
+  * {
+    border-color: var(--ui-border);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg-void);
+    color: var(--ui-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--phosphor-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "slug": "design-system",
+  "hero": {
+    "subtitle": "A token-first design system for teams that ship fast without shipping debt.",
+    "quickFacts": [
+      { "label": "YEAR", "value": "2025" },
+      { "label": "ROLE", "value": "Front-end Architect" },
+      { "label": "TOKENS", "value": "OKLCH" },
+      { "label": "BASE", "value": "shadcn/ui" }
+    ],
+    "titleAsciiKey": "design-system-hero",
+    "interactiveAsciiKey": "design-system-hero",
+    "asciiConfig": {
+      "opacity": 0.38,
+      "radius": 100,
+      "strength": 180,
+      "cellWidth": 7,
+      "cellHeight": 12,
+      "fontSize": 11
+    }
+  },
+  "architecture": {
+    "panels": [
+      {
+        "id": "foundations",
+        "type": "architecture",
+        "title": "Foundations",
+        "order": 1,
+        "body": "OKLCH color tokens with phosphor green terminal palette on void backgrounds. IBM Plex Sans for UI, IBM Plex Mono for system chrome. Motion via GSAP timelines with reduced-motion fallbacks."
+      },
+      {
+        "id": "deliverables",
+        "type": "pipeline",
+        "title": "Deliverables",
+        "order": 2,
+        "body": "MASTER.md token reference, page-level overrides in design-system/pages/, and contrast-checked phosphor-on-void pairs at ≥4.5:1. Components built on shadcn/ui primitives — composed, not copied."
+      },
+      {
+        "id": "principles",
+        "type": "decision",
+        "title": "Principles",
+        "order": 3,
+        "body": "One source of truth in tokens. Diegetic UI over decorative noise. Accessibility is not a phase — it is a constraint baked into every component variant."
+      },
+      {
+        "id": "usage",
+        "type": "stack",
+        "title": "Used In",
+        "order": 4,
+        "body": "ROOT OS portfolio shell, terminal chrome, window frames, Mail.app form patterns, and the phosphor HUD system you are navigating right now."
+      }
+    ]
+  },
+  "footer": {
+    "asciiSourceKey": "design-system-footer",
+    "links": [
+      { "label": "repo", "href": "https://github.com/gaab/design-system" },
+      { "label": "← projects", "href": "/#projects" }
+    ]
+  }
+}

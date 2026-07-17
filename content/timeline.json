@@ -1,0 +1,32 @@
+[
+  {
+    "hash": "a1b2c3d",
+    "date": "2026-07-05",
+    "message": "feat: ROOT OS portfolio — boot cinema + terminal subsystem",
+    "branch": "main"
+  },
+  {
+    "hash": "e4f5g6h",
+    "date": "2026-06-12",
+    "message": "feat: window manager + GUI apps (Profile, Projects, Editor, Mail)",
+    "branch": "main"
+  },
+  {
+    "hash": "i7j8k9l",
+    "date": "2026-05-01",
+    "message": "docs: technical dossiers (GSAP, Motion, R3F, particles)",
+    "branch": "main"
+  },
+  {
+    "hash": "m0n1o2p",
+    "date": "2025-11-18",
+    "message": "init: engineering design system — OKLCH tokens + IBM Plex",
+    "branch": "main"
+  },
+  {
+    "hash": "q3r4s5t",
+    "date": "2024-03-09",
+    "message": "first commit — creative dev journey begins",
+    "branch": "main"
+  }
+]
