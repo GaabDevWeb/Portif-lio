@@ -25,6 +25,7 @@ export * from "@/features/ascii-engine/playground";
 export * from "@/features/ascii-engine/presets";
 export * from "@/features/ascii-engine/recipes";
 export * from "@/features/ascii-engine/gallery";
+export * from "@/features/ascii-engine/icons";
 export * from "@/features/ascii-engine/themes";
 export * from "@/features/ascii-engine/stats";
 export * from "@/features/ascii-engine/benchmark";

@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     template: "%s · ASCII Engine",
   },
   description:
-    "ASCII Engine — conversão, edição, animação e playground profissional de arte ASCII",
-  keywords: ["ascii", "ascii art", "converter", "gif", "editor", "terminal"],
+    "Professional media → ASCII converter. Images, GIFs, presets, temporal pipeline, exports.",
+  keywords: ["ascii", "ascii art", "converter", "gif", "image to ascii", "temporal"],
   robots: { index: true, follow: true },
 };
 

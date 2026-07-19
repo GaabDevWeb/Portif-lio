@@ -5,13 +5,14 @@ import {
 } from "@/features/ascii-engine/gallery";
 import { downloadText, writeTextToClipboard } from "@/features/ascii-engine/browser";
 
-export type GalleryStudioAction = "edit" | "remix";
+export type GalleryStudioAction = "convert" | "remix" | "edit";
 
 /** Query params consumidos pelo AsciiLab. */
-export function studioHrefForItem(item: GalleryItem, action: GalleryStudioAction): string {
+export function studioHrefForItem(item: GalleryItem, action: GalleryStudioAction = "convert"): string {
   const params = new URLSearchParams({
+    tab: "convert",
     gallery: item.id,
-    action,
+    action: action === "edit" ? "convert" : action,
   });
   return `/?${params.toString()}`;
 }

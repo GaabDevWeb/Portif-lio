@@ -1,6 +1,6 @@
 "use client";
 
-import { LabViewport, type LabViewportProps } from "@/studio/LabViewport";
+import { LabViewport, type LabViewportProps } from "@/legacy/LabViewport";
 import { AnimationTimeline } from "@/studio/animation/AnimationTimeline";
 import type {
   AsciiAnimationFrame,

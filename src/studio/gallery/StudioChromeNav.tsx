@@ -1,17 +1,30 @@
 "use client";
 
-import Link from "next/link";
+import { ProductNav, type ProductTab } from "@/studio/ProductNav";
 
-interface StudioNavLinkProps {
+/** Shared chrome nav for standalone /gallery route — mirrors product sitemap. */
+export function StudioChromeNav({
+  active,
+}: {
+  active: ProductTab | "studio" | "gallery";
+}) {
+  const current: ProductTab =
+    active === "studio" ? "convert" : active === "gallery" ? "gallery" : active;
+
+  return <ProductNav active={current} onChange={() => undefined} mode="links" />;
+}
+
+export function StudioNavLink({
+  href,
+  label,
+  active,
+}: {
   href: string;
   label: string;
   active?: boolean;
-}
-
-/** Link de navegação Studio ↔ Gallery (phosphor mono). */
-export function StudioNavLink({ href, label, active }: StudioNavLinkProps) {
+}) {
   return (
-    <Link
+    <a
       href={href}
       className={`cursor-pointer rounded border px-2 py-1 font-mono text-[9px] uppercase tracking-wider transition-colors ${
         active
@@ -20,15 +33,6 @@ export function StudioNavLink({ href, label, active }: StudioNavLinkProps) {
       }`}
     >
       {label}
-    </Link>
-  );
-}
-
-export function StudioChromeNav({ active }: { active: "studio" | "gallery" }) {
-  return (
-    <nav className="flex items-center gap-1.5" aria-label="ASCII Engine sections">
-      <StudioNavLink href="/" label="Studio" active={active === "studio"} />
-      <StudioNavLink href="/gallery" label="Gallery" active={active === "gallery"} />
-    </nav>
+    </a>
   );
 }

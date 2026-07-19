@@ -1,12 +1,6 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { GalleryApp } from "@/studio/gallery";
-
-export const metadata: Metadata = {
-  title: "Gallery",
-  description: "ASCII Engine Gallery — browse, favorite, remix and export mock arts",
-};
-
+/** Gallery lives inside the product shell at /?tab=gallery */
 export default function GalleryPage() {
-  return <GalleryApp />;
+  redirect("/?tab=gallery");
 }

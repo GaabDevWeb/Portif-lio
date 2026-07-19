@@ -81,11 +81,11 @@ export function GalleryCard({ item, favorited, onToggleFavorite, onFlash }: Gall
           }}
         />
         <Link
-          href={studioHrefForItem(item, "edit")}
+          href={studioHrefForItem(item, "convert")}
           className="flex cursor-pointer items-center justify-center gap-1 rounded border border-[var(--ui-border)] px-1 py-1.5 font-mono text-[8px] uppercase text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
         >
           <Pencil size={11} />
-          Edit
+          Convert
         </Link>
         <Link
           href={studioHrefForItem(item, "remix")}

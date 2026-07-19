@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { AsciiLab } from "@/studio/AsciiLab";
 
 export const metadata: Metadata = {
-  title: "Studio",
-  description: "ASCII Engine Studio — convert, animate, edit, playground",
+  title: "ASCII Engine",
+  description:
+    "Professional media → ASCII converter. Upload images or GIFs, adjust quality, preview, export.",
 };
 
 export default function HomePage() {

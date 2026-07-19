@@ -21,9 +21,14 @@ const FILTER_NEUTRAL: {
   exposure: number;
   sharpness: number;
   invert: boolean;
+  invertLuminance: boolean;
+  invertColors: boolean;
   threshold: number;
   blur: number;
   edgeEnhance: number;
+  blackPoint: number;
+  midPoint: number;
+  whitePoint: number;
 } = {
   brightness: 0,
   contrast: 1,
@@ -31,9 +36,14 @@ const FILTER_NEUTRAL: {
   exposure: 0,
   sharpness: 0,
   invert: false,
+  invertLuminance: false,
+  invertColors: false,
   threshold: 0,
   blur: 0,
   edgeEnhance: 0,
+  blackPoint: 0,
+  midPoint: 0.5,
+  whitePoint: 1,
 };
 
 /** Aplica um único filtro do image-pipeline sobre ImageBuffer. */

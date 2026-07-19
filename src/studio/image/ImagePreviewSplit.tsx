@@ -1,6 +1,6 @@
 "use client";
 
-import { LabViewport, type LabViewportProps } from "@/studio/LabViewport";
+import { LabViewport, type LabViewportProps } from "@/legacy/LabViewport";
 import type { AsciiGridSource } from "@/features/ascii-interaction";
 
 /** Legado side-by-side — preferir ImageResultView + Workspace. */
