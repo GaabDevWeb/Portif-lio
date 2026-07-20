@@ -9,7 +9,7 @@
 | `charset` | string de mapeamento |
 | `mappingMode` / `algorithm` | alias mútuos |
 | `dithering` | FS, ordered, bayer, … |
-| `colorMode` / `colors` | mono → truecolor / root-os |
+| `colorMode` / `colors` | mono → original / crt-green / amber / white-terminal |
 | `gamma`, `contrast`, `brightness` | tone |
 | `effects` | playground effect ids |
 | `rendererId` | default `canvas` |
@@ -29,7 +29,7 @@ Studio: secção **Recipes** em `ThemesPresetsPanel`.
 
 ## Themes
 
-DOS, CRT, Linux, Amber, IBM, GameBoy, Windows XP, Matrix, Mono, ROOT OS — CSS vars → tokens do shell.
+DOS, CRT, Linux, Amber, IBM, GameBoy, Windows XP, Matrix, Mono, CRT Green — CSS vars → tokens do shell.
 
 ## Color export
 

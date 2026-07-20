@@ -1,6 +1,6 @@
 import { ConversionWorkerPool } from "@/features/ascii-interaction/animation-pipeline/workers/worker-pool";
 import { extractFrames } from "@/features/ascii-interaction/animation-pipeline/frame-extractor/frame-extractor";
-import { decodeGifFile } from "@/features/ascii-interaction/animation-pipeline/decoder/gif-decoder";
+import { decodeAnimationFile } from "@/features/ascii-interaction/animation-pipeline/decoder/animation-decoder";
 import {
   FrameCache,
   hashPipelineOptions,
@@ -64,6 +64,7 @@ function optionsCacheHash(options: AnimationPipelineOptions): string {
   return hashPipelineOptions({
     pipeline: options.pipeline,
     temporal: options.temporal,
+    qualityTier: options.qualityTier,
   });
 }
 
@@ -103,7 +104,12 @@ export class AnimationPipeline {
   }
 
   async loadGif(file: File): Promise<DecodedGif> {
-    this.decoded = await decodeGifFile(file);
+    return this.loadAnimation(file);
+  }
+
+  /** Load GIF or animated/static WEBP. */
+  async loadAnimation(file: File): Promise<DecodedGif> {
+    this.decoded = await decodeAnimationFile(file);
     this.rgbaSource = extractFrames(this.decoded);
     this.animation = null;
     this.conversionComplete = false;
@@ -193,7 +199,7 @@ export class AnimationPipeline {
 
     this.ensurePoolSize(options.workerCount);
 
-    const decoded = this.decoded ?? (await this.loadGif(file));
+    const decoded = this.decoded ?? (await this.loadAnimation(file));
     const rgbaFrames = this.ensureRgba();
 
     const frameDelays =

@@ -22,8 +22,7 @@ ASCII Engine is **not**:
 ASCII ENGINE
   CONVERT
   ANIMATE
-  ICONS
-  GALLERY
+  LIBRARY    # Icons + Gallery
   DOCS
 ```
 
@@ -37,9 +36,19 @@ ASCII ENGINE
 
 **Implementation:**
 
-- UI shell (`AsciiLab`) only exposes Convert · Animate · Icons · Gallery · Docs.
-- Experimental UI code moved to `src/legacy/` (not deleted), isolated from navigation.
-- Icons / Gallery / Docs are supporting surfaces that demonstrate or accelerate conversion — not alternative products.
+- UI shell (`AsciiLab`) exposes Convert · Animate · Library · Docs.
+- Library unifies Icons + Gallery.
+- Experimental UI code moved to `src/legacy/`.
+- Branding "ROOT OS" removed from product (theme/color → CRT Green).
+
+### 2026-07-19 — v1.0 approvals
+
+1. Library = Icons + Gallery — **yes**
+2. Docs stays in nav — **yes**
+3. Remove ROOT OS branding — **yes**
+4. Frame interpolation = temporal/adaptive only (no optical invent)
+5. PNG export @ source pixel size — **yes**
+6. Experimental SDK not re-exported from product facade
 
 **Gate for future features:**
 

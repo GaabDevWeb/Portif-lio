@@ -137,6 +137,8 @@ export interface MatrixExportOptions {
   sourceHeight?: number;
   cellW?: number;
   cellH?: number;
+  /** PNG only — characters on transparent canvas. */
+  transparentBackground?: boolean;
 }
 
 export function downloadMatrix(
@@ -191,19 +193,74 @@ export async function downloadMatrixPng(
     options.matchSourceResolution === true &&
     options.sourceWidth != null &&
     options.sourceHeight != null;
-  const blob = await renderMatrixToPng(
-    matrix,
-    useSource
+  const blob = await renderMatrixToPng(matrix, {
+    ...(useSource
       ? { targetWidth: options.sourceWidth, targetHeight: options.sourceHeight }
       : {
           cellW: options.cellW ?? DEFAULT_MATRIX_CELL_W,
           cellH: options.cellH ?? DEFAULT_MATRIX_CELL_H,
-        },
-  );
+        }),
+    transparentBackground: options.transparentBackground === true,
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `${basename}.png`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Pack still conversion: manifest + ascii.txt + preview.png + metadata.json */
+export async function downloadMatrixZip(
+  matrix: AsciiMatrix,
+  options: MatrixExportOptions & {
+    pipeline?: Record<string, unknown>;
+  } = {},
+): Promise<void> {
+  const JSZip = (await import("jszip")).default;
+  const basename = options.basename ?? "ascii-art";
+  const zip = new JSZip();
+  const ascii = matrixToAsciiSource(matrix);
+  const useSource =
+    options.matchSourceResolution === true &&
+    options.sourceWidth != null &&
+    options.sourceHeight != null;
+  const png = await renderMatrixToPng(matrix, {
+    ...(useSource
+      ? { targetWidth: options.sourceWidth, targetHeight: options.sourceHeight }
+      : {
+          cellW: options.cellW ?? DEFAULT_MATRIX_CELL_W,
+          cellH: options.cellH ?? DEFAULT_MATRIX_CELL_H,
+        }),
+    transparentBackground: options.transparentBackground !== false,
+  });
+
+  const manifest = {
+    version: 1,
+    format: "ascii-engine-still",
+    cols: matrix.cols,
+    rows: matrix.rows,
+    charset: matrix.charset,
+    matchSourceResolution: Boolean(options.matchSourceResolution),
+    sourceWidth: options.sourceWidth ?? null,
+    sourceHeight: options.sourceHeight ?? null,
+  };
+  const metadata = {
+    exportedAt: new Date().toISOString(),
+    characterCount: matrix.cells.length,
+    pipeline: options.pipeline ?? null,
+  };
+
+  zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+  zip.file("ascii.txt", ascii);
+  zip.file("preview.png", png);
+  zip.file("metadata.json", JSON.stringify(metadata, null, 2));
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${basename}.zip`;
   a.click();
   URL.revokeObjectURL(url);
 }

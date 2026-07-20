@@ -55,6 +55,7 @@ export { generateAsciiMatrix } from "@/features/ascii-interaction/image-pipeline
 export {
   downloadMatrix,
   downloadMatrixPng,
+  downloadMatrixZip,
   downloadText,
   copyAsciiToClipboard,
   matrixToAsciiSource,
@@ -65,6 +66,15 @@ export {
 } from "@/features/ascii-interaction/image-pipeline/exporter";
 export type { CopyAsciiResult, MatrixExportOptions } from "@/features/ascii-interaction/image-pipeline/exporter";
 export type { MatrixRenderOptions } from "@/features/ascii-interaction/image-pipeline/render-utils";
+
+export {
+  DEFAULT_CHAR_WEIGHTS,
+  applyWeightsToCharset,
+  mapLuminanceWithWeights,
+  orderCharsetByWeight,
+  weightForChar,
+  type CharWeightMap,
+} from "@/features/ascii-interaction/image-pipeline/char-weights";
 
 export {
   getImagePipelinePreset,

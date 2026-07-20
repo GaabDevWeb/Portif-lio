@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   DEFAULT_WORKSPACE_STATE,
+  ZOOM_CYCLE,
   ZOOM_PRESETS,
   type OriginalViewMode,
   type WorkspacePan,
@@ -28,7 +29,7 @@ export function useWorkspaceViewport() {
 
   const zoomIn = useCallback(() => {
     setState((prev) => {
-      const order = [...ZOOM_PRESETS];
+      const order = [...ZOOM_CYCLE];
       const idx = order.indexOf(prev.zoom);
       const next = order[Math.min(order.length - 1, Math.max(0, idx) + 1)] ?? 8;
       return { ...prev, zoom: next };
@@ -37,7 +38,7 @@ export function useWorkspaceViewport() {
 
   const zoomOut = useCallback(() => {
     setState((prev) => {
-      const order = [...ZOOM_PRESETS];
+      const order = [...ZOOM_CYCLE];
       const idx = order.indexOf(prev.zoom);
       const next = order[Math.max(0, (idx < 0 ? 0 : idx) - 1)] ?? "fit";
       return {

@@ -21,7 +21,12 @@ import type { AsciiMatrix } from "@/features/ascii-interaction/image-pipeline";
 import {
   downloadMatrix,
   downloadMatrixPng,
+  downloadMatrixZip,
 } from "@/features/ascii-interaction/image-pipeline";
+import {
+  DEFAULT_CHAR_WEIGHTS,
+  type CharWeightMap,
+} from "@/features/ascii-interaction/image-pipeline/char-weights";
 import { exportMatrixToClipboard } from "@/features/ascii-engine/exporters";
 import { BatchConvertStub } from "@/studio/image/BatchConvertStub";
 import { ClipboardPasteButton } from "@/studio/image/ClipboardPasteButton";
@@ -42,15 +47,17 @@ const DITHERING_MODES: DitheringMode[] = [
 ];
 
 const MAPPING_MODES: MappingMode[] = ["brightness", "density", "edge", "hybrid"];
-const COLOR_MODES: ColorMode[] = [
-  "mono",
-  "color",
-  "ansi16",
-  "ansi256",
-  "truecolor",
-  "gradient",
-  "root-os",
+const COLOR_MODES: { id: ColorMode; label: string }[] = [
+  { id: "original", label: "Original" },
+  { id: "mono", label: "Monochrome" },
+  { id: "inverted", label: "Inverted" },
+  { id: "palette", label: "Palette" },
+  { id: "crt-green", label: "CRT Green" },
+  { id: "amber", label: "Amber" },
+  { id: "white-terminal", label: "White Terminal" },
 ];
+
+const WEIGHT_CHARS = ["█", "▓", "▒", "░", ".", "@", "%", "#", "*", "+", "=", "-", ":"];
 
 interface RefinementPanelProps {
   options: ImagePipelineOptions;
@@ -97,6 +104,8 @@ export function RefinementPanel({
   canRedo,
   onComparePreset,
 }: RefinementPanelProps) {
+  const [matchSource, setMatchSource] = useState(true);
+  const [transparentPng, setTransparentPng] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({
     image: true,
     basic: true,
@@ -265,6 +274,19 @@ export function RefinementPanel({
             </option>
           ))}
         </select>
+        <label className="block font-mono text-[10px] text-[var(--ui-text-dim)]">
+          Custom charset / phrase
+          <textarea
+            value={options.charset}
+            rows={2}
+            onChange={(e) => {
+              onCharsetIdChange("custom");
+              onOptionsChange({ charset: e.target.value || " ." });
+            }}
+            className="mt-1 w-full rounded border border-[var(--ui-border)] bg-[var(--bg-void)] px-2 py-1.5 font-mono text-[10px] text-[var(--phosphor-primary)]"
+            placeholder="e.g. GABRIEL or <>[]{}()"
+          />
+        </label>
         <Slider
           label="Character density"
           value={options.characterDensity}
@@ -322,12 +344,59 @@ export function RefinementPanel({
             className="mt-1 w-full cursor-pointer rounded border border-[var(--ui-border)] bg-[var(--bg-void)] px-2 py-1.5"
           >
             {COLOR_MODES.map((m) => (
-              <option key={m} value={m}>
-                {m}
+              <option key={m.id} value={m.id}>
+                {m.label}
               </option>
             ))}
           </select>
         </label>
+
+        <div className="space-y-1 border-t border-[var(--ui-border)]/40 pt-2">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-[var(--amber-led)]">
+            Character weights
+          </p>
+          <p className="font-mono text-[8px] text-[var(--ui-text-dim)]">
+            Adjust glyph density (0–100) to refine contrast.
+          </p>
+          {WEIGHT_CHARS.filter((ch) => options.charset.includes(ch) || DEFAULT_CHAR_WEIGHTS[ch] != null)
+            .filter((ch, i, arr) => arr.indexOf(ch) === i)
+            .slice(0, 12)
+            .map((ch) => {
+              const weights = options.charWeights ?? DEFAULT_CHAR_WEIGHTS;
+              const value = weights[ch] ?? DEFAULT_CHAR_WEIGHTS[ch] ?? 50;
+              return (
+                <label
+                  key={ch}
+                  className="flex items-center gap-2 font-mono text-[10px] text-[var(--ui-text-dim)]"
+                >
+                  <span className="w-4 text-center text-[var(--phosphor-primary)]">{ch === " " ? "␠" : ch}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={value}
+                    onChange={(e) => {
+                      const next: CharWeightMap = {
+                        ...(options.charWeights ?? { ...DEFAULT_CHAR_WEIGHTS }),
+                        [ch]: Number(e.target.value),
+                      };
+                      onOptionsChange({ charWeights: next });
+                    }}
+                    className="flex-1 cursor-pointer accent-[var(--phosphor-primary)]"
+                  />
+                  <span className="w-8 text-right text-[var(--ui-text)]">{value}</span>
+                </label>
+              );
+            })}
+          <button
+            type="button"
+            className={btnClass(false)}
+            onClick={() => onOptionsChange({ charWeights: undefined })}
+          >
+            Reset weights
+          </button>
+        </div>
       </Accordion>
 
       <Accordion title="Presets" open={!!open.presets} onToggle={() => toggle("presets")}>
@@ -449,34 +518,76 @@ export function RefinementPanel({
           </p>
         ) : null}
         {matrix ? (
-          <div className="grid grid-cols-2 gap-1">
-            {(["txt", "json", "html", "svg"] as const).map((fmt) => (
+          <div className="space-y-2">
+            <Toggle
+              label="Match source resolution (1:1 px)"
+              checked={matchSource}
+              onChange={setMatchSource}
+            />
+            <Toggle
+              label="Transparent PNG background"
+              checked={transparentPng}
+              onChange={setTransparentPng}
+            />
+            <div className="grid grid-cols-2 gap-1">
+              {(["txt", "json", "svg"] as const).map((fmt) => (
+                <button
+                  key={fmt}
+                  type="button"
+                  onClick={() =>
+                    downloadMatrix(matrix, fmt, {
+                      matchSourceResolution: matchSource,
+                      sourceWidth,
+                      sourceHeight,
+                    })
+                  }
+                  className={btnClass(false)}
+                >
+                  {fmt.toUpperCase()}
+                </button>
+              ))}
               <button
-                key={fmt}
                 type="button"
-                onClick={() => downloadMatrix(matrix, fmt)}
                 className={btnClass(false)}
+                onClick={() =>
+                  void downloadMatrixPng(matrix, {
+                    matchSourceResolution: matchSource,
+                    sourceWidth,
+                    sourceHeight,
+                    transparentBackground: transparentPng,
+                  })
+                }
               >
-                {fmt.toUpperCase()}
+                PNG
               </button>
-            ))}
-            <button
-              type="button"
-              className={`col-span-2 ${btnClass(false)}`}
-              onClick={() => void downloadMatrixPng(matrix)}
-            >
-              PNG
-            </button>
-            <button
-              type="button"
-              className={`col-span-2 ${btnClass(false)}`}
-              onClick={() => void exportMatrixToClipboard(matrix, "txt")}
-            >
-              Copy TXT
-            </button>
+              <button
+                type="button"
+                className={`col-span-2 ${btnClass(false)}`}
+                onClick={() =>
+                  void downloadMatrixZip(matrix, {
+                    matchSourceResolution: matchSource,
+                    sourceWidth,
+                    sourceHeight,
+                    transparentBackground: transparentPng,
+                    pipeline: JSON.parse(settingsJson) as Record<string, unknown>,
+                  })
+                }
+              >
+                ZIP pack
+              </button>
+              <button
+                type="button"
+                className={`col-span-2 ${btnClass(false)}`}
+                onClick={() => void exportMatrixToClipboard(matrix, "txt")}
+              >
+                Copy TXT
+              </button>
+            </div>
           </div>
         ) : (
-          <p className="font-mono text-[9px] text-[var(--ui-text-dim)]">Converta uma imagem para exportar.</p>
+          <p className="font-mono text-[9px] text-[var(--ui-text-dim)]">
+            Converta uma imagem para exportar.
+          </p>
         )}
       </Accordion>
     </div>

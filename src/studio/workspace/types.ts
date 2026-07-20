@@ -1,4 +1,13 @@
-export type ZoomPreset = "fit" | "fit-width" | "fit-height" | 1 | 2 | 4 | 8;
+export type ZoomPreset =
+  | "fit"
+  | "fit-width"
+  | "fit-height"
+  | 0.25
+  | 0.5
+  | 1
+  | 2
+  | 4
+  | 8;
 
 export type OriginalViewMode = "split" | "overlay" | "peek" | "wipe";
 
@@ -20,10 +29,21 @@ export interface WorkspaceState {
   fullscreen: boolean;
 }
 
+/** Chips shown in toolbar (incl. Fit + percentages + original-ish 100%). */
 export const ZOOM_PRESETS: readonly ZoomPreset[] = [
   "fit",
-  "fit-width",
-  "fit-height",
+  0.25,
+  0.5,
+  1,
+  2,
+  4,
+] as const;
+
+/** Order used by zoomIn / zoomOut. */
+export const ZOOM_CYCLE: readonly ZoomPreset[] = [
+  "fit",
+  0.25,
+  0.5,
   1,
   2,
   4,
@@ -65,4 +85,18 @@ export function zoomToScale(
   if (zoom === "fit-width") return fitWidthScale;
   if (zoom === "fit-height") return fitHeightScale;
   return zoom;
+}
+
+/** UI label for zoom chip. */
+export function zoomPresetLabel(zoom: ZoomPreset): string {
+  if (zoom === "fit") return "Fit";
+  if (zoom === "fit-width") return "Fit W";
+  if (zoom === "fit-height") return "Fit H";
+  if (zoom === 0.25) return "25%";
+  if (zoom === 0.5) return "50%";
+  if (zoom === 1) return "100%";
+  if (zoom === 2) return "200%";
+  if (zoom === 4) return "400%";
+  if (zoom === 8) return "800%";
+  return String(zoom);
 }

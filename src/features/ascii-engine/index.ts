@@ -1,9 +1,7 @@
 /**
- * ASCII Engine — fachada de produto.
- * Reexporta a implementação em ascii-interaction e módulos Next.
- *
- * downloadBlob/downloadText: vindos do core (animation-pipeline).
- * writeTextToClipboard: browser adapter.
+ * ASCII Engine — product facade (converter-first).
+ * Experimental editor/scene/nodes/playground/AI are NOT re-exported.
+ * See src/legacy/ and PRODUCT_DECISIONS.md.
  */
 export * from "@/features/ascii-engine/core";
 export {
@@ -12,33 +10,19 @@ export {
   type ClipboardWriteResult,
 } from "@/features/ascii-engine/browser";
 export * from "@/features/ascii-engine/converters";
-export * from "@/features/ascii-engine/editor";
-export * from "@/features/ascii-engine/document";
-export * from "@/features/ascii-engine/scene";
-export * from "@/features/ascii-engine/brush";
-export * from "@/features/ascii-engine/tools";
-export * from "@/features/ascii-engine/libraries";
-export * from "@/features/ascii-engine/storage";
 export * from "@/features/ascii-engine/animator";
-export * from "@/features/ascii-engine/nodes";
-export * from "@/features/ascii-engine/playground";
 export * from "@/features/ascii-engine/presets";
 export * from "@/features/ascii-engine/recipes";
 export * from "@/features/ascii-engine/gallery";
 export * from "@/features/ascii-engine/icons";
 export * from "@/features/ascii-engine/themes";
-export * from "@/features/ascii-engine/stats";
-export * from "@/features/ascii-engine/benchmark";
 export * from "@/features/ascii-engine/exporters";
 export * from "@/features/ascii-engine/importers";
-export * from "@/features/ascii-engine/plugins";
-export * from "@/features/ascii-engine/ai";
 export { createAsciiEngine, type AsciiEngine } from "@/features/ascii-engine/sdk/create-ascii-engine";
 export { ASCII_ENGINE_CLI_COMMANDS } from "@/features/ascii-engine/cli/commands";
 export {
   runInfo,
   runBenchmark,
-  runNodeBenchmarkSuite,
   runConvert,
   type CliConvertOptions,
 } from "@/features/ascii-engine/cli";

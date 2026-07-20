@@ -11,9 +11,12 @@ import type {
 import {
   DEFAULT_ANIMATION_PIPELINE_OPTIONS,
   TEMPORAL_FEATURE_META,
+  ANIMATION_QUALITY_TIERS,
+  applyAnimationQualityTier,
   downloadAsciiAnimationGif,
   downloadAsciiAnimationTxtSequence,
   downloadAsciiAnimationZip,
+  type AnimationQualityTier,
   type TemporalMetrics,
 } from "@/features/ascii-interaction/animation-pipeline";
 import type { ImagePipelineOptions } from "@/features/ascii-interaction/image-pipeline";
@@ -112,12 +115,12 @@ export function AnimationConverterPanel({
 
   return (
     <div className="space-y-4">
-      <Section title="Upload GIF">
+      <Section title="Upload">
         <GifUploadZone onFile={onLoadGif} disabled={isConverting} />
       </Section>
 
       {decoded ? (
-        <Section title="GIF Info">
+        <Section title="Source Info">
           <Metric label="Dimensões" value={`${decoded.width}×${decoded.height}`} />
           <Metric label="Frames" value={String(decoded.frameCount)} />
           <Metric label="Duração" value={`${(decoded.totalDurationMs / 1000).toFixed(2)}s`} />
@@ -147,9 +150,43 @@ export function AnimationConverterPanel({
         </Section>
       ) : null}
 
+      <Section title="Quality">
+        <div className="space-y-1">
+          {ANIMATION_QUALITY_TIERS.map((tier) => (
+            <label
+              key={tier.id}
+              className="flex cursor-pointer flex-col gap-0.5 border-b border-[var(--ui-border)]/30 py-1.5 last:border-0"
+            >
+              <span className="flex items-center justify-between text-[10px] text-[var(--ui-text-dim)]">
+                <span>{tier.label}</span>
+                <input
+                  type="radio"
+                  name="quality-tier"
+                  checked={(options.qualityTier ?? "balanced") === tier.id}
+                  onChange={() => {
+                    const next = applyAnimationQualityTier(
+                      tier.id as AnimationQualityTier,
+                      options,
+                    );
+                    onAnimationOptionsChange({
+                      ...next,
+                      qualityTier: tier.id,
+                    });
+                  }}
+                  className="accent-[var(--phosphor-primary)]"
+                />
+              </span>
+              <span className="font-mono text-[8px] leading-snug text-[var(--ui-text-dim)]/80">
+                {tier.description}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Playback">
         <Toggle
-          label="Usar timing do GIF"
+          label="Usar timing nativo"
           checked={options.targetFps <= 0}
           onChange={(v) =>
             onAnimationOptionsChange({ targetFps: v ? 0 : 15 })

@@ -37,13 +37,13 @@ const DITHERING_MODES: DitheringMode[] = [
   "stucki",
 ];
 const COLOR_MODES: ColorMode[] = [
+  "original",
   "mono",
-  "color",
-  "ansi16",
-  "ansi256",
-  "truecolor",
-  "gradient",
-  "root-os",
+  "inverted",
+  "palette",
+  "crt-green",
+  "amber",
+  "white-terminal",
 ];
 
 interface ImageConverterPanelProps {

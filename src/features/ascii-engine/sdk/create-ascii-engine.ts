@@ -31,7 +31,7 @@ export function createAsciiEngine(options: AsciiEngineOptions = {}) {
   const converters = options.converters ?? defaultConverterRegistry;
   const playground = options.playground ?? defaultPlaygroundRegistry;
   const presets = options.presets ?? defaultPresetStore;
-  let themeId: AsciiEngineThemeId = options.themeId ?? "root-os";
+  let themeId: AsciiEngineThemeId = options.themeId ?? "crt-green";
   const document =
     options.document ??
     ProjectDocument.create({ themeId, name: "Untitled Project" });

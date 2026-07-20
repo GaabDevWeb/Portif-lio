@@ -1,5 +1,5 @@
 export type AsciiEngineThemeId =
-  | "root-os"
+  | "crt-green"
   | "dos"
   | "crt"
   | "linux"
@@ -29,14 +29,14 @@ export interface AsciiEngineTheme {
 
 export const ASCII_ENGINE_THEMES: AsciiEngineTheme[] = [
   {
-    id: "root-os",
-    label: "ROOT OS",
+    id: "crt-green",
+    label: "CRT Green",
     tokens: {
-      "--ae-bg": "oklch(0.07 0.01 260)",
-      "--ae-panel": "oklch(0.11 0.015 260)",
-      "--ae-border": "oklch(0.32 0.02 260)",
-      "--ae-text": "oklch(0.88 0.01 260)",
-      "--ae-text-dim": "oklch(0.62 0.01 260)",
+      "--ae-bg": "oklch(0.07 0.01 145)",
+      "--ae-panel": "oklch(0.11 0.015 145)",
+      "--ae-border": "oklch(0.32 0.04 145)",
+      "--ae-text": "oklch(0.88 0.12 145)",
+      "--ae-text-dim": "oklch(0.55 0.08 145)",
       "--ae-accent": "oklch(0.78 0.18 145)",
       "--ae-accent-dim": "oklch(0.55 0.1 145)",
       "--ae-warn": "oklch(0.75 0.16 75)",
@@ -170,8 +170,11 @@ export const ASCII_ENGINE_THEMES: AsciiEngineTheme[] = [
   },
 ];
 
-export function getTheme(id: AsciiEngineThemeId): AsciiEngineTheme {
-  return ASCII_ENGINE_THEMES.find((t) => t.id === id) ?? ASCII_ENGINE_THEMES[0]!;
+export function getTheme(id: AsciiEngineThemeId | string): AsciiEngineTheme {
+  const normalized = id === "crt-green" ? "crt-green" : id;
+  return (
+    ASCII_ENGINE_THEMES.find((t) => t.id === normalized) ?? ASCII_ENGINE_THEMES[0]!
+  );
 }
 
 export function themeToCssVars(theme: AsciiEngineTheme): Record<string, string> {

@@ -13,7 +13,7 @@ import { renderMatrixToCanvas } from "@/features/ascii-interaction/image-pipelin
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface AsciiAnimationHeroProps {
-  /** Base path público, ex.: /animations/root-os-home */
+  /** Base path público, ex.: /animations/crt-home */
   basePath: string;
   className?: string;
 }

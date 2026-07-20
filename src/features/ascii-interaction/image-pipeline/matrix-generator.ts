@@ -2,6 +2,7 @@ import {
   mapLuminanceToCharByDensity,
   resolveCellColor,
 } from "@/features/ascii-interaction/image-pipeline/charset-mapper";
+import { applyWeightsToCharset } from "@/features/ascii-interaction/image-pipeline/char-weights";
 import { applyDithering } from "@/features/ascii-interaction/image-pipeline/dithering";
 import { sobelEdges } from "@/features/ascii-interaction/image-pipeline/image-processor";
 import type {
@@ -78,7 +79,10 @@ export function generateAsciiMatrix(
   options: ImagePipelineOptions,
 ): AsciiMatrix {
   const baseCharset = options.charset.length > 1 ? options.charset : " .";
-  const charset = applyCharacterDensity(baseCharset, options.characterDensity ?? 1);
+  const weighted = options.charWeights
+    ? applyWeightsToCharset(baseCharset, options.charWeights)
+    : baseCharset;
+  const charset = applyCharacterDensity(weighted, options.characterDensity ?? 1);
   const levels = charset.length;
 
   let mapping = buildMappingField(buffer, options.mappingMode, options.edgeEnhance);

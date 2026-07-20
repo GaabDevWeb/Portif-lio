@@ -2,14 +2,18 @@
 
 import { ProductNav, type ProductTab } from "@/studio/ProductNav";
 
-/** Shared chrome nav for standalone /gallery route — mirrors product sitemap. */
+/** Shared chrome nav — mirrors product sitemap. */
 export function StudioChromeNav({
   active,
 }: {
-  active: ProductTab | "studio" | "gallery";
+  active: ProductTab | "studio" | "gallery" | "icons";
 }) {
   const current: ProductTab =
-    active === "studio" ? "convert" : active === "gallery" ? "gallery" : active;
+    active === "studio"
+      ? "convert"
+      : active === "gallery" || active === "icons"
+        ? "library"
+        : active;
 
   return <ProductNav active={current} onChange={() => undefined} mode="links" />;
 }

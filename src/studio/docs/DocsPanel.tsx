@@ -52,6 +52,9 @@ const SECTIONS = [
       "",
       "Q: What belongs in the product?",
       "A: Anything that improves conversion quality or the convert→export loop.",
+      "",
+      "Q: Library?",
+      "A: Icons + Gallery — explore ASCII without uploading first.",
     ],
   },
 ] as const;

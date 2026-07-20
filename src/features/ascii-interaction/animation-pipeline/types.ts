@@ -63,7 +63,7 @@ export interface AnimationManifest {
 
 export interface AnimationMetadata {
   sourceName: string;
-  sourceType: "image/gif";
+  sourceType: "image/gif" | "image/webp";
   convertedAt: string;
   totalDurationMs: number;
   frameDelays: number[];
@@ -79,6 +79,8 @@ export interface ConversionProgress {
   cancelled: boolean;
 }
 
+export type AnimationQualityTier = "performance" | "balanced" | "maximum";
+
 export interface AnimationPipelineOptions {
   pipeline: ImagePipelineOptions;
   targetFps: number;
@@ -87,6 +89,8 @@ export interface AnimationPipelineOptions {
   workerCount: number;
   /** Temporal ASCII — GIF sequence coherence (forces sequential convert when enabled). */
   temporal: TemporalPipelineOptions;
+  /** Convert quality profile — Performance / Balanced / Maximum. */
+  qualityTier: AnimationQualityTier;
 }
 
 export const DEFAULT_ANIMATION_PIPELINE_OPTIONS: AnimationPipelineOptions = {
@@ -113,16 +117,17 @@ export const DEFAULT_ANIMATION_PIPELINE_OPTIONS: AnimationPipelineOptions = {
     characterDensity: 1,
     characterBias: 0,
     adaptiveMapping: false,
-    charset: " .:-=+*#%@",
+    charset: "@%#*+=-:.",
     mappingMode: "brightness",
     dithering: "floyd-steinberg",
-    colorMode: "root-os",
+    colorMode: "crt-green",
   },
   targetFps: 15,
   loop: true,
   maxFramesInMemory: 48,
   workerCount: 2,
   temporal: { ...DEFAULT_TEMPORAL_OPTIONS },
+  qualityTier: "balanced",
 };
 
 export type { TemporalDebugBuffers, TemporalMetrics, TemporalPipelineOptions };

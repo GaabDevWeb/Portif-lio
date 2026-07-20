@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Gallery lives inside the product shell at /?tab=gallery */
+/** Gallery lives inside Library at /?tab=library */
 export default function GalleryPage() {
-  redirect("/?tab=gallery");
+  redirect("/?tab=library");
 }

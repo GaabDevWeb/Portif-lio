@@ -8,6 +8,7 @@ import {
   IMAGE_CHARSETS,
   autoOptimizeFromBuffer,
   getRefinementPreset,
+  loadImageElement,
   mergePipelineOptions,
   resolveOutputSize,
   sampleImage,
@@ -26,6 +27,7 @@ import {
 } from "@/features/ascii-engine/presets";
 import { getRecipe, recipeToPreset } from "@/features/ascii-engine/recipes";
 import { previewToAscii } from "@/features/ascii-engine/gallery";
+import { getIcon } from "@/features/ascii-engine/icons";
 import { AnimationConverterPanel } from "@/studio/animation/AnimationConverterPanel";
 import { AnimationResultView } from "@/studio/animation/AnimationResultView";
 import { useAnimationController } from "@/studio/animation/useAnimationController";
@@ -38,30 +40,23 @@ import { LabInteractiveCursorToggle } from "@/studio/LabInteractiveCursorToggle"
 import { LabMobileHeader } from "@/studio/LabMobileHeader";
 import { applyPreset } from "@/studio/Presets";
 import { resolveGalleryItem } from "@/studio/gallery/actions";
-import { GalleryEmbedded } from "@/studio/gallery/GalleryEmbedded";
-import { ProductNav, type ProductTab } from "@/studio/ProductNav";
-import { IconsPanel } from "@/studio/icons/IconsPanel";
+import { renderAsciiToPng } from "@/studio/library/ascii-art-export";
+import { ProductNav, normalizeProductTab, type ProductTab } from "@/studio/ProductNav";
+import { LibraryPanel } from "@/studio/library/LibraryPanel";
 import { DocsPanel } from "@/studio/docs/DocsPanel";
 import { useWorkspaceViewport } from "@/studio/workspace/useWorkspaceViewport";
 
 const PRODUCT_TABS: { id: ProductTab; label: string }[] = [
   { id: "convert", label: "Convert" },
   { id: "animate", label: "Animate" },
-  { id: "icons", label: "Icons" },
-  { id: "gallery", label: "Gallery" },
+  { id: "library", label: "Library" },
   { id: "docs", label: "Docs" },
 ];
 
-function parseTabParam(raw: string | null): ProductTab | null {
-  if (!raw) return null;
-  if (PRODUCT_TABS.some((t) => t.id === raw)) return raw as ProductTab;
-  return null;
-}
-
-/** ASCII Engine shell — professional converter (Convert · Animate · Icons · Gallery · Docs). */
+/** ASCII Engine shell — Convert · Animate · Library · Docs. */
 export function AsciiLab() {
   const [tab, setTab] = useState<ProductTab>("convert");
-  const [themeId] = useState<AsciiEngineThemeId>("root-os");
+  const [themeId] = useState<AsciiEngineThemeId>("crt-green");
   const [config, setConfig] = useState<AsciiInteractionConfig>(() => applyPreset("default"));
   const [galleryBanner, setGalleryBanner] = useState<string | null>(null);
 
@@ -216,11 +211,11 @@ export function AsciiLab() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const fromUrl = parseTabParam(params.get("tab"));
+    const fromUrl = normalizeProductTab(params.get("tab"));
     if (fromUrl) setTab(fromUrl);
   }, []);
 
-  // Gallery deep-link → Convert (never Engine)
+  // Gallery deep-link → Convert or Animate
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -233,11 +228,13 @@ export function AsciiLab() {
       const item = await resolveGalleryItem(galleryId);
       if (cancelled || !item) return;
 
-      setTabAndUrl("convert");
-      // Preview string kept for banner context; Convert loads via image pipeline from remix.
+      const targetTab: ProductTab = action === "animate" ? "animate" : "convert";
+      setTabAndUrl(targetTab);
       void previewToAscii(item.preview);
 
-      if ((action === "remix" || action === "edit") && item.recipeId) {
+      if (action === "animate") {
+        setGalleryBanner(`Gallery · ${item.title} · upload a GIF/WEBP in Animate to continue`);
+      } else if ((action === "remix" || action === "edit") && item.recipeId) {
         const recipe = getRecipe(item.recipeId);
         if (recipe) {
           applyProductPreset(recipeToPreset(recipe));
@@ -252,8 +249,46 @@ export function AsciiLab() {
       const url = new URL(window.location.href);
       url.searchParams.delete("gallery");
       url.searchParams.delete("action");
-      url.searchParams.set("tab", "convert");
+      url.searchParams.set("tab", targetTab);
       window.history.replaceState({}, "", url.pathname + url.search);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep-link once
+  }, []);
+
+  // Icon deep-link → Convert (rasterize ASCII art as source image)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const iconId = params.get("icon");
+    if (!iconId) return;
+
+    let cancelled = false;
+    void (async () => {
+      const icon = getIcon(iconId);
+      if (cancelled || !icon) return;
+
+      try {
+        const blob = await renderAsciiToPng(icon.ascii);
+        if (cancelled) return;
+        const img = await loadImageElement(blob);
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        handleImageLoaded(img, url);
+        setTabAndUrl("convert");
+        setGalleryBanner(`Icon · ${icon.name} · loaded into Convert`);
+      } catch (err) {
+        console.error("icon deep-link:", err);
+        setGalleryBanner(`Icon · ${iconId} · failed to load`);
+      }
+
+      const next = new URL(window.location.href);
+      next.searchParams.delete("icon");
+      next.searchParams.set("tab", "convert");
+      window.history.replaceState({}, "", next.pathname + next.search);
     })();
 
     return () => {
@@ -491,12 +526,11 @@ export function AsciiLab() {
                 onFpsChange={(fps) => updateAnimationOptions({ targetFps: fps })}
               />
             ) : (
-              <EmptyCanvas message="Carregue um GIF ou importe um .ascii.zip" />
+              <EmptyCanvas message="Carregue um GIF/WEBP ou importe um .ascii.zip" />
             )
           ) : null}
 
-          {tab === "icons" ? <IconsPanel /> : null}
-          {tab === "gallery" ? <GalleryEmbedded /> : null}
+          {tab === "library" ? <LibraryPanel /> : null}
           {tab === "docs" ? <DocsPanel /> : null}
         </main>
       </div>

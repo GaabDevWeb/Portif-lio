@@ -10,7 +10,7 @@ import { renderMatrixToPng } from "@/features/ascii-interaction/image-pipeline/e
 import { padFrameIndex } from "@/features/ascii-interaction/animation-pipeline/utilities/timing";
 import { downloadBlob } from "@/features/ascii-interaction/animation-pipeline/utilities/zip";
 
-const README = `ASCII Animation Package (ROOT OS)
+const README = `ASCII Animation Package (CRT Green)
 ================================
 Format: animation.ascii.zip
 Version: 1
@@ -23,7 +23,7 @@ Contents:
 - preview.png     — preview estático
 - thumbnail.png   — miniatura
 
-Importável em /labs/ascii (modo Animation).
+Importável no ASCII Engine (modo Animate).
 `;
 
 export async function exportAsciiAnimationZip(animation: AsciiAnimation): Promise<Blob> {

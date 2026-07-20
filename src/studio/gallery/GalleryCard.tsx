@@ -2,11 +2,12 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Copy, Download, Pencil, Shuffle, Star } from "lucide-react";
+import { Clapperboard, Copy, Download, ImageDown, Pencil, Shuffle, Star } from "lucide-react";
 
 import { previewToAscii, type GalleryItem } from "@/features/ascii-engine/gallery";
 import {
   copyGalleryItem,
+  exportGalleryItemPng,
   exportGalleryItemTxt,
   studioHrefForItem,
 } from "@/studio/gallery/actions";
@@ -70,7 +71,7 @@ export function GalleryCard({ item, favorited, onToggleFavorite, onFlash }: Gall
         ) : null}
       </div>
 
-      <div className="grid grid-cols-4 gap-1 border-t border-[var(--ui-border)] px-2 py-2">
+      <div className="grid grid-cols-3 gap-1 border-t border-[var(--ui-border)] px-2 py-2 sm:grid-cols-6">
         <ActionBtn
           label="Copy"
           icon={<Copy size={11} />}
@@ -80,12 +81,37 @@ export function GalleryCard({ item, favorited, onToggleFavorite, onFlash }: Gall
             });
           }}
         />
+        <ActionBtn
+          label="TXT"
+          icon={<Download size={11} />}
+          onClick={() => {
+            exportGalleryItemTxt(item);
+            onFlash(`Exported · ${item.title}.txt`);
+          }}
+        />
+        <ActionBtn
+          label="PNG"
+          icon={<ImageDown size={11} />}
+          onClick={() => {
+            void exportGalleryItemPng(item)
+              .then(() => onFlash(`Exported · ${item.title}.png`))
+              .catch(() => onFlash("PNG export failed"));
+          }}
+        />
         <Link
           href={studioHrefForItem(item, "convert")}
           className="flex cursor-pointer items-center justify-center gap-1 rounded border border-[var(--ui-border)] px-1 py-1.5 font-mono text-[8px] uppercase text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
         >
           <Pencil size={11} />
           Convert
+        </Link>
+        <Link
+          href={studioHrefForItem(item, "animate")}
+          className="flex cursor-pointer items-center justify-center gap-1 rounded border border-[var(--ui-border)] px-1 py-1.5 font-mono text-[8px] uppercase text-[var(--phosphor-primary)] hover:border-[var(--phosphor-dim)]"
+          title="Open Animate tab"
+        >
+          <Clapperboard size={11} />
+          Animate
         </Link>
         <Link
           href={studioHrefForItem(item, "remix")}
@@ -100,14 +126,6 @@ export function GalleryCard({ item, favorited, onToggleFavorite, onFlash }: Gall
           <Shuffle size={11} />
           Remix
         </Link>
-        <ActionBtn
-          label="Export"
-          icon={<Download size={11} />}
-          onClick={() => {
-            exportGalleryItemTxt(item);
-            onFlash(`Exported · ${item.title}.txt`);
-          }}
-        />
       </div>
     </article>
   );

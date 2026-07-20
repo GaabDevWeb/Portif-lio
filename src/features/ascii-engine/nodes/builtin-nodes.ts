@@ -231,9 +231,9 @@ const ColorModeNode: NodeDefinition = {
     { id: "image", type: "ImageBuffer" },
   ],
   outputs: [{ id: "matrix", type: "AsciiMatrix" }],
-  defaultParams: { colorMode: "root-os", charset: IMAGE_CHARSETS.classic },
+  defaultParams: { colorMode: "crt-green", charset: IMAGE_CHARSETS.classic },
   execute(ctx) {
-    const colorMode = asString(ctx.params, "colorMode", "root-os") as ColorMode;
+    const colorMode = asString(ctx.params, "colorMode", "crt-green") as ColorMode;
     const existing = ctx.inputs.matrix as AsciiMatrix | undefined;
     if (existing && typeof existing === "object" && "cells" in existing) {
       const cells = existing.cells.map((c) => {

@@ -4,7 +4,7 @@ export const IMAGE_PIPELINE_PRESETS: ImagePipelinePreset[] = [
   {
     id: "portrait",
     label: "Portrait",
-    options: { width: 100, mappingMode: "brightness", dithering: "floyd-steinberg", colorMode: "root-os" },
+    options: { width: 100, mappingMode: "brightness", dithering: "floyd-steinberg", colorMode: "crt-green" },
   },
   {
     id: "poster",
@@ -19,7 +19,7 @@ export const IMAGE_PIPELINE_PRESETS: ImagePipelinePreset[] = [
   {
     id: "retro",
     label: "Retro CRT",
-    options: { width: 80, contrast: 1.3, gamma: 1.2, colorMode: "root-os", blur: 0.3 },
+    options: { width: 80, contrast: 1.3, gamma: 1.2, colorMode: "crt-green", blur: 0.3 },
   },
   {
     id: "matrix",

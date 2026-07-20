@@ -1,38 +1,36 @@
-# Conversion Benchmark Log
+# Conversion Bench — 2026-07-19
 
-> Fixtures: `fixtures/conversion-bench/*.ppm` · Runner: `npm run bench:conversion -- --label <name>`  
-> Note: `baseline` was captured after P0.1–P0.2 + density LUT were already on the branch (no pre-fix archive). Fingerprints stable across `after-p0-p1` confirm determinism; ms variance is noise.
+Command: `npm run bench:conversion`  
+Host: local (dev machine). Times are **pipeline convert only** on fixture grids — not full 1080p/4K wall-clock SLAs.
 
-## baseline — 2026-07-11T00:18:07.964Z
+## Results (ms)
 
-| fixture | convert ms | cols×rows | cells | fingerprint | heap MiB |
-|---|---:|---|---:|---|---:|
-| anime | 15.37 | 64×116 | 3955 | `f8397c00` | 9 |
-| dark | 1.84 | 48×87 | 313 | `471425d8` | 9 |
-| gif-long | 2.38 | 40×73 | 2538 | `60018cb6` | 10 |
-| gif-short | 3.01 | 40×73 | 2883 | `c953b48d` | 9 |
-| hires | 6.98 | 80×109 | 7865 | `586200ee` | 11 |
-| landscape | 3.32 | 80×73 | 4685 | `a7c13f7a` | 12 |
-| light | 2.32 | 48×87 | 4176 | `d8882d36` | 11 |
-| lores | 0.25 | 24×29 | 591 | `4c52add5` | 12 |
-| photo | 3.37 | 80×109 | 7919 | `8981f638` | 14 |
-| pixel | 1.35 | 32×58 | 928 | `5baf1085` | 11 |
-| portrait | 1.95 | 48×116 | 4872 | `b6768d88` | 14 |
-| text | 0.95 | 64×58 | 1856 | `ae063345` | 15 |
+| Fixture | convertMs | cols×rows | cells |
+|---------|-----------|-----------|-------|
+| anime | 11.43 | 64×37 | 2368 |
+| dark | 3.48 | 48×28 | 1344 |
+| gif-long | 2.73 | 40×23 | 920 |
+| gif-short | 2.79 | 40×23 | 920 |
+| hires | 3.55 | 80×35 | 2800 |
+| landscape | 4.79 | 80×23 | 1840 |
+| light | 3.03 | 48×28 | 1344 |
+| lores | 0.24 | 24×9 | 216 |
+| photo | 4.57 | 80×35 | 2800 |
+| pixel | 0.84 | 32×19 | 608 |
+| portrait | 1.09 | 48×37 | 1776 |
+| text | 0.39 | 64×19 | 1216 |
 
-## after-p0-p1 — 2026-07-11T00:19:13.310Z
+## Interpretation vs v1.0 SLAs
 
-| fixture | convert ms | cols×rows | cells | fingerprint | heap MiB |
-|---|---:|---|---:|---|---:|
-| anime | 14.21 | 64×116 | 3955 | `f8397c00` | 9 |
-| dark | 1.45 | 48×87 | 313 | `471425d8` | 8 |
-| gif-long | 2.41 | 40×73 | 2538 | `60018cb6` | 9 |
-| gif-short | 2.4 | 40×73 | 2883 | `c953b48d` | 11 |
-| hires | 7.47 | 80×109 | 7865 | `586200ee` | 10 |
-| landscape | 3.57 | 80×73 | 4685 | `a7c13f7a` | 10 |
-| light | 2.39 | 48×87 | 4176 | `d8882d36` | 10 |
-| lores | 0.3 | 24×29 | 591 | `4c52add5` | 11 |
-| photo | 3.25 | 80×109 | 7919 | `8981f638` | 12 |
-| pixel | 0.43 | 32×58 | 928 | `5baf1085` | 13 |
-| portrait | 2.34 | 48×116 | 4872 | `b6768d88` | 12 |
-| text | 0.54 | 64×58 | 1856 | `ae063345` | 13 |
+| Target | Status |
+|--------|--------|
+| 1080p &lt; 100 ms | **Not measured at 1080p** in this harness (fixtures are small grids). Worker path exists; re-run with larger widths to gate CI. |
+| 4K &lt; 500 ms | Same — aspirational until dedicated 4K fixture. |
+| 100-frame GIF &lt; 5 s (Balanced) | Not covered by still `bench:conversion`; use Temporal + quality tier in UI / future anim bench. |
+
+Fixtures complete well under 100 ms at current grid sizes → core convert path is healthy. Document larger workloads before treating SLAs as release gates.
+
+## Related
+
+- `docs/architecture/PERFORMANCE-LAYER.md`
+- Quality tiers: Performance / Balanced / Maximum

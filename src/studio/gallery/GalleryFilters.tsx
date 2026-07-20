@@ -58,12 +58,32 @@ export function GalleryFilters({
         ))}
       </div>
 
-      <label className="block font-mono text-[10px] text-[var(--ui-text-dim)]">
-        Collection
+      <div>
+        <p className="mb-1.5 font-mono text-[10px] text-[var(--ui-text-dim)]">Collections</p>
+        <div className="flex flex-wrap gap-1">
+          <FilterChip
+            label="All"
+            active={collectionId === "all"}
+            onClick={() => onCollectionChange("all")}
+          />
+          {collections
+            .filter((col) =>
+              ["col-featured", "col-trending", "col-recent"].includes(col.id),
+            )
+            .map((col) => (
+              <FilterChip
+                key={col.id}
+                label={col.title}
+                active={collectionId === col.id}
+                onClick={() => onCollectionChange(col.id)}
+              />
+            ))}
+        </div>
         <select
           value={collectionId}
           onChange={(e) => onCollectionChange(e.target.value as string | "all")}
-          className="mt-1 w-full cursor-pointer rounded border border-[var(--ui-border)] bg-[var(--bg-void)] px-2 py-1.5 font-mono text-[11px] text-[var(--phosphor-primary)]"
+          className="mt-2 w-full cursor-pointer rounded border border-[var(--ui-border)] bg-[var(--bg-void)] px-2 py-1.5 font-mono text-[11px] text-[var(--phosphor-primary)]"
+          aria-label="All collections"
         >
           <option value="all">All collections</option>
           {collections.map((col) => (
@@ -72,7 +92,7 @@ export function GalleryFilters({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
       <PanelToggle
         label="Favorites only"

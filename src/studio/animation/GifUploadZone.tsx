@@ -8,6 +8,17 @@ interface GifUploadZoneProps {
   disabled?: boolean;
 }
 
+function isAnimationFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return (
+    file.type === "image/gif" ||
+    file.type === "image/webp" ||
+    name.endsWith(".gif") ||
+    name.endsWith(".webp")
+  );
+}
+
+/** Upload zone for GIF and animated/static WEBP. */
 export function GifUploadZone({ onFile, disabled }: GifUploadZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -16,8 +27,8 @@ export function GifUploadZone({ onFile, disabled }: GifUploadZoneProps) {
   const handle = useCallback(
     (file: File) => {
       setError(null);
-      if (file.type !== "image/gif" && !file.name.toLowerCase().endsWith(".gif")) {
-        setError("Apenas ficheiros GIF são suportados.");
+      if (!isAnimationFile(file)) {
+        setError("Apenas GIF ou WEBP são suportados.");
         return;
       }
       onFile(file);
@@ -50,7 +61,7 @@ export function GifUploadZone({ onFile, disabled }: GifUploadZoneProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/gif"
+        accept="image/gif,image/webp,.gif,.webp"
         className="hidden"
         disabled={disabled}
         onChange={(e) => {
@@ -59,15 +70,17 @@ export function GifUploadZone({ onFile, disabled }: GifUploadZoneProps) {
           e.target.value = "";
         }}
       />
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex gap-2 text-[var(--phosphor-dim)]">
-          <Upload size={16} aria-hidden />
-          <Film size={16} aria-hidden />
-        </div>
-        <p className="font-mono text-[10px] text-[var(--ui-text)]">Upload GIF animado</p>
-        <p className="text-[9px] text-[var(--ui-text-dim)]">Drag & drop ou clique</p>
-      </div>
-      {error ? <p className="mt-2 text-[9px] text-[var(--stderr)]">{error}</p> : null}
+      <Film className="mx-auto mb-2 h-6 w-6 text-[var(--phosphor-dim)]" aria-hidden />
+      <p className="font-mono text-[10px] text-[var(--phosphor-primary)]">
+        <Upload className="mr-1 inline h-3 w-3" aria-hidden />
+        Drop GIF / WEBP or click
+      </p>
+      <p className="mt-1 font-mono text-[8px] text-[var(--ui-text-dim)]">
+        Animated WEBP requires Chromium ImageDecoder
+      </p>
+      {error ? (
+        <p className="mt-2 font-mono text-[9px] text-[var(--stderr)]">{error}</p>
+      ) : null}
     </div>
   );
 }

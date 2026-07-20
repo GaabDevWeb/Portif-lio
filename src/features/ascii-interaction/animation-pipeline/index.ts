@@ -1,5 +1,16 @@
 export * from "@/features/ascii-interaction/animation-pipeline/types";
 export { decodeGifBuffer, decodeGifFile } from "@/features/ascii-interaction/animation-pipeline/decoder/gif-decoder";
+export { decodeWebpBuffer, decodeWebpFile } from "@/features/ascii-interaction/animation-pipeline/decoder/webp-decoder";
+export {
+  decodeAnimationFile,
+  decodeAnimationBuffer,
+  detectAnimationSourceKind,
+} from "@/features/ascii-interaction/animation-pipeline/decoder/animation-decoder";
+export {
+  applyAnimationQualityTier,
+  ANIMATION_QUALITY_TIERS,
+  type AnimationQualityTier,
+} from "@/features/ascii-interaction/animation-pipeline/quality-tiers";
 export { extractFrames, summarizeGif } from "@/features/ascii-interaction/animation-pipeline/frame-extractor/frame-extractor";
 export {
   convertRgbaFrameToMatrix,

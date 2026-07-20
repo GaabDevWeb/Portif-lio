@@ -127,7 +127,7 @@ describe("recipes", () => {
     expect(getRecipeByName("CRT Green")?.id).toBe("crt-green");
 
     const patch = applyRecipe("crt-green");
-    expect(patch.colorMode).toBe("root-os");
+    expect(patch.colorMode).toBe("crt-green");
     expect(patch.mappingMode).toBe("brightness");
     expect(patch.dithering).toBe("floyd-steinberg");
     expect(patch.contrast).toBe(1.25);

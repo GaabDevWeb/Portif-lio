@@ -177,7 +177,9 @@ export function useAnimationController() {
       temporal: patch.temporal
         ? { ...prev.temporal, ...patch.temporal }
         : prev.temporal,
-      pipeline: patch.pipeline ?? prev.pipeline,
+      pipeline: patch.pipeline
+        ? { ...prev.pipeline, ...patch.pipeline }
+        : prev.pipeline,
     }));
     if (patch.targetFps != null) playbackRef.current?.setFps(patch.targetFps);
     if (patch.loop != null) playbackRef.current?.setLoop(patch.loop);

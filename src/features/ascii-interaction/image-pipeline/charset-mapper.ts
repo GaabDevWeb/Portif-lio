@@ -1,11 +1,19 @@
 import type { ColorMode } from "@/features/ascii-interaction/image-pipeline/types";
 
-const ROOT_OS_PALETTE = [
+const CRT_GREEN_PALETTE = [
   { r: 157, g: 255, b: 157 },
   { r: 61, g: 107, b: 61 },
   { r: 200, g: 255, b: 200 },
   { r: 10, g: 18, b: 10 },
   { r: 255, g: 200, b: 80 },
+];
+
+const AMBER_PALETTE = [
+  { r: 255, g: 176, b: 0 },
+  { r: 200, g: 120, b: 0 },
+  { r: 120, g: 60, b: 0 },
+  { r: 40, g: 20, b: 0 },
+  { r: 255, g: 220, b: 120 },
 ];
 
 const ANSI_16: [number, number, number][] = [
@@ -138,13 +146,31 @@ export function resolveCellColor(
   luminance: number,
   mode: ColorMode,
 ): { r: number; g: number; b: number } {
-  switch (mode) {
+  const normalized =
+    mode === "crt-green"
+      ? "crt-green"
+      : mode === "color" || mode === "truecolor"
+        ? "original"
+        : mode === "ansi16"
+          ? "palette"
+          : mode;
+
+  switch (normalized) {
     case "mono":
       return { r: luminance * 255, g: luminance * 255, b: luminance * 255 };
-    case "color":
-    case "truecolor":
+    case "white-terminal": {
+      const v = Math.round(luminance * 255);
+      return { r: v, g: v, b: v };
+    }
+    case "inverted": {
+      const ir = 255 - r;
+      const ig = 255 - g;
+      const ib = 255 - b;
+      return { r: ir, g: ig, b: ib };
+    }
+    case "original":
       return { r, g, b };
-    case "ansi16": {
+    case "palette": {
       const idx = nearestPaletteIndex(r, g, b, ANSI_16);
       const [cr, cg, cb] = ANSI_16[idx]!;
       return { r: cr, g: cg, b: cb };
@@ -153,9 +179,24 @@ export function resolveCellColor(
       return ansi256Color(luminance, r, g, b);
     case "gradient":
       return gradientColor(luminance);
-    case "root-os": {
-      const idx = nearestPaletteIndex(r, g, b, ROOT_OS_PALETTE.map((c) => [c.r, c.g, c.b] as [number, number, number]));
-      const c = ROOT_OS_PALETTE[idx]!;
+    case "crt-green": {
+      const idx = nearestPaletteIndex(
+        r,
+        g,
+        b,
+        CRT_GREEN_PALETTE.map((c) => [c.r, c.g, c.b] as [number, number, number]),
+      );
+      const c = CRT_GREEN_PALETTE[idx]!;
+      return { r: c.r, g: c.g, b: c.b };
+    }
+    case "amber": {
+      const idx = nearestPaletteIndex(
+        r,
+        g,
+        b,
+        AMBER_PALETTE.map((c) => [c.r, c.g, c.b] as [number, number, number]),
+      );
+      const c = AMBER_PALETTE[idx]!;
       return { r: c.r, g: c.g, b: c.b };
     }
     default:
@@ -205,11 +246,14 @@ function gradientColor(lum: number): { r: number; g: number; b: number } {
 }
 
 export const IMAGE_CHARSETS: Record<string, string> = {
+  classic: "@%#*+=-:.",
+  blocks: "█▓▒░ ",
+  binary: "01",
+  letters: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  symbols: "<>[]{}()",
   "ultra-light": " .,:;",
-  classic: " .:-=+*#%@",
   dense: " ░▒▓█",
-  blocks: " ▁▂▃▄▅▆▇█",
   braille: " ⠀⠁⠃⠇⠏⠟⠿⡿⣿",
   unicode: " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
-  custom: " .:-=+*#%@",
+  custom: "@%#*+=-:.",
 };

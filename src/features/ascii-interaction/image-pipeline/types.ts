@@ -24,13 +24,23 @@ export type DitheringMode =
   | "stucki";
 
 export type ColorMode =
+  | "original"
   | "mono"
+  | "inverted"
+  | "palette"
+  | "crt-green"
+  | "amber"
+  | "white-terminal"
+  /** @deprecated use original */
   | "color"
+  /** @deprecated use original */
+  | "truecolor"
+  /** @deprecated use palette */
   | "ansi16"
   | "ansi256"
-  | "truecolor"
   | "gradient"
-  | "root-os";
+  /** @deprecated use crt-green */
+  | "crt-green";
 
 export interface ImagePipelineOptions {
   width: number;
@@ -79,6 +89,11 @@ export interface ImagePipelineOptions {
   /** Stretch luminance to image histogram before char mapping. */
   adaptiveMapping: boolean;
   charset: string;
+  /**
+   * Optional per-glyph visual weights (0…100). When set, charset is reordered
+   * and luminance mapping uses the weight LUT (Character Weight Editor).
+   */
+  charWeights?: Record<string, number>;
   mappingMode: MappingMode;
   dithering: DitheringMode;
   colorMode: ColorMode;
@@ -156,8 +171,8 @@ export const DEFAULT_IMAGE_PIPELINE_OPTIONS: ImagePipelineOptions = {
   characterDensity: 1,
   characterBias: 0,
   adaptiveMapping: false,
-  charset: " .:-=+*#%@",
+  charset: "@%#*+=-:.",
   mappingMode: "brightness",
   dithering: "floyd-steinberg",
-  colorMode: "root-os",
+  colorMode: "crt-green",
 };

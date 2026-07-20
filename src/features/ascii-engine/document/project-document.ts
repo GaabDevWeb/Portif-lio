@@ -99,7 +99,7 @@ export class ProjectDocument {
         updatedAt: createdAt,
         author: options.author,
       },
-      themeId: options.themeId ?? "root-os",
+      themeId: options.themeId ?? "crt-green",
       workspace: { ...DEFAULT_PROJECT_WORKSPACE, ...options.workspace },
       editor: new EditorDocument(),
     });
@@ -159,7 +159,7 @@ export class ProjectDocument {
         updatedAt: createdAt,
         author: options.author,
       },
-      themeId: options.themeId ?? "root-os",
+      themeId: options.themeId ?? "crt-green",
       workspace: { ...DEFAULT_PROJECT_WORKSPACE, ...options.workspace },
       editor,
     });
